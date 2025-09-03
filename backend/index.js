@@ -17,13 +17,20 @@ import nurseRoutes from "./routes/nurseRoutes.js";
 import cleanerRoutes from "./routes/cleanerRoutes.js";
 import receptionistRoutes from "./routes/receptionistRoutes.js";
 import { errorHandler } from "./utils/errorHandler.js";
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
 
-dotenv.config();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+dotenv.config({ path: join(__dirname, '.env') });
 
 const app = express();
 const httpServer = createServer(app);
 const port = process.env.PORT || 3030;
 const mongoUrl = process.env.MONGO_URL;
+console.log('MongoDB URL:', mongoUrl);
+console.log('Environment variables:', process.env);
 
 // MongoDB Connection
 (async () => {

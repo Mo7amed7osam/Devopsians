@@ -68,10 +68,10 @@ export const createUser = async (req, res, next) => {
 
 export const loginUser = async (req, res, next) => {
     try {
-        const { userName, password, role } = req.body;
+        const { userName, password } = req.body;
 
-        if (!userName || !password || !role) {
-            return next(new ErrorHandler("Please fill out the full form", 400));
+        if (!userName || !password) {
+            return next(new ErrorHandler("Please provide username and password", 400));
         }
 
         const user = await User.findOne({ userName }).select("+userPass");
@@ -84,15 +84,13 @@ export const loginUser = async (req, res, next) => {
             return next(new ErrorHandler("Invalid Username or Password", 404));
         }
 
-        if (role !== user.role) {
-            return next(new ErrorHandler("Role does not match the provided role", 403));
-        }
-
         // Exclude the password from the user data before sending it
         const userData = {
-            id: user._id, // Include user ID
+            id: user._id,
             userName: user.userName,
-            role: user.role, // Add other relevant fields if needed
+            role: user.role,
+            firstName: user.firstName,
+            lastName: user.lastName
         };
 
         // Use the organization's token utility function

@@ -5,6 +5,7 @@ import socket from "../socket"; // Import the existing socket instance as the de
 import styles from "./UserHomeScreen.module.css";
 import Icus from "../components/Icus";
 import Map from "../components/Map";
+import Navigation from "../components/Navigation";
 
 function UserHomeScreen() {
   const { id: userId } = useParams();
@@ -106,6 +107,7 @@ function UserHomeScreen() {
 
   return (
     <div className={styles.userHomeContainer}>
+      <Navigation />
       {isPopupVisible ? (
         <div className={styles.popupContainer}>
           <div className={styles.popupBox}>

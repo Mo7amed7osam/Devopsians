@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 import mongooseSequence from 'mongoose-sequence';
 import validator from 'validator';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
 const AutoIncrement = mongooseSequence(mongoose); // Initialize the plugin

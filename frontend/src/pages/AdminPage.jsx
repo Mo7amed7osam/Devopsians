@@ -1,9 +1,11 @@
 import DashboardCard from "../components/DashBoardCard";
+import Navigation from "../components/Navigation";
 import styles from "./AdminPage.module.css";
 
 function AdminPage() {
   return (
     <>
+      <Navigation />
       <div>
         <h1 style={{ fontSize: 30 }}>
           Welcome MR. Admin, what do you want to do today!

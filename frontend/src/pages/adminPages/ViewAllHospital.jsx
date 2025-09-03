@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import axios from "axios";
 import socket from "../../socket"; // Ensure the correct path
+import Navigation from "../../components/Navigation";
 import styles from "./ViewAllHospital.module.css";
 
 function ViewAllHospital() {
@@ -96,6 +97,7 @@ function ViewAllHospital() {
 
   return (
     <div className={styles.viewAllHospitals}>
+      <Navigation />
       <h1>All Hospitals</h1>
       {hospitals.length === 0 ? (
         <p>No hospitals available at the moment.</p>

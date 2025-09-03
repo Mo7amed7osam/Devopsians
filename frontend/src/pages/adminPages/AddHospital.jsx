@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import Navigation from "../../components/Navigation";
 import styles from "./AddHospital.module.css";
 
 function AddHospital() {
@@ -51,6 +52,7 @@ function AddHospital() {
 
   return (
     <section className="bg-indigo-50">
+      <Navigation />
       <div className={styles.container} >
         <div className="bg-white px-6 py-8 mb-4 shadow-md rounded-md border m-4 md:m-0">
           <form onSubmit={submitForm}>

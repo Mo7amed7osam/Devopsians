@@ -1,5 +1,6 @@
 import { useParams } from "react-router-dom";
 import DashboardCard from "../components/DashBoardCard";
+import Navigation from "../components/Navigation";
 import styles from "./ManagerDashboard.module.css";
 
 function ManagerDashboard() {
@@ -7,6 +8,7 @@ function ManagerDashboard() {
 
   return (
     <>
+      <Navigation />
       <div>
         <h1 style={{ fontSize: 30 }}>
           Welcome MR. Manager, what do you want to do today!

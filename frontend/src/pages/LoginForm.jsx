@@ -1,25 +1,17 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { setUserCookies } from "../utils/cookieUtils";
 import "./Loginform.css";
 
 const MAX_ATTEMPTS = 3; // Maximum login attempts
 const LOCKOUT_TIME = 30000; // Lockout time in milliseconds
-const ROLES = [
-  "Patient",
-  "Doctor",
-  "Manager",
-  "Nurse",
-  "Cleaner",
-  "Receptionist",
-];
 
 const LoginForm = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     userName: "",
-    password: "",
-    role: "", // Ensure no default is pre-selected
+    password: ""
   });
 
   const [error, setError] = useState("");
@@ -36,6 +28,7 @@ const LoginForm = () => {
     Nurse: "/nurse",
     Cleaner: "/cleaner",
     Receptionist: "/reception",
+    Admin:"/Admin"
   };
 
   // Handle input changes
@@ -72,11 +65,6 @@ const LoginForm = () => {
       return;
     }
 
-    if (!formData.role) {
-      setError("Please select a role.");
-      return;
-    }
-
     try {
       const response = await axios.post(
         "http://localhost:3030/user/login-user",
@@ -84,19 +72,18 @@ const LoginForm = () => {
       );
 
       if (response.status === 200) {
-        // Store the auth token and user role
-        localStorage.setItem("authToken", response.data.token);
-        localStorage.setItem("userRole", formData.role);
+        const { user } = response.data;
+        // Store all relevant user data in cookies
+        setUserCookies(response.data);
 
-        const userId = response.data.user.id; // Assuming the user object contains an `id` field
         setSuccessMessage("Login successful! Redirecting...");
         setLoginAttempts(0);
 
-        // Get redirect path based on the selected role
-        const redirectPath = roleRedirectPaths[formData.role] || "/login";
+        // Get redirect path based on the user's role from the response
+        const redirectPath = roleRedirectPaths[user.role] || "/login";
 
-        // Redirect with user ID as a path parameter
-        navigate(`${redirectPath}/${userId}`);
+        // Redirect without user ID in the URL
+        navigate(redirectPath);
       }
     } catch (err) {
       setError("Login failed. Please check your credentials.", err);
@@ -145,28 +132,6 @@ const LoginForm = () => {
             required
             disabled={isLockedOut}
           />
-        </div>
-
-        {/* Role Dropdown */}
-        <div className="form-group">
-          <label htmlFor="role">Role</label>
-          <select
-            id="role"
-            name="role"
-            value={formData.role}
-            onChange={handleChange}
-            required
-            disabled={isLockedOut}
-          >
-            <option value="" disabled>
-              Select your role
-            </option>
-            {ROLES.map((role) => (
-              <option key={role} value={role}>
-                {role}
-              </option>
-            ))}
-          </select>
         </div>
 
         {/* Submit Button */}

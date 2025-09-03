@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
 import styles from "./Doctor.module.css";
+import Navigation from "../components/Navigation";
 
 const DoctorDashboard = () => {
   const { id: doctorId } = useParams();
@@ -181,6 +182,7 @@ const DoctorDashboard = () => {
 
   return (
     <div className={styles.doctorDashboard}>
+      <Navigation />
       <header className={styles.dashboardHeader}>
         <h1>Doctor Dashboard</h1>
         <div className={styles.headerActions}>

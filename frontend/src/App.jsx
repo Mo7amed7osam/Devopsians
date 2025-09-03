@@ -25,22 +25,57 @@ function App() {
         <Route path="/" element={<Homepage />} />
         <Route path="/Login" element={<LoginForm />} />
         <Route path="/Register" element={<RegistrationForm />} />
-        <Route path="/Admin" element={<AdminPage />} />
-        <Route path="/Home" element={<UserHomeScreen />} />
-        <Route path="/Addhospital" element={<AddHospital />} />
-        <Route path="/ViewHospital" element={<ViewAllHospital />} />
-        <Route path="/Addicu/:id" element={<Addicu />} />
         <Route
-          path="/ManageEmployees/:id"
-          element={<EmployeeManagement />}
+          path="/Admin"
+          element={
+            <PrivateRoute requiredRole="Admin">
+              <AdminPage />
+            </PrivateRoute>
+          }
         />
         <Route
-          path="/UpdateDetails/:userId/:icuId"
-          element={<UpdateMedicalDetails />}
+          path="/Addhospital"
+          element={
+            <PrivateRoute requiredRole="Admin">
+              <AddHospital />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/ViewHospital"
+          element={
+            <PrivateRoute requiredRole="Admin">
+              <ViewAllHospital />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/Addicu"
+          element={
+            <PrivateRoute requiredRole="Manager">
+              <Addicu />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/ManageEmployees"
+          element={
+            <PrivateRoute requiredRole="Manager">
+              <EmployeeManagement />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/UpdateDetails"
+          element={
+            <PrivateRoute requiredRole="Patient">
+              <UpdateMedicalDetails />
+            </PrivateRoute>
+          }
         />
 
         <Route
-          path="/Home/:id"
+          path="/Home"
           element={
             <PrivateRoute requiredRole="Patient">
               <UserHomeScreen />
@@ -48,7 +83,7 @@ function App() {
           }
         />
         <Route
-          path="/Doctor/:id"
+          path="/Doctor"
           element={
             <PrivateRoute requiredRole="Doctor">
               <Doctor />
@@ -56,7 +91,7 @@ function App() {
           }
         />
         <Route
-          path="/PatientProfile/:userId/:icuId"
+          path="/PatientProfile"
           element={
             <PrivateRoute requiredRole="Patient">
               <PatientHomePage />
@@ -64,7 +99,7 @@ function App() {
           }
         />
         <Route
-          path="/Manager/:id"
+          path="/Manager"
           element={
             <PrivateRoute requiredRole="Manager">
               <ManagerDashboard />

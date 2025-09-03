@@ -3,7 +3,7 @@ import Hospital from "../models/hospitalModel.js";
 import ICU from "../models/icuModel.js";
 import User from "../models/userModel.js";
 import Feedback from "../models/feedbackModel.js";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import validator from "validator";
 import { io } from "../index.js";
 

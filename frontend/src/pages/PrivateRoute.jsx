@@ -1,29 +1,35 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import PropTypes from "prop-types";
 import axios from "axios";
+import { getUserData } from "../utils/cookieUtils";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3030";
 
 const PrivateRoute = ({ children, requiredRole }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [userRole, setUserRole] = useState(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const token = localStorage.getItem("authToken");
-
-    if (!token) {
+    const userData = getUserData();
+    
+    if (!userData || !userData.token) {
       navigate("/login");
+      return;
+    }
+
+    // If we already have the role in cookies, check it immediately
+    if (userData.role && requiredRole && userData.role !== requiredRole) {
+      navigate("/unauthorized");
       return;
     }
 
     // Verify token by sending it in the body
     axios
-      .post("http://localhost:3030/user/verify-token", { token })
+      .post(`${API_URL}/user/verify-token`, { token: userData.token })
       .then((response) => {
         if (response.status === 200) {
           setIsAuthenticated(true);
-          setUserRole(response.data.role);
-          console.log("This is Requrired Role", { requiredRole });
           // Check if the role matches the required role
           if (requiredRole && response.data.role !== requiredRole) {
             navigate("/unauthorized"); // Redirect to Unauthorized page
@@ -35,6 +41,7 @@ const PrivateRoute = ({ children, requiredRole }) => {
           "Error verifying token:",
           error.response?.data || error.message
         );
+        setIsAuthenticated(false);
         navigate("/login");
       })
       .finally(() => {
@@ -44,11 +51,19 @@ const PrivateRoute = ({ children, requiredRole }) => {
 
   // Show loading state while checking authentication
   if (loading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
   }
 
   // Render the protected content if authenticated
   return isAuthenticated ? children : null;
+};
+PrivateRoute.propTypes = {
+  children: PropTypes.node,
+  requiredRole: PropTypes.string
 };
 
 export default PrivateRoute;
