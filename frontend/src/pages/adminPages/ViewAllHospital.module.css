@@ -1,0 +1,99 @@
+/* General styles */
+.viewAllHospitals {
+  text-align: center;
+  padding: 20px;
+}
+
+h1 {
+  text-align: center;
+  font-size: 3rem;
+  color: #333;
+  margin-bottom: 20px;
+}
+
+.error {
+  color: red;
+  text-align: center;
+  font-size: 1.2rem;
+  margin-bottom: 20px;
+}
+
+/* Hospital list and cards */
+.hospitalList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: center;
+}
+
+.hospitalCard {
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  width: 300px;
+  position: relative;
+  text-align: left;
+}
+
+.hospitalCardBlocked {
+  background-color: #f8d7da;
+  border-left: 5px solid #dc3545;
+}
+
+/* Hospital card text */
+.hospitalCard h2 {
+  font-size: 1.5rem;
+  margin-bottom: 10px;
+  color: #007bff;
+}
+
+.hospitalCard p {
+  font-size: 1rem;
+  margin: 5px 0;
+  color: #555;
+}
+
+/* Actions container */
+.hospitalActions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 15px;
+}
+
+/* Buttons */
+.actionButton {
+  font-size: 1rem;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.deleteButton {
+  background-color: #dc3545;
+  color: #fff;
+}
+
+.deleteButton:hover {
+  background-color: #b02a37;
+}
+
+.blockButton {
+  background-color: #ffc107;
+  color: #000;
+}
+
+.blockButton:hover {
+  background-color: #d39e00;
+}
+
+.unblockButton {
+  background-color: #28a745;
+  color: #fff;
+}
+
+.unblockButton:hover {
+  background-color: #218838;
+}

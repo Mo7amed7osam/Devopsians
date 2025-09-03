@@ -1,0 +1,14 @@
+.request-list {
+    list-style: none;
+    padding: 0;
+  }
+  
+  .request-item {
+    padding: 0.75rem;
+    border-bottom: 1px solid #e0e0e0;
+  }
+  
+  .request-item:last-child {
+    border-bottom: none;
+  }
+  

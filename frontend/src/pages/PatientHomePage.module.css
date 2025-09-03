@@ -1,0 +1,166 @@
+/* PatientHomePage.module.css */
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    font-family: 'Arial', sans-serif;
+    background-color: #f4f7f6;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+h1 {
+    color: #2c3e50;
+    text-align: center;
+    margin-bottom: 30px;
+    font-size: 2.5em;
+    border-bottom: 3px solid #3498db;
+    padding-bottom: 10px;
+}
+
+.patientInfo {
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 30px;
+    width: 100%;
+    max-width: 600px;
+    margin-bottom: 20px;
+}
+
+.patientInfo h2 {
+    color: #2c3e50;
+    border-bottom: 2px solid #3498db;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+.detail {
+    margin-bottom: 15px;
+    padding: 10px;
+    background-color: #f9f9f9;
+    border-radius: 5px;
+    display: flex;
+}
+
+.detail strong {
+    color: #2980b9;
+    margin-right: 10px;
+    min-width: 150px;
+}
+
+.checkoutButton, 
+.logoutButton, 
+.payButton, 
+.cancelButton {
+    padding: 12px 25px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.3s ease;
+}
+
+.checkoutButton {
+    background-color: #2ecc71;
+    color: white;
+    margin-bottom: 20px;
+}
+
+.checkoutButton:hover {
+    background-color: #27ae60;
+}
+
+.logoutButton {
+    background-color: #e74c3c;
+    color: white;
+}
+
+.logoutButton:hover {
+    background-color: #c0392b;
+}
+
+.invoicePopup {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.popupContent {
+    background-color: white;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    width: 90%;
+    max-width: 500px;
+    text-align: center;
+}
+
+.popupContent h2 {
+    color: #2c3e50;
+    margin-bottom: 20px;
+}
+
+.popupButtons {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+}
+
+.payButton {
+    background-color: #3498db;
+    color: white;
+    flex-grow: 1;
+    margin-right: 10px;
+}
+
+.payButton:hover {
+    background-color: #2980b9;
+}
+
+.cancelButton {
+    background-color: #95a5a6;
+    color: white;
+    flex-grow: 1;
+}
+
+.cancelButton:hover {
+    background-color: #7f8c8d;
+}
+
+/* Responsive Design */
+@media screen and (max-width: 600px) {
+    .container {
+        padding: 10px;
+    }
+
+    .patientInfo {
+        padding: 15px;
+    }
+
+    .detail {
+        flex-direction: column;
+    }
+
+    .detail strong {
+        margin-bottom: 5px;
+    }
+
+    .popupButtons {
+        flex-direction: column;
+    }
+
+    .payButton, 
+    .cancelButton {
+        margin: 5px 0;
+    }
+}

@@ -1,0 +1,20 @@
+.icu-mgmt {
+    background: white;
+    border-radius: 5px;
+    padding: 1rem;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  }
+  
+  .icu-list {
+    list-style: none;
+    padding: 0;
+  }
+  
+  .icu-item {
+    padding: 0.75rem;
+    border-bottom: 1px solid #e0e0e0;
+  }
+  
+  .icu-item:last-child {
+    border-bottom: none;
+  }

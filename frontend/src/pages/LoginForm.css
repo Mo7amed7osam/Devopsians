@@ -1,0 +1,212 @@
+/* LoginForm.css - Modern and Clean Design */
+
+:root {
+  --primary-color: #3498db;
+  --secondary-color: #2980b9;
+  --background-color: #ffffff;
+  --text-color: #2c3e50;
+  --input-border-color: #ecf0f1;
+  --input-focus-color: #3498db;
+  --error-color: #e74c3c;
+  --success-color: #2ecc71;
+  --disabled-color: #bdc3c7;
+}
+
+* {
+  box-sizing: border-box;
+  font-family: 'Inter', 'Segoe UI', Roboto, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 450px;
+  margin: 40px auto;
+  padding: 40px;
+  background-color: var(--background-color);
+  border-radius: 16px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+  border: 1px solid var(--input-border-color);
+  transition: all 0.3s ease;
+}
+
+.login-form:hover {
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.08);
+  transform: translateY(-5px);
+}
+
+h2 {
+  text-align: center;
+  color: var(--text-color);
+  font-size: 2rem;
+  margin-bottom: 30px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.form-group {
+  margin-bottom: 25px;
+  position: relative;
+}
+
+label {
+  display: block;
+  margin-bottom: 10px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-color);
+  opacity: 0.8;
+  transition: opacity 0.3s ease;
+}
+
+input,
+select {
+  width: 100%;
+  padding: 15px;
+  font-size: 1.1rem;
+  border: 2px solid var(--input-border-color);
+  border-radius: 10px;
+  transition: all 0.3s ease;
+  background-color: #f9f9f9;
+}
+
+input:focus,
+select:focus {
+  border-color: var(--input-focus-color);
+  background-color: white;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+  outline: none;
+}
+
+.error-message {
+  color: var(--error-color);
+  font-size: 1rem;
+  margin-top: 10px;
+  text-align: left;
+  position: absolute;
+  bottom: -25px;
+  left: 0;
+  opacity: 0.9;
+}
+
+.success-message {
+  color: var(--success-color);
+  font-size: 1.1rem;
+  margin-top: 15px;
+  text-align: center;
+  font-weight: 500;
+}
+
+button,
+.register-button {
+  padding: 15px;
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 1.2rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  text-align: center;
+  margin-top: 20px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+}
+
+button:hover,
+.register-button:hover {
+  background-color: var(--secondary-color);
+  transform: translateY(-3px);
+  box-shadow: 0 7px 20px rgba(52, 152, 219, 0.4);
+}
+
+button:disabled {
+  background-color: var(--disabled-color);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+  opacity: 0.7;
+}
+
+select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 20 20' fill='%233498db'%3E%3Cpath d='M10 14l-5-5 1.5-1.5L10 11l3.5-3.5L15 9l-5 5z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 15px center;
+  padding-right: 40px;
+}
+
+/* Responsive Design */
+@media (max-width: 480px) {
+  .login-form {
+    width: 95%;
+    padding: 25px;
+    margin: 20px auto;
+  }
+
+  h2 {
+    font-size: 1.7rem;
+    margin-bottom: 25px;
+  }
+
+  input,
+  select,
+  button,
+  .register-button {
+    font-size: 1rem;
+    padding: 12px;
+  }
+
+  label {
+    font-size: 1rem;
+  }
+
+  .error-message {
+    font-size: 0.9rem;
+  }
+}
+
+/* Subtle Animations and Interactions */
+input:hover,
+select:hover {
+  border-color: var(--input-focus-color);
+}
+
+/* Accessibility Enhancements */
+input:disabled {
+  background-color: #f4f4f4;
+  color: #888;
+}
+
+.register-button {
+  display: block; /* Ensure the button is treated as a block element */
+  margin: 10px auto; /* Center horizontally and add spacing from other elements */
+  background-color: #4caf50; /* Green background */
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  cursor: pointer;
+  font-size: 16px;
+  text-align: center;
+}
+
+.register-button:hover {
+  background-color: #45a049; /* Darker green on hover */
+}
+
+.account-message {
+  display: block; /* Ensures it behaves as a block element */
+  margin-top: 10px; /* Adds spacing from the Login button */ /* Adds spacing from the Register button */
+  font-size: 14px; /* Adjusts text size */
+  color: #555; /* Sets a neutral gray color */
+  text-align: center; /* Centers the text */
+}

@@ -1,0 +1,34 @@
+.card {
+  width: 30rem; /* Increased width */
+  height: 20rem; /* Increased height */
+  border-radius: 15px; /* Slightly more rounded corners */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 6px 10px rgba(0, 0, 0, 0.1); /* Slightly stronger shadow */
+  transition: transform 0.3s ease, box-shadow 0.3s ease; /* Smooth transitions */
+  background-color: var(
+    --card-color,
+    #007bff
+  ); /* Default background, customizable */
+}
+
+.card:hover {
+  transform: translateY(-8px); /* More noticeable hover effect */
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2); /* Enhanced hover shadow */
+}
+
+.content {
+  text-align: center;
+  color: #fff; /* Ensures contrast with background */
+  font-size: 2.5rem; /* Increased font size for better readability */
+  font-weight: bold;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem; /* More spacing between items */
+}
+
+.icon {
+  font-size: 3rem; /* Larger icons */
+}

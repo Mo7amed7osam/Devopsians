@@ -1,0 +1,102 @@
+.homeContainer {
+  max-width: 1200px; /* Increase container width */
+  margin: 0 auto; /* Center the container */
+  padding: 20px;
+  display: flex; /* Use flex layout for better alignment */
+  gap: 20px; /* Space between items */
+}
+
+.icuList {
+  flex: 1; /* Allow ICUs to take up equal space */
+  list-style-type: none;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(
+    auto-fill,
+    minmax(280px, 1fr)
+  ); /* Adjust item size */
+  gap: 20px; /* Space between cards */
+}
+
+.icuItem {
+  background-color: #ffffff; /* Clean white background */
+  border-radius: 12px; /* Smooth rounded corners */
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+  height: 220px; /* Slightly larger cards */
+  padding: 20px; /* Inner padding */
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between; /* Space content */
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.icuItem:hover {
+  transform: translateY(-8px); /* Lift on hover */
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.icuItem h3 {
+  color: #333333; /* Darker text color for readability */
+  margin-bottom: 10px;
+  font-size: 1.4rem;
+  border-bottom: 2px solid #3498db; /* Add a colored border */
+  padding-bottom: 8px;
+  text-transform: capitalize;
+}
+
+.icuItem p {
+  color: #555555;
+  margin: 5px 0;
+  font-size: 1rem; /* Consistent text size */
+}
+
+.reserveButton {
+  width: 100%;
+  padding: 12px;
+  background-color: #3498db; /* Primary blue color */
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  text-align: center;
+  transition: background-color 0.3s ease;
+}
+
+.reserveButton:hover:not(:disabled) {
+  background-color: #2980b9; /* Slightly darker hover effect */
+}
+
+.reserveButton:disabled {
+  background-color: #bdc3c7;
+  cursor: not-allowed;
+}
+
+.mapContainer {
+  flex: 1.5; /* Give more space to the map */
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.mapContainer iframe,
+.mapContainer .map {
+  width: 100%;
+  height: 100%;
+}
+
+/* Responsive Styling */
+@media (max-width: 768px) {
+  .homeContainer {
+    flex-direction: column;
+  }
+
+  .icuList {
+    grid-template-columns: 1fr;
+  }
+
+  .mapContainer {
+    height: 300px; /* Fixed height for map on smaller screens */
+  }
+}
