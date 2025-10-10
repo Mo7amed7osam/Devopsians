@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import styles from "./DashboardCard.module.css";
+import styles from "./DashBoardCard.module.css";
 
 function DashboardCard({ title, icon, color, route }) {
   const navigate = useNavigate();
