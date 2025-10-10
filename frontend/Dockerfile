@@ -1,13 +1,17 @@
 # Frontend Dockerfile: build with Node, serve with Nginx
 
 FROM node:20-alpine AS build
-WORKDIR /app
-# Copy root and frontend to handle workspace and local dependency
-COPY . .
 WORKDIR /app/frontend
+# Only copy frontend package files to install deps
+COPY frontend/package*.json ./
+RUN npm ci || npm install
+
+# Build arg for API base
 ARG VITE_API_URL
 ENV VITE_API_URL=${VITE_API_URL}
-RUN npm ci || npm install
+
+# Copy frontend source
+COPY frontend/. .
 RUN npm run build
 
 FROM nginx:alpine

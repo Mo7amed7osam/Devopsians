@@ -32,9 +32,9 @@ pipeline {
                         bat '"C:\\Program Files\\Git\\usr\\bin\\scp.exe" -i "%SSH_KEY_FILE%" -o StrictHostKeyChecking=no -r . %EC2_USER%@%EC2_HOST%:/home/%EC2_USER%/devopsians-build/'
                         
                         // Build images on EC2
-                        bat '"C:\\Program Files\\Git\\usr\\bin\\ssh.exe" -i "%SSH_KEY_FILE%" -o StrictHostKeyChecking=no %EC2_USER%@%EC2_HOST% "cd /home/%EC2_USER%/devopsians-build && docker build -t %DOCKERHUB_USERNAME%/%BACKEND_IMAGE%:%IMAGE_TAG% -f backend/Dockerfile . && docker tag %DOCKERHUB_USERNAME%/%BACKEND_IMAGE%:%IMAGE_TAG% %DOCKERHUB_USERNAME%/%BACKEND_IMAGE%:latest"'
+                        bat '"C:\\Program Files\\Git\\usr\\bin\\ssh.exe" -i "%SSH_KEY_FILE%" -o StrictHostKeyChecking=no %EC2_USER%@%EC2_HOST% "cd /home/%EC2_USER%/devopsians-build && docker build --no-cache -t %DOCKERHUB_USERNAME%/%BACKEND_IMAGE%:%IMAGE_TAG% -f backend/Dockerfile . && docker tag %DOCKERHUB_USERNAME%/%BACKEND_IMAGE%:%IMAGE_TAG% %DOCKERHUB_USERNAME%/%BACKEND_IMAGE%:latest"'
                         
-                        bat '"C:\\Program Files\\Git\\usr\\bin\\ssh.exe" -i "%SSH_KEY_FILE%" -o StrictHostKeyChecking=no %EC2_USER%@%EC2_HOST% "cd /home/%EC2_USER%/devopsians-build && docker build -t %DOCKERHUB_USERNAME%/%FRONTEND_IMAGE%:%IMAGE_TAG% -f frontend/Dockerfile --build-arg VITE_API_URL=http://%EC2_HOST%:3030 . && docker tag %DOCKERHUB_USERNAME%/%FRONTEND_IMAGE%:%IMAGE_TAG% %DOCKERHUB_USERNAME%/%FRONTEND_IMAGE%:latest"'
+                        bat '"C:\\Program Files\\Git\\usr\\bin\\ssh.exe" -i "%SSH_KEY_FILE%" -o StrictHostKeyChecking=no %EC2_USER%@%EC2_HOST% "cd /home/%EC2_USER%/devopsians-build && docker build --no-cache -t %DOCKERHUB_USERNAME%/%FRONTEND_IMAGE%:%IMAGE_TAG% -f frontend/Dockerfile --build-arg VITE_API_URL=http://%EC2_HOST%:3030 . && docker tag %DOCKERHUB_USERNAME%/%FRONTEND_IMAGE%:%IMAGE_TAG% %DOCKERHUB_USERNAME%/%FRONTEND_IMAGE%:latest"'
                         
                         // Login and push from EC2
                         bat '"C:\\Program Files\\Git\\usr\\bin\\ssh.exe" -i "%SSH_KEY_FILE%" -o StrictHostKeyChecking=no %EC2_USER%@%EC2_HOST% "echo %DOCKERHUB_PASS% | docker login -u %DOCKERHUB_USER% --password-stdin"'

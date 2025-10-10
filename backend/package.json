@@ -11,7 +11,6 @@
     "cloudinary": "^2.4.0",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
-    "devopsians": "file:..",
     "dotenv": "^16.4.5",
     "express": "^4.21.1",
     "express-fileupload": "^1.5.1",

@@ -3,16 +3,16 @@
 
 FROM node:20-alpine
 
-# Create app directory
-WORKDIR /app
-
-# Copy the entire repo as build context to satisfy local "file:.." dependency
-# in backend/package.json ("devopsians": "file:..")
-COPY . .
-
-# Install only production dependencies for backend
+# Set working directory for backend
 WORKDIR /app/backend
-RUN npm install --omit=dev
+
+# Copy only backend package files and install production deps
+COPY backend/package*.json ./
+# Prefer clean install if lockfile exists, otherwise regular install
+RUN if [ -f package-lock.json ]; then npm ci --omit=dev --legacy-peer-deps; else npm install --omit=dev --legacy-peer-deps; fi
+
+# Copy backend source code
+COPY backend/. .
 
 # Expose backend port
 EXPOSE 3030
