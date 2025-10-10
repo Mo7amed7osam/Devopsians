@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
+import { API_BASE } from "../utils/api";
 import styles from "./Doctor.module.css";
 import Navigation from "../components/Navigation";
 
@@ -19,7 +20,7 @@ const DoctorDashboard = () => {
       try {
         setLoading(true);
         const response = await axios.get(
-          `http://localhost:3030/doctor/assigned-patients/doctor/${doctorId}/`
+          `${API_BASE}/doctor/assigned-patients/doctor/${doctorId}/`
         );
 
         if (response.status !== 200) {
@@ -53,7 +54,7 @@ const DoctorDashboard = () => {
 
     try {
       const response = await axios.put(
-        `http://localhost:3030/doctor/update-medicine-schedule/doctor/${doctorId}/patient/${patientId}`,
+  `${API_BASE}/doctor/update-medicine-schedule/doctor/${doctorId}/patient/${patientId}`,
         { medicineSchedule: newMedicineSchedule }
       );
 

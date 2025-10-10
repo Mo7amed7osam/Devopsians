@@ -1,6 +1,7 @@
 // src/components/UpdateMedicalDetails.jsx
 import { useState } from "react";
 import axios from "axios";
+import { API_BASE } from "../utils/api";
 import { useParams, useNavigate } from "react-router-dom";
 import styles from "./UserHomeScreen.module.css"; // You can create your own styles
 
@@ -15,7 +16,7 @@ const UpdateMedicalDetails = () => {
     try {
       // Send data to the backend to update the medical details
       await axios.put(
-        `http://localhost:3030/user/${userId}/update-medical-details`,
+        `${API_BASE}/user/${userId}/update-medical-details`,
         {
           currentCondition,
           medicalHistory,
@@ -32,7 +33,7 @@ const UpdateMedicalDetails = () => {
   };
 
   async function handleCancel({ userId, icuId }) {
-    await axios.post("http://localhost:3030/patient/free-icu", {
+  await axios.post(`${API_BASE}/patient/free-icu`, {
       userId: userId,
       icuId: icuId,
     });

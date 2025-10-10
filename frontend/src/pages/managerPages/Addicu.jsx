@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
+import { API_BASE } from "../../utils/api";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import styles from "./Addicu.module.css";
@@ -26,7 +27,7 @@ function AddIcu() {
   useEffect(() => {
     const fetchHospitalDetails = async () => {
       try {
-        const response = await fetch(`http://localhost:3030/admin/view-an-managers/${id}`);
+        const response = await fetch(`${API_BASE}/admin/view-an-managers/${id}`);
         const data = await response.json();
 
         if (response.ok) {
@@ -58,7 +59,7 @@ function AddIcu() {
     };
 
     try {
-      const icuResponse = await fetch("http://localhost:3030/manager/register-icu", {
+      const icuResponse = await fetch(`${API_BASE}/manager/register-icu`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

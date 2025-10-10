@@ -1,3 +1,4 @@
+import { API_BASE } from "../utils/api";
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import styles from "./PatientHomePage.module.css"; // Importing the CSS module
@@ -25,7 +26,7 @@ function PatientHomePage() {
       try {
         console.log("Fetching data for userId:", userId);
         const response = await axios.get(
-          `http://localhost:3030/user/details/${userId}`
+          `${API_BASE}/user/details/${userId}`
         );
         console.log("Fetched patient data:", response.data);
 
@@ -35,7 +36,7 @@ function PatientHomePage() {
         // Fetch assigned doctor details
         if (patient.assignedDoctor) {
           const doctorResponse = await axios.get(
-            `http://localhost:3030/user/details/${patient.assignedDoctor}`
+            `${API_BASE}/user/details/${patient.assignedDoctor}`
           );
           console.log("Fetched doctor data:", doctorResponse.data);
           setDoctorDetails(doctorResponse.data.user);
@@ -61,7 +62,7 @@ function PatientHomePage() {
       try {
         console.log("Fetching data for icuId:", icuId);
         const response = await axios.get(
-          `http://localhost:3030/manager/view-icu-byId/${icuId}`
+          `${API_BASE}/manager/view-icu-byId/${icuId}`
         );
         console.log("Fetched ICU data:", response.data);
 
@@ -79,7 +80,7 @@ function PatientHomePage() {
   const handleCheckout = async () => {
     try {
       const response = await axios.get(
-        `http://localhost:3030/manager/calculate-fees/${userId}`
+  `${API_BASE}/manager/calculate-fees/${userId}`
       );
       setFees(response.data.data.totalFees);
       setShowInvoicePopup(true); // Show the popup after fetching fees

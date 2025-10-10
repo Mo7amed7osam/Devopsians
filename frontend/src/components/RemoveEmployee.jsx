@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { API_BASE } from "../utils/api";
 
 function RemoveEmployee() {
   const [id, setId] = useState(""); // Change 'userName' to 'id'
@@ -9,7 +10,7 @@ function RemoveEmployee() {
     try {
       // Use 'id' in the fetch URL instead of 'userName'
       const res = await fetch(
-        `http://localhost:3030/manager/remove-employee/${id}`,
+        `${API_BASE}/manager/remove-employee/${id}`,
         {
           method: "DELETE",
         }

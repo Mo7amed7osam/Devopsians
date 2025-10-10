@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
+import { API_BASE } from "../../utils/api";
 import socket from "../../socket"; // Ensure the correct path
 import Navigation from "../../components/Navigation";
 import styles from "./ViewAllHospital.module.css";
@@ -14,7 +15,7 @@ function ViewAllHospital() {
       setLoading(true);
       try {
         const response = await axios.get(
-          "http://localhost:3030/admin/view-hospitals"
+          `${API_BASE}/admin/view-hospitals`
         );
         setHospitals(response.data.hospitals || []);
       } catch (err) {
@@ -39,7 +40,7 @@ function ViewAllHospital() {
   const handleDelete = async (hospitalId) => {
     try {
       await axios.delete(
-        `http://localhost:3030/admin/delete-hospital/${hospitalId}`
+  `${API_BASE}/admin/delete-hospital/${hospitalId}`
       );
       setHospitals(hospitals.filter((hospital) => hospital._id !== hospitalId));
       alert("Hospital deleted successfully!");
@@ -52,7 +53,7 @@ function ViewAllHospital() {
   const handleBlock = async (hospitalId) => {
     try {
       await axios.put(
-        `http://localhost:3030/admin/block-hospital/${hospitalId}`
+  `${API_BASE}/admin/block-hospital/${hospitalId}`
       );
       setHospitals(
         hospitals.map((hospital) =>
@@ -71,7 +72,7 @@ function ViewAllHospital() {
   const handleUnblock = async (hospitalId) => {
     try {
       await axios.put(
-        `http://localhost:3030/admin/unblock-hospital/${hospitalId}`
+  `${API_BASE}/admin/unblock-hospital/${hospitalId}`
       );
       setHospitals(
         hospitals.map((hospital) =>

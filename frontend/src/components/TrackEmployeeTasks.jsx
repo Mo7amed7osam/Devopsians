@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { API_BASE } from "../utils/api";
 
 function TrackEmployeeTasks({ employeeId, onClose }) {
   const [useCaseName, setUseCaseName] = useState("");
@@ -8,7 +9,7 @@ function TrackEmployeeTasks({ employeeId, onClose }) {
     e.preventDefault();
     try {
       const res = await fetch(
-        `http://localhost:3030/manager/track-employee-tasks?employeeId=${employeeId}&useCaseName=${useCaseName}`
+        `${API_BASE}/manager/track-employee-tasks?employeeId=${employeeId}&useCaseName=${useCaseName}`
       );
       const data = await res.json();
       setTasks(data.data || []); // Set tasks based on response

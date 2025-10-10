@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
+import { API_BASE } from "../utils/api";
 import styles from "./EmployeeMgmt.module.css"; // Import the CSS module
 import TrackEmployeeTasks from "../components/TrackEmployeeTasks";
 import AssignTask from "../components/AssignTask";
@@ -14,7 +15,7 @@ function EmployeeManagement() {
   useEffect(() => {
     if (managerId) {
       axios
-        .get(`http://localhost:3030/manager/view-all-employees/${managerId}`)
+  .get(`${API_BASE}/manager/view-all-employees/${managerId}`)
         .then((response) => {
           setEmployees(response.data.employees);
         })
@@ -24,7 +25,7 @@ function EmployeeManagement() {
 
   const handleRemoveEmployee = (_id) => {
     axios
-      .delete(`http://localhost:3030/manager/remove-employee`, {
+  .delete(`${API_BASE}/manager/remove-employee`, {
         data: { id: _id },
       })
       .then(() => {

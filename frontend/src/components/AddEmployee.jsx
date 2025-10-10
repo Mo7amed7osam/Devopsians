@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { API_BASE } from "../utils/api";
 
 function AddEmployee() {
   const [formData, setFormData] = useState({
@@ -22,7 +23,7 @@ function AddEmployee() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch("http://localhost:3030/manager/add-employee", {
+      const res = await fetch(`${API_BASE}/manager/add-employee`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),

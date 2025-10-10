@@ -1,5 +1,6 @@
 import { useState } from "react";
 import axios from "axios";
+import { API_BASE } from "../utils/api";
 import { useNavigate } from "react-router-dom";
 import { setUserCookies } from "../utils/cookieUtils";
 import "./Loginform.css";
@@ -67,7 +68,7 @@ const LoginForm = () => {
 
     try {
       const response = await axios.post(
-        "http://localhost:3030/user/login-user",
+  `${API_BASE}/user/login-user`,
         formData
       );
 

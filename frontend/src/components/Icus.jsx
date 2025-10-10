@@ -2,6 +2,7 @@ import { useState } from "react";
 import styles from "./Icus.module.css";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { API_BASE } from "../utils/api";
 
 function Icus({ userId, specialization, icus }) {
   const navigate = useNavigate();
@@ -9,7 +10,7 @@ function Icus({ userId, specialization, icus }) {
 
   const handleReserveICU = async (icuId) => {
     try {
-      await axios.post("http://localhost:3030/patient/reserve-icu", {
+      await axios.post(`${API_BASE}/patient/reserve-icu`, {
         userId,
         icuId,
       });

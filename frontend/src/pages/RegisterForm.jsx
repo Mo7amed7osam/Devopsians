@@ -1,5 +1,6 @@
 import { useState } from "react";
 import axios from "axios";
+import { API_BASE } from "../utils/api";
 import "./RegisterForm.css";
 
 function RegistrationForm() {
@@ -55,13 +56,13 @@ function RegistrationForm() {
   
     try {
       const response = await axios.post(
-        "http://localhost:3030/user/create-user",
+        `${API_BASE}/user/create-user`,
         formData
       );
       console.log("Response:", response.data);
       alert("Registration successful!");
   
-      await axios.post("http://localhost:3030/user/send-email", {
+      await axios.post(`${API_BASE}/user/send-email`, {
         email: formData.email,
         name: formData.firstName,
       });

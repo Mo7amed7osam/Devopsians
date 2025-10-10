@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { API_BASE } from "../utils/api";
 import "./ICUMgmt.module.css";
 
 function ICUMgmt() {
@@ -11,7 +12,7 @@ function ICUMgmt() {
     const fetchICUs = async () => {
       try {
         setLoading(true);
-        const response = await axios.get("http://localhost:3030/api/view-icus");
+  const response = await axios.get(`${API_BASE}/api/view-icus`);
         setICUs(response.data.data || []);
       } catch (err) {
         setError("Unable to fetch ICUs.");

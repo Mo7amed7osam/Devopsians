@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { API_BASE } from "../utils/api";
 
 function AssignTask({ employeeId, onClose }) {
   const [formData, setFormData] = useState({
@@ -19,7 +20,7 @@ function AssignTask({ employeeId, onClose }) {
     e.preventDefault();
     try {
       const res = await fetch(
-        "http://localhost:3030/manager/create-and-assign-task",
+        `${API_BASE}/manager/create-and-assign-task`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

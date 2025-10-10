@@ -1,6 +1,5 @@
 import { io } from "socket.io-client";
-
-const SOCKET_URL = "http://localhost:3030"; // Ensure this matches your backend's port and URL
+import { API_BASE as SOCKET_URL } from "./utils/api";
 
 const socket = io(SOCKET_URL, {
   transports: ["websocket"], // Explicitly use WebSocket transport

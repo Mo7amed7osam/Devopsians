@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import PropTypes from "prop-types";
 import axios from "axios";
 import { getUserData } from "../utils/cookieUtils";
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3030";
+import { API_BASE as API_URL } from "../utils/api";
 
 const PrivateRoute = ({ children, requiredRole }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);

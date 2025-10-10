@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { API_BASE } from "../../utils/api";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import Navigation from "../../components/Navigation";
@@ -28,7 +29,7 @@ function AddHospital() {
 
     try {
       // Make a POST request to add the hospital
-      const response = await fetch("http://localhost:3030/admin/add-hospital", {
+  const response = await fetch(`${API_BASE}/admin/add-hospital`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
+import { API_BASE } from "../utils/api";
 import socket from "../socket"; // Import the existing socket instance as the default export
 import styles from "./UserHomeScreen.module.css";
 import Icus from "../components/Icus";
@@ -48,7 +49,7 @@ function UserHomeScreen() {
             try {
               setLoading(true);
               const response = await axios.get(
-                "http://localhost:3030/patient/get-available-icus",
+                `${API_BASE}/patient/get-available-icus`,
                 {
                   params: {
                     userLocation: `${longitude},${latitude}`,

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { API_BASE } from "../utils/api";
 import "./VacationRequests.module.css";
 
 function VacationRequests() {
@@ -11,7 +12,7 @@ function VacationRequests() {
     const fetchRequests = async () => {
       try {
         setLoading(true);
-        const response = await axios.get("http://localhost:3030/api/view-vacation-requests");
+  const response = await axios.get(`${API_BASE}/api/view-vacation-requests`);
         setRequests(response.data.data || []);
       } catch (err) {
         setError("Unable to fetch vacation requests.");
