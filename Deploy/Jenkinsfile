@@ -27,7 +27,8 @@ pipeline {
                         sshUserPrivateKey(credentialsId: 'ec2-ssh-key', keyFileVariable: 'SSH_KEY_FILE'),
                         usernamePassword(credentialsId: 'dockerhub-credentials', usernameVariable: 'DOCKERHUB_USER', passwordVariable: 'DOCKERHUB_PASS')
                     ]) {
-                        // Upload source code to EC2
+                        // Create build directory and upload source code to EC2
+                        bat '"C:\\Program Files\\Git\\usr\\bin\\ssh.exe" -i "%SSH_KEY_FILE%" -o StrictHostKeyChecking=no %EC2_USER%@%EC2_HOST% "mkdir -p /home/%EC2_USER%/devopsians-build"'
                         bat '"C:\\Program Files\\Git\\usr\\bin\\scp.exe" -i "%SSH_KEY_FILE%" -o StrictHostKeyChecking=no -r . %EC2_USER%@%EC2_HOST%:/home/%EC2_USER%/devopsians-build/'
                         
                         // Build images on EC2
