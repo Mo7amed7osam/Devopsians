@@ -10,7 +10,6 @@ pipeline {
         EC2_HOST = '56.228.11.117'
         EC2_USER = 'ubuntu'
         SSH_KEY = credentials('ec2-ssh-key')
-        MONGO_URL = credentials('mongo-url')
         FRONTEND_URL = "http://${EC2_HOST}"
     }
 
@@ -46,7 +45,10 @@ pipeline {
         stage('Deploy on EC2 via SSH') {
             steps {
                 script {
-                    withCredentials([sshUserPrivateKey(credentialsId: 'ec2-ssh-key', keyFileVariable: 'SSH_KEY_FILE')]) {
+                    withCredentials([
+                        sshUserPrivateKey(credentialsId: 'ec2-ssh-key', keyFileVariable: 'SSH_KEY_FILE'),
+                        string(credentialsId: 'mongo-url', variable: 'MONGO_URL')
+                    ]) {
                         // Upload docker-compose and env file
                         bat '"C:\\Program Files\\Git\\usr\\bin\\scp.exe" -i "%SSH_KEY_FILE%" -o StrictHostKeyChecking=no Deploy/docker-compose.yml %EC2_USER%@%EC2_HOST%:/home/%EC2_USER%/docker-compose.yml'
                         // Create .env on remote with required vars
@@ -65,7 +67,13 @@ pipeline {
             echo "Deployed: http://${EC2_HOST}"
         }
         cleanup {
-            bat 'docker logout || true'
+            script {
+                if (isUnix()) {
+                    sh 'docker logout || true'
+                } else {
+                    bat 'docker logout || true'
+                }
+            }
         }
     }
 }
