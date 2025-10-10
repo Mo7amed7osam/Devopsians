@@ -3,7 +3,7 @@ import axios from "axios";
 import { API_BASE } from "../utils/api";
 import { useNavigate } from "react-router-dom";
 import { setUserCookies } from "../utils/cookieUtils";
-import "./Loginform.css";
+import "./LoginForm.css";
 
 const MAX_ATTEMPTS = 3; // Maximum login attempts
 const LOCKOUT_TIME = 30000; // Lockout time in milliseconds
