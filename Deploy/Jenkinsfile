@@ -27,9 +27,10 @@ pipeline {
                         sshUserPrivateKey(credentialsId: 'ec2-ssh-key', keyFileVariable: 'SSH_KEY_FILE'),
                         usernamePassword(credentialsId: 'dockerhub-credentials', usernameVariable: 'DOCKERHUB_USER', passwordVariable: 'DOCKERHUB_PASS')
                     ]) {
-                        // Create build directory and upload source code to EC2
-                        bat '"C:\\Program Files\\Git\\usr\\bin\\ssh.exe" -i "%SSH_KEY_FILE%" -o StrictHostKeyChecking=no %EC2_USER%@%EC2_HOST% "mkdir -p /home/%EC2_USER%/devopsians-build"'
-                        bat '"C:\\Program Files\\Git\\usr\\bin\\scp.exe" -i "%SSH_KEY_FILE%" -o StrictHostKeyChecking=no -r . %EC2_USER%@%EC2_HOST%:/home/%EC2_USER%/devopsians-build/'
+                        // Clean and prepare build directory on EC2 (explicit ubuntu path and ownership)
+                        bat '"C:\\Program Files\\Git\\usr\\bin\\ssh.exe" -i "%SSH_KEY_FILE%" -o StrictHostKeyChecking=no %EC2_USER%@%EC2_HOST% "sudo rm -rf /home/ubuntu/devopsians-build || true; mkdir -p /home/ubuntu/devopsians-build; sudo chown ubuntu:ubuntu /home/ubuntu/devopsians-build"'
+                        // Copy only necessary project files (exclude .git by not copying it): backend/, frontend/, and docker-compose.yml
+                        bat '"C:\\Program Files\\Git\\usr\\bin\\scp.exe" -i "%SSH_KEY_FILE%" -o StrictHostKeyChecking=no -r backend frontend Deploy/docker-compose.yml %EC2_USER%@%EC2_HOST%:/home/%EC2_USER%/devopsians-build/'
                         
                         // Build images on EC2
                         bat '"C:\\Program Files\\Git\\usr\\bin\\ssh.exe" -i "%SSH_KEY_FILE%" -o StrictHostKeyChecking=no %EC2_USER%@%EC2_HOST% "cd /home/%EC2_USER%/devopsians-build && docker build --no-cache -t %DOCKERHUB_USERNAME%/%BACKEND_IMAGE%:%IMAGE_TAG% -f backend/Dockerfile . && docker tag %DOCKERHUB_USERNAME%/%BACKEND_IMAGE%:%IMAGE_TAG% %DOCKERHUB_USERNAME%/%BACKEND_IMAGE%:latest"'
