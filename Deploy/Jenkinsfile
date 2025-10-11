@@ -66,13 +66,18 @@ pipeline {
                         bat '"C:\\Program Files\\Git\\usr\\bin\\scp.exe" -i "%SSH_KEY_FILE%" -o StrictHostKeyChecking=no Deploy/docker-compose.yml %EC2_USER%@%EC2_HOST%:/home/%EC2_USER%/docker-compose.yml'
                         // Stop any containers using port 80 before deploying
                         bat '"C:\\Program Files\\Git\\usr\\bin\\ssh.exe" -i "%SSH_KEY_FILE%" -o StrictHostKeyChecking=no %EC2_USER%@%EC2_HOST% "sudo docker ps -q --filter \\"publish=80\\" | xargs -r sudo docker stop"'
-                        // Create .env on remote with required vars (Windows-safe version)
+                        
+                        // Create setup_env.sh script locally on Windows Jenkins
                         bat """
-                        "C:\\Program Files\\Git\\usr\\bin\\ssh.exe" -i "${SSH_KEY_FILE}" -o StrictHostKeyChecking=no ubuntu@${EC2_HOST} ^
-                          "echo DOCKERHUB_USERNAME=${DOCKERHUB_USERNAME} > ~/devopsians.env && \\
-                          echo MONGO_URL='${MONGO_URL}' >> ~/devopsians.env && \\
-                          echo FRONTEND_URL=http://${EC2_HOST} >> ~/devopsians.env"
+                        echo #!/bin/bash > setup_env.sh
+                        echo echo DOCKERHUB_USERNAME=${DOCKERHUB_USERNAME} ^> ~/devopsians.env >> setup_env.sh
+                        echo echo MONGO_URL='${MONGO_URL}' ^>^> ~/devopsians.env >> setup_env.sh
+                        echo echo FRONTEND_URL=http://${EC2_HOST} ^>^> ~/devopsians.env >> setup_env.sh
                         """
+                        
+                        // Copy setup script to EC2 and execute it
+                        bat '"C:\\Program Files\\Git\\usr\\bin\\scp.exe" -i "%SSH_KEY_FILE%" -o StrictHostKeyChecking=no setup_env.sh %EC2_USER%@%EC2_HOST%:/home/%EC2_USER%/setup_env.sh'
+                        bat '"C:\\Program Files\\Git\\usr\\bin\\ssh.exe" -i "%SSH_KEY_FILE%" -o StrictHostKeyChecking=no %EC2_USER%@%EC2_HOST% "chmod +x ~/setup_env.sh && ~/setup_env.sh && rm ~/setup_env.sh"'
 
                         // Pull latest images and restart stack
                         bat '"C:\\Program Files\\Git\\usr\\bin\\ssh.exe" -i "%SSH_KEY_FILE%" -o StrictHostKeyChecking=no %EC2_USER%@%EC2_HOST% "export $(cat ~/devopsians.env | xargs); docker pull %DOCKERHUB_USERNAME%/%BACKEND_IMAGE%:latest && docker pull %DOCKERHUB_USERNAME%/%FRONTEND_IMAGE%:latest && docker compose -f ~/docker-compose.yml down || true && docker compose -f ~/docker-compose.yml up -d"'
