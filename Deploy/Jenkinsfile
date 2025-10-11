@@ -10,6 +10,7 @@ pipeline {
         EC2_HOST = '56.228.11.117'
         EC2_USER = 'ubuntu'
         SSH_KEY = credentials('ec2-ssh-key')
+        MONGO_URL = credentials('mongo-url')
         FRONTEND_URL = "http://${EC2_HOST}"
     }
 
