@@ -68,15 +68,21 @@ pipeline {
                         bat '"C:\\Program Files\\Git\\usr\\bin\\ssh.exe" -i "%SSH_KEY_FILE%" -o StrictHostKeyChecking=no %EC2_USER%@%EC2_HOST% "sudo docker ps -q --filter \\"publish=80\\" | xargs -r sudo docker stop"'
                         bat '"C:\\Program Files\\Git\\usr\\bin\\ssh.exe" -i "%SSH_KEY_FILE%" -o StrictHostKeyChecking=no %EC2_USER%@%EC2_HOST% "sudo docker ps -q --filter \\"publish=3030\\" | xargs -r sudo docker stop"'
                         
-                        // Create setup_env.sh script locally on Windows Jenkins
-                        bat """
+                        // Create setup_env.sh script locally on Windows Jenkins (fixed escaping)
+                        bat '''
                         echo #!/bin/bash > setup_env.sh
                         echo echo DOCKERHUB_USERNAME=%DOCKERHUB_USERNAME% ^> ~/devopsians.env >> setup_env.sh
-                        echo echo MONGO_URL='%MONGO_URL%' ^>^> ~/devopsians.env >> setup_env.sh
-                        echo echo FRONTEND_URL=http://%EC2_HOST% ^>^> ~/devopsians.env >> setup_env.sh
                         echo echo NODE_ENV=production ^>^> ~/devopsians.env >> setup_env.sh
                         echo echo PORT=3030 ^>^> ~/devopsians.env >> setup_env.sh
-                        """
+                        echo echo FRONTEND_URL=http://%EC2_HOST% ^>^> ~/devopsians.env >> setup_env.sh
+                        '''
+                        
+                        // Create MONGO_URL line separately to handle special characters
+                        script {
+                            bat """
+                            echo echo MONGO_URL='${MONGO_URL}' ^>^> ~/devopsians.env >> setup_env.sh
+                            """
+                        }
                         
                         // Copy setup script to EC2 and execute it
                         bat '"C:\\Program Files\\Git\\usr\\bin\\scp.exe" -i "%SSH_KEY_FILE%" -o StrictHostKeyChecking=no setup_env.sh %EC2_USER%@%EC2_HOST%:/home/%EC2_USER%/setup_env.sh'
