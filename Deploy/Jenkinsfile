@@ -65,9 +65,14 @@ pipeline {
                         // Upload docker-compose file
                         bat '"C:\\Program Files\\Git\\usr\\bin\\scp.exe" -i "%SSH_KEY_FILE%" -o StrictHostKeyChecking=no Deploy/docker-compose.yml %EC2_USER%@%EC2_HOST%:/home/%EC2_USER%/docker-compose.yml'
                         // Stop any containers using port 80 before deploying
-                        bat '"C:\\Program Files\\Git\\usr\\bin\\ssh.exe" -i "%SSH_KEY_FILE%" -o StrictHostKeyChecking=no %EC2_USER%@%EC2_HOST% "sudo docker stop $(sudo docker ps -q --filter \\"publish=80\\") || true"'
-                        // Create .env on remote with required vars (escape MONGO_URL for special chars)
-                        bat '"C:\\Program Files\\Git\\usr\\bin\\ssh.exe" -i "%SSH_KEY_FILE%" -o StrictHostKeyChecking=no %EC2_USER%@%EC2_HOST% "echo DOCKERHUB_USERNAME=%DOCKERHUB_USERNAME% > ~/devopsians.env && echo MONGO_URL=\\"%MONGO_URL%\\" >> ~/devopsians.env && echo FRONTEND_URL=%FRONTEND_URL% >> ~/devopsians.env"'
+                        bat '"C:\\Program Files\\Git\\usr\\bin\\ssh.exe" -i "%SSH_KEY_FILE%" -o StrictHostKeyChecking=no %EC2_USER%@%EC2_HOST% "sudo docker ps -q --filter \\"publish=80\\" | xargs -r sudo docker stop"'
+                        // Create .env on remote with required vars (Windows-safe version)
+                        bat """
+                        "C:\\Program Files\\Git\\usr\\bin\\ssh.exe" -i "${SSH_KEY_FILE}" -o StrictHostKeyChecking=no ubuntu@${EC2_HOST} ^
+                          "echo DOCKERHUB_USERNAME=${DOCKERHUB_USERNAME} > ~/devopsians.env && \\
+                          echo MONGO_URL='${MONGO_URL}' >> ~/devopsians.env && \\
+                          echo FRONTEND_URL=http://${EC2_HOST} >> ~/devopsians.env"
+                        """
 
                         // Pull latest images and restart stack
                         bat '"C:\\Program Files\\Git\\usr\\bin\\ssh.exe" -i "%SSH_KEY_FILE%" -o StrictHostKeyChecking=no %EC2_USER%@%EC2_HOST% "export $(cat ~/devopsians.env | xargs); docker pull %DOCKERHUB_USERNAME%/%BACKEND_IMAGE%:latest && docker pull %DOCKERHUB_USERNAME%/%FRONTEND_IMAGE%:latest && docker compose -f ~/docker-compose.yml down || true && docker compose -f ~/docker-compose.yml up -d"'
