@@ -64,15 +64,18 @@ pipeline {
                     ]) {
                         // Upload docker-compose file
                         bat '"C:\\Program Files\\Git\\usr\\bin\\scp.exe" -i "%SSH_KEY_FILE%" -o StrictHostKeyChecking=no Deploy/docker-compose.yml %EC2_USER%@%EC2_HOST%:/home/%EC2_USER%/docker-compose.yml'
-                        // Stop any containers using port 80 before deploying
+                        // Stop any containers using port 80 and 3030 before deploying
                         bat '"C:\\Program Files\\Git\\usr\\bin\\ssh.exe" -i "%SSH_KEY_FILE%" -o StrictHostKeyChecking=no %EC2_USER%@%EC2_HOST% "sudo docker ps -q --filter \\"publish=80\\" | xargs -r sudo docker stop"'
+                        bat '"C:\\Program Files\\Git\\usr\\bin\\ssh.exe" -i "%SSH_KEY_FILE%" -o StrictHostKeyChecking=no %EC2_USER%@%EC2_HOST% "sudo docker ps -q --filter \\"publish=3030\\" | xargs -r sudo docker stop"'
                         
                         // Create setup_env.sh script locally on Windows Jenkins
                         bat """
                         echo #!/bin/bash > setup_env.sh
-                        echo echo DOCKERHUB_USERNAME=${DOCKERHUB_USERNAME} ^> ~/devopsians.env >> setup_env.sh
-                        echo echo MONGO_URL='${MONGO_URL}' ^>^> ~/devopsians.env >> setup_env.sh
-                        echo echo FRONTEND_URL=http://${EC2_HOST} ^>^> ~/devopsians.env >> setup_env.sh
+                        echo echo DOCKERHUB_USERNAME=%DOCKERHUB_USERNAME% ^> ~/devopsians.env >> setup_env.sh
+                        echo echo MONGO_URL='%MONGO_URL%' ^>^> ~/devopsians.env >> setup_env.sh
+                        echo echo FRONTEND_URL=http://%EC2_HOST% ^>^> ~/devopsians.env >> setup_env.sh
+                        echo echo NODE_ENV=production ^>^> ~/devopsians.env >> setup_env.sh
+                        echo echo PORT=3030 ^>^> ~/devopsians.env >> setup_env.sh
                         """
                         
                         // Copy setup script to EC2 and execute it
@@ -81,6 +84,39 @@ pipeline {
 
                         // Pull latest images and restart stack
                         bat '"C:\\Program Files\\Git\\usr\\bin\\ssh.exe" -i "%SSH_KEY_FILE%" -o StrictHostKeyChecking=no %EC2_USER%@%EC2_HOST% "export $(cat ~/devopsians.env | xargs); docker pull %DOCKERHUB_USERNAME%/%BACKEND_IMAGE%:latest && docker pull %DOCKERHUB_USERNAME%/%FRONTEND_IMAGE%:latest && docker compose -f ~/docker-compose.yml down || true && docker compose -f ~/docker-compose.yml up -d"'
+                        
+                        // Wait for containers to start and check health
+                        bat '"C:\\Program Files\\Git\\usr\\bin\\ssh.exe" -i "%SSH_KEY_FILE%" -o StrictHostKeyChecking=no %EC2_USER%@%EC2_HOST% "sleep 10"'
+                        
+                        // Check if containers are running and print logs if they fail
+                        script {
+                            def containerCheck = bat(
+                                script: '"C:\\Program Files\\Git\\usr\\bin\\ssh.exe" -i "%SSH_KEY_FILE%" -o StrictHostKeyChecking=no %EC2_USER%@%EC2_HOST% "docker ps --format \\"table {{.Names}}\\t{{.Status}}\\" | grep -E \\"devopsians-(backend|frontend)\\""',
+                                returnStatus: true
+                            )
+                            
+                            if (containerCheck != 0) {
+                                echo "WARNING: Some containers may not be running properly. Checking logs..."
+                                bat '"C:\\Program Files\\Git\\usr\\bin\\ssh.exe" -i "%SSH_KEY_FILE%" -o StrictHostKeyChecking=no %EC2_USER%@%EC2_HOST% "echo \\"=== Backend Container Logs ===\\" && docker logs devopsians-backend --tail 50 || echo \\"Backend container not found\\""'
+                                bat '"C:\\Program Files\\Git\\usr\\bin\\ssh.exe" -i "%SSH_KEY_FILE%" -o StrictHostKeyChecking=no %EC2_USER%@%EC2_HOST% "echo \\"=== Frontend Container Logs ===\\" && docker logs devopsians-frontend --tail 50 || echo \\"Frontend container not found\\""'
+                            } else {
+                                echo "✅ All containers are running successfully!"
+                            }
+                        }
+                        
+                        // Final health check for frontend
+                        script {
+                            def healthCheck = bat(
+                                script: '"C:\\Program Files\\Git\\usr\\bin\\ssh.exe" -i "%SSH_KEY_FILE%" -o StrictHostKeyChecking=no %EC2_USER%@%EC2_HOST% "curl -f http://localhost:80 || curl -f http://localhost"',
+                                returnStatus: true
+                            )
+                            
+                            if (healthCheck == 0) {
+                                echo "✅ Frontend is responding at http://${EC2_HOST}"
+                            } else {
+                                echo "⚠️ Frontend health check failed. Check container logs above."
+                            }
+                        }
                         
                         // Cleanup build directory
                         bat '"C:\\Program Files\\Git\\usr\\bin\\ssh.exe" -i "%SSH_KEY_FILE%" -o StrictHostKeyChecking=no %EC2_USER%@%EC2_HOST% "rm -rf /home/%EC2_USER%/devopsians-build"'
