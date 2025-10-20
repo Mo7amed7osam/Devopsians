@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { API_BASE } from "../../utils/api";
-import socket from "../../socket"; // Ensure the correct path
-import Navigation from "../../components/Navigation";
+import socket from "../../lib/socket"; // Ensure the correct path
+import Navigation from "../../components/common/Navigation";
 import styles from "./ViewAllHospital.module.css";
 
 function ViewAllHospital() {

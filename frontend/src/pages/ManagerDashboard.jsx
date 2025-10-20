@@ -1,6 +1,6 @@
 import { useParams } from "react-router-dom";
-import DashboardCard from "../components/DashBoardCard";
-import Navigation from "../components/Navigation";
+import DashboardCard from "../components/common/DashBoardCard";
+import Navigation from "../components/common/Navigation";
 import styles from "./ManagerDashboard.module.css";
 
 function ManagerDashboard() {

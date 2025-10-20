@@ -1,10 +1,10 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import Homepage from "./pages/Homepage";
 import PageNotFound from "./pages/PageNotFound";
-import LoginForm from "./pages/LoginForm";
-import RegistrationForm from "./pages/RegisterForm";
+import LoginForm from "./pages/auth/LoginForm";
+import RegistrationForm from "./pages/auth/RegisterForm";
 import AdminPage from "./pages/AdminPage";
-import PrivateRoute from "./pages/PrivateRoute";
+import PrivateRoute from "./routes/PrivateRoute";
 import Doctor from "./pages/Doctor";
 // import Manager from "./pages/Manager";
 //import Manager from "./pages/Manager";

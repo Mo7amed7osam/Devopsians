@@ -2,7 +2,7 @@ import { useState } from "react";
 import { API_BASE } from "../../utils/api";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import Navigation from "../../components/Navigation";
+import Navigation from "../../components/common/Navigation";
 import styles from "./AddHospital.module.css";
 
 function AddHospital() {

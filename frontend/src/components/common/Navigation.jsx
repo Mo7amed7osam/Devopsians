@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { clearUserCookies } from "../utils/cookieUtils";
+import { clearUserCookies } from "../../utils/cookieUtils";
 import styles from "./Navigation.module.css";
 
 function Navigation() {

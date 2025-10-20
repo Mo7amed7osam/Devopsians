@@ -2,11 +2,11 @@ import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
 import { API_BASE } from "../utils/api";
-import socket from "../socket"; // Import the existing socket instance as the default export
+import socket from "../lib/socket"; // Import the existing socket instance as the default export
 import styles from "./UserHomeScreen.module.css";
-import Icus from "../components/Icus";
-import Map from "../components/Map";
-import Navigation from "../components/Navigation";
+import Icus from "../components/patient/Icus";
+import Map from "../components/patient/Map";
+import Navigation from "../components/common/Navigation";
 
 function UserHomeScreen() {
   const { id: userId } = useParams();

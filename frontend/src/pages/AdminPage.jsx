@@ -1,5 +1,5 @@
-import DashboardCard from "../components/DashBoardCard";
-import Navigation from "../components/Navigation";
+import DashboardCard from "../components/common/DashBoardCard";
+import Navigation from "../components/common/Navigation";
 import styles from "./AdminPage.module.css";
 
 function AdminPage() {

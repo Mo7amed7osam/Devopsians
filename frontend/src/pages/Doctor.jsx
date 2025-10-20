@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 import axios from "axios";
 import { API_BASE } from "../utils/api";
 import styles from "./Doctor.module.css";
-import Navigation from "../components/Navigation";
+import Navigation from "../components/common/Navigation";
 
 const DoctorDashboard = () => {
   const { id: doctorId } = useParams();
