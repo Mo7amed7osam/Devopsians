@@ -1,98 +1,257 @@
-/* src/components/Navigation.module.css */
-.header {
-  background-color: var(--color-background-light, #ffffff);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  border-bottom: 1px solid var(--color-border, #e0e0e0);
-  width: 100%;
+/* Modern Navigation Bar Styles */
+
+.nav {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  backdrop-filter: blur(10px);
 }
 
-.navbar {
+.navContent {
   max-width: 1400px;
   margin: 0 auto;
-  /* --- SET LEFT PADDING TO 0 --- */
-  padding: 0 20px 0 0; /* Top, Right, Bottom, Left */
+  padding: 0 2rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
   height: 70px;
 }
 
-.logoLink {
-  text-decoration: none;
-  display: flex; /* Helps align logo if needed */
-  align-items: center;
-}
-
-.navLinks {
+/* Left Section */
+.leftSection {
   display: flex;
   align-items: center;
-  gap: 20px; /* Space between links */
+  gap: 2rem;
 }
 
-.navItem {
-  text-decoration: none;
-  color: var(--color-text-dark, #333333);
-  font-weight: 500;
-  padding: 8px 12px;
-  transition: color 0.2s, background-color 0.2s;
-  border-radius: 4px;
-  font-size: 16px;
-  font-family: inherit;
-  line-height: 1.5;
-}
-
-.navItem:hover {
-  color: var(--color-primary, #007bff);
-}
-
-.registerBtn {
-  background-color: var(--color-primary, #007bff);
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-weight: 700;
+  font-size: 1.5rem;
   color: white;
-  padding: 8px 15px;
-  font-weight: 600;
-  border-radius: 4px;
+  cursor: pointer;
+  transition: transform 0.2s ease;
 }
 
-.registerBtn:hover {
-  background-color: var(--color-primary-dark, #0056b3);
+.brand:hover {
+  transform: scale(1.02);
+}
+
+.logo {
+  width: 36px;
+  height: 36px;
   color: white;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
 }
 
-.logoutBtn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-family: inherit;
-  font-size: 16px;
-  font-weight: 500;
-  color: var(--color-text-dark, #333333);
-  padding: 8px 12px;
-  line-height: 1.5;
-  text-align: center;
-  margin: 0;
-  border-radius: 4px; /* Added */
-  transition: color 0.2s; /* Added */
-}
-.logoutBtn:hover {
-    color: var(--color-primary, #007bff);
+.brandText {
+  font-weight: 700;
+  background: linear-gradient(to right, #ffffff, #f0f0f0);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.5px;
 }
 
-/* --- Styles for the Dark Mode Toggle Button --- */
-/* (Keep previous styles for darkModeToggle) */
-.darkModeToggle {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 1.2rem;
-  padding: 8px 12px;
-  color: var(--color-text-dark);
-  line-height: 1;
+/* Right Section */
+.rightSection {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+/* User Info Section */
+.userInfo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 1rem;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 50px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+}
+
+.userInfo:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.userAvatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%);
+  color: #667eea;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: color 0.2s;
+  font-weight: 700;
+  font-size: 1.1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
-.darkModeToggle:hover {
-  color: var(--color-primary);
+.userDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.userNameDisplay {
+  color: white;
+  font-weight: 600;
+  font-size: 0.95rem;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.userRoleTag {
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 0.15rem 0.5rem;
+  border-radius: 10px;
+  line-height: 1;
+  width: fit-content;
+}
+
+/* Role Badge Colors (for tag) */
+.adminBadge {
+  background: rgba(239, 68, 68, 0.3);
+  color: #fee2e2;
+}
+
+.managerBadge {
+  background: rgba(59, 130, 246, 0.3);
+  color: #dbeafe;
+}
+
+.doctorBadge {
+  background: rgba(16, 185, 129, 0.3);
+  color: #d1fae5;
+}
+
+.receptionistBadge {
+  background: rgba(245, 158, 11, 0.3);
+  color: #fef3c7;
+}
+
+.ambulanceBadge {
+  background: rgba(168, 85, 247, 0.3);
+  color: #f3e8ff;
+}
+
+.patientBadge {
+  background: rgba(99, 102, 241, 0.3);
+  color: #e0e7ff;
+}
+
+.defaultBadge {
+  background: rgba(107, 114, 128, 0.3);
+  color: #f3f4f6;
+}
+
+/* Logout Button */
+.logoutButton,
+.loginButton {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.25rem;
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+  font-family: inherit;
+}
+
+.logoutButton:hover,
+.loginButton:hover {
+  background: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.logoutButton:active,
+.loginButton:active {
+  transform: translateY(0);
+}
+
+.logoutIcon,
+.loginIcon {
+  width: 20px;
+  height: 20px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .navContent {
+    padding: 0 1rem;
+    height: 60px;
+  }
+
+  .brandText {
+    font-size: 1.2rem;
+  }
+
+  .logo {
+    width: 30px;
+    height: 30px;
+  }
+
+  .userDetails {
+    display: none;
+  }
+
+  .userInfo {
+    padding: 0.5rem;
+  }
+
+  .userAvatar {
+    width: 36px;
+    height: 36px;
+    font-size: 1rem;
+  }
+
+  .logoutButton span,
+  .loginButton span {
+    display: none;
+  }
+
+  .logoutButton,
+  .loginButton {
+    padding: 0.6rem;
+    min-width: 44px;
+    justify-content: center;
+  }
+
+  .rightSection {
+    gap: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .brandText {
+    display: none;
+  }
+
+  .navContent {
+    padding: 0 0.75rem;
+  }
+
+  .userAvatar {
+    width: 32px;
+    height: 32px;
+    font-size: 0.9rem;
+  }
 }

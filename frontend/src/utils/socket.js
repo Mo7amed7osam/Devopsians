@@ -1,5 +1,5 @@
 import { io } from "socket.io-client";
-import { API_BASE as SOCKET_URL } from "./utils/api";
+import { API_BASE as SOCKET_URL } from "../utils/api";
 
 const socket = io(SOCKET_URL, {
   transports: ["websocket"], // Explicitly use WebSocket transport

@@ -1,5 +1,5 @@
 // src/utils/realtime.js
-import socket from '../socket';
+import socket from './socket';
 
 // Custom hook to subscribe to a real-time event
 export const useSocketEvent = (eventName, callback) => {

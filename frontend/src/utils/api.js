@@ -3,14 +3,13 @@ import axios from 'axios';
 import { getToken, clearSession } from './cookieUtils';
 
 // ============================================================
-//    MOCK BACKEND SETUP (using json-server)
+//    BACKEND SETUP
 // ============================================================
-// Make sure your mock server runs with:
-// npx json-server --watch mockData.json --port 5000
+// Backend server runs on port 3030
 // ============================================================
 
 const API = axios.create({
-  baseURL: 'http://localhost:5000', // ⬅️ Mock backend URL
+  baseURL: 'http://localhost:3030', // ⬅️ Backend URL
   headers: { 'Content-Type': 'application/json' },
   timeout: 10000,
 });
@@ -247,4 +246,5 @@ export const registerICU = async (icuData) => {
 //    EXPORTS
 // ============================================================
 
+export const API_BASE = 'http://localhost:3030'; // Export base URL for other modules
 export default API;

@@ -10,7 +10,7 @@ import Navigation from './components/common/Navigation.jsx';
 
 // --- Utilities & Security ---
 import PrivateRoute from './routes/PrivateRoute.jsx';
-import socket from './lib/socket';
+import socket from './utils/socket';
 import { useAuth } from './contexts/AuthContext'; 
 
 // --- Import Auth Pages ---
@@ -20,26 +20,22 @@ import RegisterForm from './pages/auth/RegisterForm.jsx';
 import PageNotFound from './pages/auth/PageNotFound.jsx';
 
 // --- Import Patient Pages ---
-import ICUSelect from './pages/patientPages/ICUSelect.jsx';
-import PatientHomePage from './pages/patientPages/PatientHomePage.jsx';
+import ICUSelect from './pages/Patient/ICUSelect.jsx';
+import PatientHomePage from './pages/Patient/PatientHomePage.jsx';
 
 // --- Import Manager Pages ---
-import ManagerDashboard from './pages/managerPages/ManagerDashboard.jsx';
-import EmployeePage from './pages/managerPages/EmployeeMgmt.jsx';
+import ManagerDashboard from './pages/Manager/ManagerDashboard.jsx';
+import EmployeePage from './pages/Manager/EmployeeMgmt.jsx';
 
 // --- Import Admin Pages ---
-import AdminPage from './pages/adminPages/AdminPage.jsx';
+import AdminDashboard from './pages/Admin/AdminDashboard.jsx';
 
 // --- Import Doctor Pages ---
-import DoctorPage from './pages/doctor/Doctor.jsx';
+import DoctorPage from './pages/Doctor/Doctor.jsx';
 
 // --- Import Shared Pages ---
-import ReceptionistDashboard from './pages/shared/ReceptionistDashboard.jsx';
-import AmbulanceDashboard from './pages/shared/Ambulance.jsx';
-
-// --- Import Other Role Pages ---
-import NurseDashboard from './pages/Nurse.jsx';
-import CleanerDashboard from './pages/Cleaner.jsx';
+import ReceptionistPanel from './pages/Receptionist/ReceptionistPanel.jsx';
+import AmbulancePanel from './pages/Ambulance/AmbulancePanel.jsx';
 
 
 const App = () => {
@@ -104,7 +100,7 @@ const App = () => {
                         path="/admin"
                         element={
                             <PrivateRoute allowedRoles={['admin']}>
-                                <AdminPage />
+                                <AdminDashboard />
                             </PrivateRoute>
                         }
                     />
@@ -131,37 +127,20 @@ const App = () => {
 
                     {/* --- EMPLOYEE ROLE ROUTES (NOW SEPARATED) --- */}
                     <Route
-                        path="/nurse"
-                        element={
-                            <PrivateRoute allowedRoles={['nurse']}>
-                                {/* UPDATED to use new component */}
-                                <NurseDashboard />
-                            </PrivateRoute>
-                        }
-                    />
-                    <Route
                         path="/receptionist"
                         element={
                             <PrivateRoute allowedRoles={['receptionist']}>
-                                <ReceptionistDashboard />
+                                <ReceptionistPanel />
                             </PrivateRoute>
                         }
                     />
-                    <Route
-                        path="/cleaner"
-                        element={
-                            <PrivateRoute allowedRoles={['cleaner']}>
-                                {/* UPDATED to use new component */}
-                                <CleanerDashboard />
-                            </PrivateRoute>
-                        }
-                    />
+                    {/* Nurse and Cleaner routes removed - components not implemented */}
                     {/* NEW ROUTE for Ambulance */}
                     <Route
                         path="/ambulance"
                         element={
                             <PrivateRoute allowedRoles={['ambulance']}>
-                                <AmbulanceDashboard />
+                                <AmbulancePanel />
                             </PrivateRoute>
                         }
                     />

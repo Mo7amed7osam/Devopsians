@@ -3,8 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { viewAllHospitals, blockHospital } from '../../utils/api';
 import styles from './ViewAllHospital.module.css';
-import Button from '../../components/Button';
-import Modal from '../../components/Modal'; // 1. Import the Modal component
+import Button from '../../components/common/Button';
+import Modal from '../../components/common/Modal'; // 1. Import the Modal component
 
 const mockHospitals = [
     { id: 'h1', name: 'Al-Salam Hospital', rating: 4.8, isBlocked: false, manager: 'Mngr 1', icuCount: 15 },

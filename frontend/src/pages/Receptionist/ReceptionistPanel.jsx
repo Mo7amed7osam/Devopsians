@@ -1,29 +1,24 @@
-// src/pages/ReceptionistDashboard.jsx
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import styles from './ReceptionistDashboard.module.css';
-import Button from '../components/Button';
-// 1. Import the new ambulance function
-import { fetchActiveReservations, fetchActiveAmbulances } from '../utils/api'; 
+import Button from '../../components/common/Button';
+import { fetchActiveReservations, fetchActiveAmbulances } from '../../utils/api';
 
-const ReceptionistDashboard = () => {
+const ReceptionistPanel = () => {
     const [reservations, setReservations] = useState([]);
-    const [ambulances, setAmbulances] = useState([]); // 2. Add new state for ambulances
+    const [ambulances, setAmbulances] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    // 3. Fetch all data on load
     useEffect(() => {
         const loadData = async () => {
             setLoading(true);
             try {
-                // Fetch both sets of data
                 const [resResponse, ambResponse] = await Promise.all([
                     fetchActiveReservations(),
                     fetchActiveAmbulances()
                 ]);
-                
                 setReservations(resResponse.data);
-                setAmbulances(ambResponse.data.filter(a => a.status === 'EN_ROUTE')); // Only show en_route
+                setAmbulances(ambResponse.data.filter(a => a.status === 'EN_ROUTE'));
             } catch (err) {
                 toast.error("Failed to fetch dashboard data.");
                 console.error(err);
@@ -35,7 +30,7 @@ const ReceptionistDashboard = () => {
     }, []);
 
     const handleCheckIn = (reservationId, patientName, icuRoom) => {
-        toast.success(`Checked in ${patientName} to ICU Room ${icuRoom}.`);
+        toast.success(`Checked in  to ICU Room .`);
         setReservations(prev => prev.filter(res => res.id !== reservationId));
     };
 
@@ -46,18 +41,27 @@ const ReceptionistDashboard = () => {
             toast.warn("Please enter a Patient ID or Room #.");
             return;
         }
-        toast.info(`Patient ${patientId} checked out. ICU set to MAINTENANCE.`);
+        toast.info(`Patient  checked out. ICU set to MAINTENANCE.`);
         e.target.reset();
     };
 
     return (
         <div className={styles.dashboard}>
+            <section className="p-4 bg-slate-800 text-gray-100 rounded-xl mb-6">
+                <h2 className="text-2xl font-semibold mb-2">💼 Receptionist Journey</h2>
+                <ul className="list-disc ml-6 space-y-1">
+                    <li>Login → Access Reception Panel</li>
+                    <li>View ICU bed availability in real time</li>
+                    <li>Create and submit new ICU reservation requests</li>
+                    <li>Confirm patient check-ins and check-outs</li>
+                    <li>Receive ambulance arrival notifications</li>
+                    <li>Keep all data synced with the system automatically</li>
+                </ul>
+            </section>
             <header className={styles.header}>
                 <h1>Receptionist Dashboard</h1>
                 <p>Manage patient arrivals, departures, and ambulance coordination.</p>
             </header>
-
-            {/* 4. Add new Ambulance Status Panel */}
             <section className={styles.statusPanel}>
                 <h3>Live Ambulance Status</h3>
                 {loading ? (
@@ -69,7 +73,7 @@ const ReceptionistDashboard = () => {
                         ) : (
                             ambulances.map(amb => (
                                 <div key={amb.id} className={styles.ambulanceItem}>
-                                    <span className={`${styles.statusBadge} ${styles.statusEnRoute}`}>EN ROUTE</span>
+                                    <span className={`${styles.statusBadge} `}>EN ROUTE</span>
                                     <div className={styles.ambulanceInfo}>
                                         <strong>{amb.patientName}</strong> (Driver: {amb.driver})
                                     </div>
@@ -82,10 +86,7 @@ const ReceptionistDashboard = () => {
                     </div>
                 )}
             </section>
-
-            {/* 5. Keep the existing grid for Check-in/Out */}
             <div className={styles.grid}>
-                {/* Check-In Section */}
                 <section className={styles.formCard}>
                     <h3>Patient Check-In ({reservations.length} Pending)</h3>
                     {loading ? (
@@ -112,8 +113,6 @@ const ReceptionistDashboard = () => {
                         </div>
                     )}
                 </section>
-
-                {/* Check-Out Section */}
                 <section className={styles.formCard}>
                     <h3>Patient Check-Out</h3>
                     <p>Discharge a patient and mark their ICU as "Maintenance".</p>
@@ -132,4 +131,4 @@ const ReceptionistDashboard = () => {
     );
 };
 
-export default ReceptionistDashboard;
+export default ReceptionistPanel;

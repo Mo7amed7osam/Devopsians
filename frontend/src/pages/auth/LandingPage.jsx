@@ -2,8 +2,8 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import styles from './LandingPage.module.css'; //
-import Button from '../components/Button'; //
-import { useAuth } from '../contexts/AuthContext'; //
+import Button from '../../components/common/Button'; //
+import { useAuth } from '../../contexts/AuthContext'; //
 
 const LandingPage = () => {
     const navigate = useNavigate();

@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import styles from './Doctor.module.css';
-import Button from '../components/Button';
+import Button from '../../components/common/Button';
 
 // --- Sub-Component: PatientStatusCard ---
 const PatientStatusCard = ({ patient, onSelect, isSelected }) => {

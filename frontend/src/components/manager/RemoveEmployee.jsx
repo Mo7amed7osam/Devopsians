@@ -1,7 +1,7 @@
 // src/components/RemoveEmployee.jsx
 import React, { useState } from 'react';
 import { toast } from 'react-toastify'; // 1. Import toast
-import Button from './Button';
+import Button from '../common/Button';
 
 const RemoveEmployee = ({ onEmployeeAction }) => {
   const [identifier, setIdentifier] = useState('');

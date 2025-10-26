@@ -1,11 +1,11 @@
 // src/pages/LoginForm.jsx
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { loginUser } from '../utils/api';
-import { setToken, setRole } from '../utils/cookieUtils';
-import { useAuth } from '../contexts/AuthContext';
+import { loginUser } from '../../utils/api';
+import { saveSession } from '../../utils/cookieUtils';
+import { useAuth } from '../../contexts/AuthContext';
 import styles from './LoginForm.module.css';
-import Button from '../components/Button';
+import Button from '../../components/common/Button';
 
 const LoginForm = () => {
     const [credentials, setCredentials] = useState({ email: '', password: '' });
@@ -25,10 +25,10 @@ const LoginForm = () => {
 
         try {
             const response = await loginUser(credentials);
-            const { token, role } = response.data;
+            const { token, role, user } = response.data;
 
-            setToken(token);
-            setRole(role);
+            // Save session with user data
+            saveSession(token, role, user);
             login(token, role);
 
             let path = '/';

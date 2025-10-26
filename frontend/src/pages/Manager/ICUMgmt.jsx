@@ -1,10 +1,10 @@
 // src/pages/ICUMgmt.jsx
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify'; // 1. Import toast
-import { viewHospitalICUs, deleteICU } from '../utils/api';
+import { viewHospitalICUs, deleteICU } from '../../utils/api';
 import styles from './ICUMgmt.module.css';
-import socket from '../utils/realtime';
-import Button from '../components/Button';
+import socket from '../../utils/realtime';
+import Button from '../../components/common/Button';
 
 const ICUMgmt = ({ hospitalId }) => {
     const [icus, setIcus] = useState([]);

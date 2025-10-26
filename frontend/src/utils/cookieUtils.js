@@ -3,6 +3,8 @@ import Cookies from 'js-cookie';
 
 const TOKEN_KEY = 'auth_token';
 const ROLE_KEY = 'user_role';
+const USER_NAME_KEY = 'user_name';
+const USER_ID_KEY = 'user_id';
 
 // ============================================================
 //   TOKEN MANAGEMENT — stored in secure cookies
@@ -55,15 +57,73 @@ export const removeRole = () => {
 };
 
 // ============================================================
+//    USER NAME MANAGEMENT — stored in localStorage
+// ============================================================
+
+/**
+ * Stores the user's name.
+ * @param {string} firstName
+ * @param {string} lastName
+ */
+export const setUserName = (firstName, lastName) => {
+  const fullName = `${firstName} ${lastName}`.trim();
+  localStorage.setItem(USER_NAME_KEY, fullName);
+};
+
+/**
+ * Retrieves the user's stored name.
+ */
+export const getUserName = () => localStorage.getItem(USER_NAME_KEY);
+
+/**
+ * Removes the stored user name.
+ */
+export const removeUserName = () => {
+  localStorage.removeItem(USER_NAME_KEY);
+};
+
+// ============================================================
+//    USER ID MANAGEMENT — stored in localStorage
+// ============================================================
+
+/**
+ * Stores the user's ID.
+ * @param {string} id
+ */
+export const setUserId = (id) => {
+  localStorage.setItem(USER_ID_KEY, id);
+};
+
+/**
+ * Retrieves the user's stored ID.
+ */
+export const getUserId = () => localStorage.getItem(USER_ID_KEY);
+
+/**
+ * Removes the stored user ID.
+ */
+export const removeUserId = () => {
+  localStorage.removeItem(USER_ID_KEY);
+};
+
+// ============================================================
 //    SESSION HELPERS
 // ============================================================
 
 /**
  * Saves both token and role in one go (used after login).
  */
-export const saveSession = (token, role) => {
+export const saveSession = (token, role, user = null) => {
   setToken(token);
   setRole(role);
+  if (user) {
+    if (user.firstName && user.lastName) {
+      setUserName(user.firstName, user.lastName);
+    }
+    if (user.id) {
+      setUserId(user.id);
+    }
+  }
 };
 
 /**
@@ -72,4 +132,17 @@ export const saveSession = (token, role) => {
 export const clearSession = () => {
   removeToken();
   removeRole();
+  removeUserName();
+  removeUserId();
+};
+
+/**
+ * Gets both token and role for authentication checks.
+ */
+export const getUserData = () => {
+  const token = getToken();
+  const role = getRole();
+  const name = getUserName();
+  const id = getUserId();
+  return token ? { token, role, name, id } : null;
 };

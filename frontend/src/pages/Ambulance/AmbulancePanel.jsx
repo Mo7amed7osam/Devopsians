@@ -1,17 +1,13 @@
-// src/pages/AmbulanceDashboard.jsx
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
-// Using the specific styles for this dashboard
-import styles from './Ambulance.module.css'; 
-import Button from '../components/Button';
-import { fetchActiveAmbulances } from '../utils/api'; // Assuming an API function
+import styles from './Ambulance.module.css';
+import Button from '../../components/common/Button';
+import { fetchActiveAmbulances } from '../../utils/api';
 
-const AmbulanceDashboard = () => {
+const AmbulancePanel = () => {
     const [ambulances, setAmbulances] = useState([]);
     const [loading, setLoading] = useState(true);
-    
-    // This ID would come from auth context in a real app
-    const myAmbulanceId = 'amb-01'; 
+    const myAmbulanceId = 'amb-01';
     const [myStatus, setMyStatus] = useState('EN_ROUTE');
 
     useEffect(() => {
@@ -20,10 +16,8 @@ const AmbulanceDashboard = () => {
             try {
                 const ambResponse = await fetchActiveAmbulances();
                 setAmbulances(ambResponse.data);
-                
                 const myAmb = ambResponse.data.find(a => a.id === myAmbulanceId);
                 if (myAmb) setMyStatus(myAmb.status);
-
             } catch (err) {
                 toast.error("Failed to fetch ambulance data.");
                 console.error(err);
@@ -35,11 +29,8 @@ const AmbulanceDashboard = () => {
     }, []);
 
     const handleStatusUpdate = (newStatus) => {
-        // Mock API call
         toast.success(`Your status has been updated to ${newStatus}.`);
         setMyStatus(newStatus);
-        
-        // Update the list optimistically
         setAmbulances(prev => 
             prev.map(amb => 
                 amb.id === myAmbulanceId ? { ...amb, status: newStatus } : amb
@@ -51,12 +42,20 @@ const AmbulanceDashboard = () => {
 
     return (
         <div className={styles.dashboard}>
+            <section className="p-4 bg-slate-800 text-gray-100 rounded-xl mb-6">
+                <h2 className="text-2xl font-semibold mb-2">🚑 Ambulance Journey</h2>
+                <ul className="list-disc ml-6 space-y-1">
+                    <li>Login → Access Ambulance Panel (mobile view)</li>
+                    <li>View assigned trips linked to ICU reservations</li>
+                    <li>Mark status: "En Route" or "Arrived"</li>
+                    <li>Send live GPS updates to the hospital dashboard</li>
+                    <li>Mark trip as completed after patient handoff</li>
+                </ul>
+            </section>
             <header className={styles.header}>
                 <h1>Ambulance Crew Dashboard</h1>
                 <p>Update your status and view active transports.</p>
             </header>
-
-            {/* Section to manage THIS ambulance's status */}
             <section className={styles.formCard} style={{ marginBottom: '30px' }}>
                 <h3>My Status (Ambulance {myAmbulanceId})</h3>
                 {myAmbulance ? (
@@ -65,7 +64,6 @@ const AmbulanceDashboard = () => {
                         <p><strong>Status:</strong> {myStatus}</p>
                     </div>
                 ) : <p>Loading your details...</p>}
-                
                 <div className={styles.grid} style={{ marginTop: '20px' }}>
                     <Button 
                         variant="success" 
@@ -81,7 +79,7 @@ const AmbulanceDashboard = () => {
                     >
                         Mark ARRIVED AT HOSPITAL
                     </Button>
-                     <Button 
+                    <Button 
                         variant="secondary" 
                         onClick={() => handleStatusUpdate('AVAILABLE')}
                         disabled={myStatus === 'AVAILABLE'}
@@ -90,8 +88,6 @@ const AmbulanceDashboard = () => {
                     </Button>
                 </div>
             </section>
-
-            {/* Section to view all active ambulances */}
             <section className={styles.statusPanel}>
                 <h3>All Active Ambulances</h3>
                 {loading ? (
@@ -103,8 +99,7 @@ const AmbulanceDashboard = () => {
                         ) : (
                             ambulances.map(amb => (
                                 <div key={amb.id} className={styles.ambulanceItem}>
-                                    {/* Use status directly, assuming CSS class matches (e.g., statusENROUTE) */}
-                                    <span className={`${styles.statusBadge} ${styles[`status${amb.status.toUpperCase()}`] || styles.statusEnRoute}`}>
+                                    <span className={`${styles.statusBadge} ${styles['status' + amb.status.toUpperCase()] || styles.statusEnRoute}`}>
                                         {amb.status.replace('_', ' ')}
                                     </span>
                                     <div className={styles.ambulanceInfo}>
@@ -123,4 +118,4 @@ const AmbulanceDashboard = () => {
     );
 };
 
-export default AmbulanceDashboard;
+export default AmbulancePanel;

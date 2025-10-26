@@ -1,9 +1,9 @@
 // src/pages/UpdateMedicalDetails.jsx
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify'; // 1. Import toast
-import { updateMedicalHistory } from '../utils/api';
+import { updateMedicalHistory } from '../../utils/api';
 import styles from './UpdateMedicalDetails.module.css';
-import Button from '../components/Button';
+import Button from '../../components/common/Button';
 
 const UpdateMedicalDetails = ({ patientId, initialHistory, onUpdateComplete }) => {
     const [history, setHistory] = useState(initialHistory || '');

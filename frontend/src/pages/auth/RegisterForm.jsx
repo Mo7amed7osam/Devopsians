@@ -67,9 +67,9 @@
 // src/pages/RegisterForm.jsx
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom'; // Import Link
-import { registerPatient } from '../utils/api';
+import { registerPatient } from '../../utils/api';
 import styles from './RegisterForm.module.css'; // <-- 1. Updated import
-import Button from '../components/Button'; // <-- 2. Import Button
+import Button from '../../components/common/Button'; // <-- 2. Import Button
 
 const RegisterForm = () => {
     const [formData, setFormData] = useState({

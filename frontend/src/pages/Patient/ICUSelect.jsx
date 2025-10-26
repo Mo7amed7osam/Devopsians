@@ -1,13 +1,13 @@
 // src/pages/ICUSelect.jsx
 import React, { useState, useEffect, useCallback } from 'react';
 import { toast } from 'react-toastify';
-import MapComponent from '../components/patient/Map.jsx';
-import Icus from '../components/patient/Icus.jsx';
-import { fetchAvailableICUs, reserveICU } from '../utils/api';
-import socket from '../utils/realtime'; 
-import { getRole } from '../utils/cookieUtils';
+import MapComponent from '../../components/patient/Map.jsx';
+import Icus from '../../components/patient/Icus.jsx';
+import { fetchAvailableICUs, reserveICU } from '../../utils/api';
+import socket from '../../utils/realtime'; 
+import { getRole } from '../../utils/cookieUtils';
 import styles from './ICUSelect.module.css'; 
-import Button from '../components/Button';
+import Button from '../../components/common/Button';
 
 const ICUSelect = () => {
     const [userLocation, setUserLocation] = useState(null);

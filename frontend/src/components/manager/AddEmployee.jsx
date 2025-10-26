@@ -1,61 +1,45 @@
-import React, { useState } from "react";
-import { API_BASE } from "../utils/api";
+// src/components/AddEmployee.jsx
+import React, { useState } from 'react';
+import Button from '../common/Button';
 
-function AddEmployee() {
-  const [formData, setFormData] = useState({
-    managerId: "",
-    firstName: "",
-    lastName: "",
-    userName: "",
-    email: "",
-    phone: "",
-    userPass: "",
-    role: "",
-    gender: "",
+const AddEmployee = ({ onEmployeeAction }) => {
+  const [formData, setFormData] = useState({ 
+    name: '', email: '', role: 'nurse', password: '', department: '' // Added department
   });
-
-  const [response, setResponse] = useState(null);
-
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
+  
   const handleSubmit = async (e) => {
     e.preventDefault();
-    try {
-      const res = await fetch(`${API_BASE}/manager/add-employee`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-      const data = await res.json();
-      setResponse(data);
-    } catch (error) {
-      setResponse({ success: false, message: error.message });
-    }
+    onEmployeeAction({ ...formData, id: Date.now() }, 'added');
+    setFormData({ name: '', email: '', role: 'nurse', password: '', department: '' });
   };
 
   return (
-    <div>
-      <h2>Add Employee</h2>
-      <form onSubmit={handleSubmit}>
-        {Object.keys(formData).map((key) => (
-          <div key={key}>
-            <label>{key}: </label>
-            <input
-              type="text"
-              name={key}
-              value={formData[key]}
-              onChange={handleChange}
-              required
-            />
-          </div>
-        ))}
-        <button type="submit">Add Employee</button>
-      </form>
-      {response && <p>{response.message}</p>}
-    </div>
-  );
-}
+    <form onSubmit={handleSubmit} className="form-card">
+      <h3>Add New Employee</h3>
+      <input type="text" name="name" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} placeholder="Full Name" required />
+      <input type="email" name="email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} placeholder="Email Address" required />
+      <input type="password" name="password" value={formData.password} onChange={(e) => setFormData({...formData, password: e.target.value})} placeholder="Initial Password" required />
+      
+      {/* --- NEW Department Field --- */}
+      <select name="department" value={formData.department} onChange={(e) => setFormData({...formData, department: e.target.value})} required>
+        <option value="">-- Select Department --</option>
+        <option value="Cardiology">Cardiology</option>
+        <option value="Neurology">Neurology</option>
+        <option value="General">General Medicine</option>
+        <option value="Maintenance">Maintenance</option>
+        <option value="Administration">Administration</option>
+      </select>
 
+      <select name="role" value={formData.role} onChange={(e) => setFormData({...formData, role: e.target.value})}>
+        <option value="nurse">Nurse</option>
+        <option value="doctor">Doctor</option>
+        <option value="cleaner">Cleaner</option>
+        <option value="receptionist">Receptionist</option>
+      </select>
+      <Button type="submit" variant="primary">
+        Add Employee
+      </Button>
+    </form>
+  );
+};
 export default AddEmployee;

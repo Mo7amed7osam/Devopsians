@@ -1,67 +1,41 @@
 import { useState } from "react";
 import styles from "./Icus.module.css";
-import { useNavigate } from "react-router-dom";
-import axios from "axios";
-import { API_BASE } from "../../utils/api";
 
-function Icus({ userId, specialization, icus }) {
-  const navigate = useNavigate();
-  const [error, setError] = useState("");
+function Icus({ icuList = [], onReserve, loading }) {
+  if (loading) {
+    return <div className={styles.loading}>Loading ICUs...</div>;
+  }
 
-  const handleReserveICU = async (icuId) => {
-    try {
-      await axios.post(`${API_BASE}/patient/reserve-icu`, {
-        userId,
-        icuId,
-      });
-      alert("ICU reserved successfully!");
-      navigate(`/UpdateDetails/${userId}/${icuId}`);
-    } catch (err) {
-      console.error("Error reserving ICU:", err);
-      setError("Failed to reserve ICU. Please try again later.");
-    }
-  };
-
-  const filteredICUs = icus.filter(
-    (icu) => icu.specialization === specialization
-  );
+  if (!icuList || icuList.length === 0) {
+    return (
+      <div className={styles.noIcus}>
+        <p>No ICUs available at the moment.</p>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.container}>
-      {error && <div className={styles.error}>{error}</div>}
-      {filteredICUs.length === 0 ? (
-        <p className={styles.noIcus}>
-          No ICUs available for the specialization &quot;{specialization}&quot;
-          near your location.
-        </p>
-      ) : (
-        <ul className={styles.icuList}>
-          {filteredICUs.map(
-            ({ _id, hospital, specialization, fees, status }) => (
-              <li key={_id} className={styles.icuItem}>
-                <h3 className={styles.hospitalName}>
-                  {hospital?.name || "Not assigned"}
-                </h3>
-                <p className={styles.address}>
-                  Address: {hospital?.address || "N/A"}
-                </p>
-                <p className={styles.specialization}>
-                  Specialization: {specialization}
-                </p>
-                <p className={styles.fees}>Fees: ${fees}</p>
-                <button
-                  onClick={() => handleReserveICU(_id)}
-                  className={styles.reserveButton}
-                  disabled={status === "Occupied"}
-                  aria-disabled={status === "Occupied"}
-                >
-                  {status === "Occupied" ? "Reserved" : "Reserve"}
-                </button>
-              </li>
-            )
-          )}
-        </ul>
-      )}
+      <ul className={styles.icuList}>
+        {icuList.map((icu) => (
+          <li key={icu.id} className={styles.icuItem}>
+            <h3 className={styles.hospitalName}>
+              {icu.hospitalName || "Unknown Hospital"}
+            </h3>
+            <p className={styles.specialization}>
+              Specialization: {icu.specialization}
+            </p>
+            <p className={styles.distance}>Distance: {icu.distance}</p>
+            <p className={styles.fees}>Fee: {icu.fee}</p>
+            <button
+              onClick={() => onReserve(icu.id)}
+              className={styles.reserveButton}
+            >
+              Reserve
+            </button>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

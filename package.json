@@ -18,12 +18,12 @@
     "setup": "npm install --prefix frontend && npm install --prefix backend"
   },
   "dependencies": {
-    "concurrently": "^8.0.0",
     "cross-env": "^7.0.3",
     "nodemon": "^3.1.7",
     "rimraf": "^5.0.1"
   },
   "devDependencies": {
+    "concurrently": "^9.2.1",
     "eslint": "^9.15.0",
     "eslint-config-react-app": "^7.0.1",
     "prettier": "^3.4.1"

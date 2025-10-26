@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { toast } from 'react-toastify'; // 1. Import toast
 import { addHospital } from '../../utils/api';
 import styles from './AddHospital.module.css';
-import Button from '../../components/Button';
+import Button from '../../components/common/Button';
 
 const AddHospital = ({ onHospitalAdded }) => {
     const [formData, setFormData] = useState({

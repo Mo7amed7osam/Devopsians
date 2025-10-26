@@ -1,6 +1,6 @@
 import ICU from "../models/icuModel.js";
 import Hospital from "../models/hospitalModel.js";
-import VisitorRoom from "../models/visitorsRoomModel.js";
+// import VisitorRoom from "../models/visitorsRoomModel.js"; // TODO: Create visitorsRoomModel.js
 import Service from "../models/serviceModel.js";
 import User from "../models/userModel.js";
 import Feedback from "../models/feedbackModel.js";

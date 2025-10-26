@@ -6,7 +6,7 @@ import AddHospital from './adminPages/AddHospital.jsx';
 import ViewAllHospital from './adminPages/ViewAllHospital.jsx';
 import SystemLogs from './adminPages/SystemLogs.jsx'; // 1. Import SystemLogs
 import styles from './AdminPage.module.css';
-import Button from '../components/Button';
+import Button from '../../components/common/Button';
 import AddEmployee from '../components/AddEmployee.jsx';
 import RemoveEmployee from '../components/RemoveEmployee.jsx';
 import { fetchSystemStats, viewAllHospitals } from '../utils/api'; // Import necessary API functions

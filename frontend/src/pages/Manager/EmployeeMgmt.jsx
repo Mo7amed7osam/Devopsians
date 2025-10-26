@@ -2,9 +2,9 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 // NOTE: Assuming requestVacation might still be relevant for *any* employee managed here
-import { updateTaskStatus, requestVacation } from '../utils/api';
+import { updateTaskStatus, requestVacation } from '../../utils/api';
 import styles from './EmployeeMgmt.module.css';
-import Button from '../components/Button';
+import Button from '../../components/common/Button';
 
 // Renamed component for clarity, assuming it's used by Manager for various roles
 const GenericEmployeeDashboard = ({ employeeRole = 'Employee' }) => {

@@ -1,4 +1,4 @@
-import { API_BASE } from "../utils/api";
+import { API_BASE } from "../../utils/api";
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import styles from "./PatientHomePage.module.css"; // Importing the CSS module

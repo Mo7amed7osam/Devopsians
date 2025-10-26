@@ -1,7 +1,7 @@
 // src/pages/Homepage.jsx
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getRole } from '../utils/cookieUtils';
+import { getRole } from '../../utils/cookieUtils';
 import styles from './Homepage.module.css';
 
 const Homepage = () => {

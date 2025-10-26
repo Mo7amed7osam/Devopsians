@@ -1,9 +1,9 @@
 // src/pages/UserHomeScreen.jsx
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getRole } from '../utils/cookieUtils';
+import { getRole } from '../../utils/cookieUtils';
 import styles from './UserHomeScreen.module.css';
-import Button from '../components/Button'; // 1. Import Button
+import Button from '../../components/common/Button'; // 1. Import Button
 
 const UserHomeScreen = () => {
     const navigate = useNavigate();
