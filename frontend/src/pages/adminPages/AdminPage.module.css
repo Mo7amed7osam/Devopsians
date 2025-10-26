@@ -1,61 +1,91 @@
-/* Container for the admin page */
-.adminPageContainer {
-  display: flex;
-  flex-wrap: wrap; /* Allow wrapping on smaller screens */
-  justify-content: space-between; /* Distribute space between cards */
-  gap: 20px; /* Add space between cards */
-  padding: 20px;
-  font-family: Arial, sans-serif;
+/* src/pages/AdminPage.module.css */
+.adminDashboard {
+    padding: 20px 30px;
+    max-width: 1400px;
+    margin: 0 auto;
+    background-color: var(--color-background-light, #f4f6f9);
+    min-height: 100vh;
 }
 
-/* Individual dashboard cards */
-.dashboardCard {
-  background-color: #fff;
-  padding: 20px;
-  border-radius: 10px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-  text-align: center;
-  cursor: pointer;
-  flex: 1; /* Make cards grow equally */
-  max-width: 250px; /* Optional: Limit the width of each card */
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+.header h1 {
+    color: var(--color-primary-dark, #0056b3);
+    text-align: center;
+    margin-bottom: 30px;
+    padding-bottom: 10px;
+    border-bottom: 3px solid #e0e0e0;
 }
 
-.dashboardCard:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+.statsGrid {
+    display: grid;
+    /* This automatically handles 4 items, so no change is needed here */
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 30px;
+    margin-bottom: 40px;
 }
 
-/* Card text */
-.dashboardCard h3 {
-  font-size: 1.2rem;
-  color: #333;
-  margin-bottom: 10px;
+.tabsNav {
+    display: flex;
+    border-bottom: 2px solid #ddd;
+    margin-bottom: 20px;
 }
 
-/* Icon styles */
-.icon {
-  font-size: 2.5rem;
-  margin-bottom: 15px;
+.tabButton {
+    background: none;
+    border: none;
+    padding: 15px 25px;
+    font-size: 16px;
+    font-weight: 600;
+    color: #6c757d;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: color 0.2s, border-bottom-color 0.2s;
+    margin-right: 5px;
+    /* We add this to override the 100% width from the default Button style */
+    width: auto; 
 }
 
-/* Card color variations */
-.colorLightgreen {
-  background-color: #a8e6cf;
+.tabButton:hover {
+    color: #333;
 }
 
-.colorLightred {
-  background-color: #ff8b94;
+.tabButton.active {
+    color: var(--color-primary, #007bff);
+    border-bottom-color: var(--color-primary, #007bff);
 }
 
-.colorLightpurple {
-  background-color: #d4a5ff;
+.contentArea {
+    padding: 20px 0;
 }
 
-.colorLightyellow {
-  background-color: #fdfd96;
+.formCard {
+    background-color: white;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    max-width: 500px;
+    margin: 30px auto;
 }
 
-.colorLightorange {
-  background-color: #ffd3b6;
+.formTitle {
+    color: #333;
+    margin-top: 0;
+    margin-bottom: 20px;
+    font-size: 20px;
+    text-align: center;
+}
+
+.formCard input {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-sizing: border-box;
+}
+
+.employeeMgmtGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    align-items: start;
 }

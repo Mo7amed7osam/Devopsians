@@ -2,7 +2,7 @@ import { useState } from "react";
 import styles from "./Icus.module.css";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { API_BASE } from "../utils/api";
+import { API_BASE } from "../../utils/api";
 
 function Icus({ userId, specialization, icus }) {
   const navigate = useNavigate();

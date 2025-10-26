@@ -5,32 +5,41 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 // --- Global Components ---
-import Navigation from './components/Navigation.jsx';
+import Navigation from './components/common/Navigation.jsx';
 // import Footer from './components/Footer.jsx';
 
 // --- Utilities & Security ---
-import PrivateRoute from './pages/PrivateRoute.jsx';
-import socket from './socket';
+import PrivateRoute from './routes/PrivateRoute.jsx';
+import socket from './lib/socket';
 import { useAuth } from './contexts/AuthContext'; 
 
-// --- Import All Pages ---
-import LandingPage from './pages/LandingPage.jsx';
-import ICUSelect from './pages/ICUSelect.jsx';
-import LoginForm from './pages/LoginForm.jsx';
-import RegisterForm from './pages/RegisterForm.jsx';
-import PatientHomePage from './pages/PatientHomePage.jsx';
-import ManagerDashboard from './pages/ManagerDashboard.jsx';
-import AdminPage from './pages/AdminPage.jsx';
-import DoctorPage from './pages/Doctor.jsx';
-// REMOVED EmployeePage, but it's still used by ManagerDashboard
-import EmployeePage from './pages/EmployeeMgmt.jsx'; 
-import PageNotFound from './pages/PageNotFound.jsx';
-import ReceptionistDashboard from './pages/ReceptionistDashboard.jsx';
+// --- Import Auth Pages ---
+import LandingPage from './pages/auth/LandingPage.jsx';
+import LoginForm from './pages/auth/LoginForm.jsx';
+import RegisterForm from './pages/auth/RegisterForm.jsx';
+import PageNotFound from './pages/auth/PageNotFound.jsx';
 
-// --- NEWLY IMPORTED DASHBOARDS ---
+// --- Import Patient Pages ---
+import ICUSelect from './pages/patientPages/ICUSelect.jsx';
+import PatientHomePage from './pages/patientPages/PatientHomePage.jsx';
+
+// --- Import Manager Pages ---
+import ManagerDashboard from './pages/managerPages/ManagerDashboard.jsx';
+import EmployeePage from './pages/managerPages/EmployeeMgmt.jsx';
+
+// --- Import Admin Pages ---
+import AdminPage from './pages/adminPages/AdminPage.jsx';
+
+// --- Import Doctor Pages ---
+import DoctorPage from './pages/doctor/Doctor.jsx';
+
+// --- Import Shared Pages ---
+import ReceptionistDashboard from './pages/shared/ReceptionistDashboard.jsx';
+import AmbulanceDashboard from './pages/shared/Ambulance.jsx';
+
+// --- Import Other Role Pages ---
 import NurseDashboard from './pages/Nurse.jsx';
 import CleanerDashboard from './pages/Cleaner.jsx';
-import AmbulanceDashboard from './pages/Ambulance.jsx';
 
 
 const App = () => {
