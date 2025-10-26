@@ -1,0 +1,72 @@
+/* src/pages/UserHomeScreen.module.css */
+.container {
+    padding: 30px;
+    max-width: 1200px;
+    margin: 0 auto;
+    min-height: calc(100vh - 70px);
+}
+
+.welcomeCard {
+    background-color: var(--color-primary-light, #e0f7fa); /* Light blue background */
+    padding: 50px;
+    border-radius: 12px;
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.title {
+    color: var(--color-primary-dark, #0056b3);
+    font-size: 2.5em;
+    margin-top: 0;
+}
+
+.message {
+    font-size: 1.2em;
+    color: #333;
+    margin-bottom: 30px;
+}
+
+/* New style to override the default Button component's size */
+.dashboardButton {
+    padding: 15px 30px;
+    font-size: 1.1em;
+    max-width: 400px; /* Give it a max-width */
+    margin: 0 auto;   /* Center it */
+}
+
+/* Quick Actions Grid */
+.quickActions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 30px;
+}
+
+.actionItem {
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+.actionItem i {
+    font-size: 2em;
+    color: #6c757d;
+    margin-bottom: 10px;
+}
+
+.actionItem h4 {
+    color: #333;
+    margin-top: 0;
+}
+
+.actionItem button {
+    background-color: #f8f9fa;
+    border: 1px solid #ccc;
+    color: #333;
+    padding: 8px 15px;
+    border-radius: 5px;
+    margin-top: 10px;
+    cursor: pointer;
+}

@@ -1,61 +1,75 @@
-// Cookie utility functions
-const setCookie = (name, value, days = 1) => {
-  const date = new Date();
-  date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
-  const expires = `expires=${date.toUTCString()}`;
-  document.cookie = `${name}=${value};${expires};path=/;SameSite=Strict;Secure`;
+// src/utils/cookieUtils.js
+import Cookies from 'js-cookie';
+
+const TOKEN_KEY = 'auth_token';
+const ROLE_KEY = 'user_role';
+
+// ============================================================
+//   TOKEN MANAGEMENT — stored in secure cookies
+// ============================================================
+
+/**
+ * Stores the authentication token securely in cookies.
+ * @param {string} token - JWT or mock token.
+ */
+export const setToken = (token) => {
+  Cookies.set(TOKEN_KEY, token, {
+    expires: 7, // valid for 7 days
+    secure: process.env.NODE_ENV === 'production', // only HTTPS in production
+    sameSite: 'Strict', // prevent CSRF
+  });
 };
 
-const getCookie = (name) => {
-  const cookieName = `${name}=`;
-  const decodedCookie = decodeURIComponent(document.cookie);
-  const cookieArray = decodedCookie.split(';');
-  
-  for (let cookie of cookieArray) {
-    while (cookie.charAt(0) === ' ') {
-      cookie = cookie.substring(1);
-    }
-    if (cookie.indexOf(cookieName) === 0) {
-      return cookie.substring(cookieName.length, cookie.length);
-    }
-  }
-  return null;
+/**
+ * Retrieves the stored authentication token.
+ */
+export const getToken = () => Cookies.get(TOKEN_KEY);
+
+/**
+ * Removes the authentication token.
+ */
+export const removeToken = () => Cookies.remove(TOKEN_KEY);
+
+// ============================================================
+//    ROLE MANAGEMENT — stored in localStorage
+// ============================================================
+
+/**
+ * Stores the user's role (e.g., 'admin', 'doctor', etc.).
+ * @param {string} role
+ */
+export const setRole = (role) => {
+  localStorage.setItem(ROLE_KEY, role);
 };
 
-const removeCookie = (name) => {
-  document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
+/**
+ * Retrieves the user's stored role.
+ */
+export const getRole = () => localStorage.getItem(ROLE_KEY);
+
+/**
+ * Removes the stored user role.
+ */
+export const removeRole = () => {
+  localStorage.removeItem(ROLE_KEY);
 };
 
-export const setUserCookies = (userData) => {
-  const { token, user } = userData;
-  setCookie('authToken', token);
-  setCookie('userRole', user.role);
-  setCookie('userId', user.id);
-  setCookie('userName', user.userName);
-  if (user.firstName) setCookie('firstName', user.firstName);
-  if (user.lastName) setCookie('lastName', user.lastName);
+// ============================================================
+//    SESSION HELPERS
+// ============================================================
+
+/**
+ * Saves both token and role in one go (used after login).
+ */
+export const saveSession = (token, role) => {
+  setToken(token);
+  setRole(role);
 };
 
-export const clearUserCookies = () => {
-  removeCookie('authToken');
-  removeCookie('userRole');
-  removeCookie('userId');
-  removeCookie('userName');
-  removeCookie('firstName');
-  removeCookie('lastName');
-};
-
-export const getUserData = () => {
-  return {
-    token: getCookie('authToken'),
-    role: getCookie('userRole'),
-    id: getCookie('userId'),
-    userName: getCookie('userName'),
-    firstName: getCookie('firstName'),
-    lastName: getCookie('lastName')
-  };
-};
-
-export const isAuthenticated = () => {
-  return !!getCookie('authToken');
+/**
+ * Clears all session data (used on logout).
+ */
+export const clearSession = () => {
+  removeToken();
+  removeRole();
 };

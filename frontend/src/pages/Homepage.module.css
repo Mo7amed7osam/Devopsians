@@ -1,0 +1,43 @@
+/* src/pages/Homepage.module.css */
+/* This CSS provides styling for the main redirect/loading page after login. */
+
+.loadingContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    /* Calculates full viewport height minus the height of the Navigation bar (approx 70px) */
+    min-height: calc(100vh - 70px);
+    text-align: center;
+    background-color: var(--color-background-light, #f8f9fa);
+    padding: 20px;
+}
+
+.title {
+    color: #333;
+    margin-top: 20px;
+    font-size: 2em;
+}
+
+/* Icon for the spinner (assuming Font Awesome is used) */
+.loadingContainer i {
+    font-size: 3em;
+    color: var(--color-primary, #007bff);
+}
+
+.loginButton {
+    background-color: var(--color-success, #28a745); /* Green button for positive action */
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 20px;
+    transition: background-color 0.2s;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.loginButton:hover {
+    background-color: #1e7e34;
+}

@@ -1,0 +1,126 @@
+/* src/pages/AmbulanceDashboard.module.css */
+.dashboard {
+    padding: 30px;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.header {
+    text-align: center;
+    margin-bottom: 30px;
+    border-bottom: 2px solid #e0e0e0;
+    padding-bottom: 15px;
+}
+
+.header h1 {
+    color: var(--color-primary-dark, #0056b3);
+    margin-top: 0;
+}
+
+.header p {
+    font-size: 1.1em;
+    color: #6c757d;
+}
+
+/* Reusable card style for 'My Status' section */
+.formCard {
+    background-color: white;
+    padding: 25px;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+}
+
+.formCard h3 {
+    margin-top: 0;
+    border-bottom: 1px dashed #eee;
+    padding-bottom: 10px;
+}
+
+/* Grid for status update buttons */
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); /* Responsive grid */
+    gap: 15px; /* Spacing between buttons */
+    align-items: start;
+}
+
+/* Styles for the Ambulance List Panel (Copied from ReceptionistDashboard.module.css) */
+.statusPanel {
+    background-color: #fff;
+    padding: 20px 25px;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+    margin-bottom: 30px;
+    border-top: 4px solid var(--color-primary, #007bff);
+}
+
+.statusPanel h3 {
+    margin-top: 0;
+    color: var(--color-primary-dark);
+}
+
+.ambulanceList {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.ambulanceItem {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 15px;
+    padding: 10px;
+    border-radius: 5px;
+    background-color: #f8f9fa;
+    border: 1px solid #e0e0e0;
+}
+
+.ambulanceInfo {
+    font-size: 1.1em;
+}
+
+.ambulanceEta {
+    font-size: 1.1em;
+}
+
+.noAmbulance {
+    color: #6c757d;
+    font-style: italic;
+}
+
+.statusBadge {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.9em;
+    font-weight: 700;
+    color: white;
+    text-transform: uppercase; /* Make status clear */
+}
+
+/* Status Colors for Badges */
+.statusENROUTE { /* Match CSS Modules convention */
+    background-color: var(--color-warning, #ffc107);
+    color: #333;
+}
+.statusARRIVEDHOSPITAL { /* Match CSS Modules convention */
+    background-color: var(--color-primary, #007bff);
+}
+.statusAVAILABLE { /* Match CSS Modules convention */
+     background-color: var(--color-success, #28a745);
+}
+/* Fallback/Default style if status unknown */
+.statusEnRoute { /* Keep original if needed as fallback */
+    background-color: var(--color-warning, #ffc107);
+    color: #333;
+}
+
+.placeholder {
+    padding: 40px 20px;
+    text-align: center;
+    background-color: #f8f9fa;
+    border: 1px dashed #ccc;
+    border-radius: 5px;
+    color: #6c757d;
+}

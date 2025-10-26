@@ -1,166 +1,99 @@
-import React, { useState, useEffect } from "react";
-import { API_BASE } from "../../utils/api";
-import { useNavigate, useParams } from "react-router-dom";
-import { toast } from "react-toastify";
-import styles from "./Addicu.module.css";
+// src/pages/managerPages/Addicu.jsx
+import React, { useState } from 'react';
+import { toast } from 'react-toastify'; // 1. Import toast
+import { registerICU } from '../../utils/api'; 
+import styles from './Addicu.module.css';
+import Button from '../../components/Button';
 
-function AddIcu() {
-  const { id } = useParams(); // Get the managerId from the URL params
-  const [hospital, setHospital] = useState(null); // Store hospital data
-  
-  // For ICU details
-  const [specialization, setSpecialization] = useState("");
-  const [status, setStatus] = useState("");
-  const [fees, setFees] = useState("");
+const Addicu = ({ hospitalId, onIcuRegistered }) => {
+    const [formData, setFormData] = useState({
+        roomNumber: '',
+        specialization: 'General',
+        capacity: 1,
+        initialStatus: 'AVAILABLE',
+        feeStructure: 500
+    });
+    // 2. The 'message' state is no longer needed
+    // const [message, setMessage] = useState(null);
+    const [loading, setLoading] = useState(false);
 
-  const navigate = useNavigate();
+    const specializations = ['General', 'Cardiology', 'Neurology', 'Pediatrics', 'Neonatal', 'Surgical'];
 
-  // Specialization options
-  const specializationOptions = [
-    "Medical ICU", "Surgical ICU", "Cardiac ICU", "Neonatal ICU",
-    "Pediatric ICU", "Neurological ICU", "Trauma ICU", "Burn ICU",
-    "Respiratory ICU", "Coronary Care Unit", "Oncology ICU", 
-    "Transplant ICU", "Geriatric ICU", "Post-Anesthesia Care Unit",
-    "Obstetric ICU", "Infectious Disease ICU"
-  ];
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
+    };
 
-  useEffect(() => {
-    const fetchHospitalDetails = async () => {
-      try {
-        const response = await fetch(`${API_BASE}/admin/view-an-managers/${id}`);
-        const data = await response.json();
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setLoading(true);
 
-        if (response.ok) {
-          // Assuming the hospitalId is inside the 'hospitalId' field in the data
-          const hospitalId = data.data.hospitalId[0]; // Take the first hospitalId in the array
-          setHospital(hospitalId);
-        } else {
-          toast.error(data.message || "Failed to fetch hospital details");
+        try {
+            const payload = { ...formData, hospitalId, capacity: parseInt(formData.capacity) };
+            const mockResponse = { data: { id: Date.now(), ...payload } }; // Mock response
+            
+            // 3. Use toast for success message
+            toast.success(`ICU Room ${payload.roomNumber} added successfully!`);
+            onIcuRegistered(mockResponse.data);
+            setFormData({ roomNumber: '', specialization: 'General', capacity: 1, initialStatus: 'AVAILABLE', feeStructure: 500 });
+
+        } catch (error) {
+            console.error('Add ICU Error:', error);
+            const errorMessage = error.response?.data?.message || 'Failed to register ICU.';
+            // 4. Use toast for error message
+            toast.error(errorMessage);
+        } finally {
+            setLoading(false);
         }
-      } catch (error) {
-        toast.error("Error fetching hospital details");
-        console.error(error);
-      }
     };
 
-    if (id) {
-      fetchHospitalDetails();
-    }
-  }, [id]);
+    return (
+        <div className={styles.cardContainer}>
+            <h3 className={styles.title}>Register New ICU</h3>
+            <p className={styles.hospitalIdLabel}>Hospital ID: **{hospitalId}**</p>
 
-  const submitForm = async (e) => {
-    e.preventDefault();
+            {/* 5. The old message display is removed from here */}
+            
+            <form onSubmit={handleSubmit} className={styles.form}>
+                <div className={styles.formGroup}>
+                    <label htmlFor="roomNumber">Room Number/Identifier</label>
+                    <input type="text" id="roomNumber" name="roomNumber" value={formData.roomNumber} onChange={handleChange} required disabled={loading} />
+                </div>
+                
+                <div className={styles.formGroup}>
+                    <label htmlFor="specialization">Specialization</label>
+                    <select id="specialization" name="specialization" value={formData.specialization} onChange={handleChange} required disabled={loading}>
+                        {specializations.map(spec => (
+                            <option key={spec} value={spec}>{spec}</option>
+                        ))}
+                    </select>
+                </div>
+                
+                <div className={styles.rowGroup}>
+                    <div className={styles.formGroup}>
+                        <label htmlFor="capacity">Beds/Capacity</label>
+                        <input type="number" id="capacity" name="capacity" value={formData.capacity} min="1" onChange={handleChange} required disabled={loading} />
+                    </div>
+                    <div className={styles.formGroup}>
+                        <label htmlFor="feeStructure">Daily Fee (EGP)</label>
+                        <input type="number" id="feeStructure" name="feeStructure" value={formData.feeStructure} onChange={handleChange} required disabled={loading} />
+                    </div>
+                </div>
 
-    const icuData = {
-      hospitalId: hospital, 
-      specialization,
-      status,
-      fees,
-    };
+                <div className={styles.formGroup}>
+                    <label htmlFor="initialStatus">Initial Status</label>
+                    <select id="initialStatus" name="initialStatus" value={formData.initialStatus} onChange={handleChange} disabled={loading}>
+                        <option value="AVAILABLE">AVAILABLE</option>
+                        <option value="MAINTENANCE">MAINTENANCE</option>
+                    </select>
+                </div>
 
-    try {
-      const icuResponse = await fetch(`${API_BASE}/manager/register-icu`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(icuData),
-      });
-
-      const icuDataResponse = await icuResponse.json();
-      if (icuResponse.ok) {
-        toast.success("ICU added successfully!");
-
-      } else {
-        toast.error(icuDataResponse.message || "Failed to add ICU");
-      }
-    } catch (error) {
-      toast.error("An error occurred while adding the ICU.");
-      console.error(error);
-    }
-  };
-
-  if (!hospital) {
-    return <div>Loading...</div>;
-  }
-
-  return (
-    <section className="bg-indigo-50">
-      <div className={styles.container}>
-        <div className="bg-white px-6 py-8 mb-4 shadow-md rounded-md border m-4 md:m-0">
-          <form onSubmit={submitForm}>
-            <h2 className="text-3xl text-center font-semibold mb-6">
-              Add ICU to Hospital
-            </h2>
-            {/* Specialization */}
-            <div className="mb-4">
-              <label htmlFor="specialization" className="block text-gray-700 font-bold mb-2">
-                Specialization
-              </label>
-              <select
-                id="specialization"
-                name="specialization"
-                className="border rounded w-full py-2 px-3 mb-2"
-                value={specialization}
-                onChange={(e) => setSpecialization(e.target.value)}
-                required
-              >
-                <option value="">Select Specialization</option>
-                {specializationOptions.map((option, index) => (
-                  <option key={index} value={option}>{option}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Status */}
-            <div className="mb-4">
-              <label htmlFor="status" className="block text-gray-700 font-bold mb-2">
-                Status
-              </label>
-              <select
-                id="status"
-                name="status"
-                className="border rounded w-full py-2 px-3 mb-2"
-                value={status}
-                onChange={(e) => setStatus(e.target.value)}
-                required
-              >
-                <option value="">Select Status</option>
-                <option value="Available">Available</option>
-                <option value="Occupied">Occupied</option>
-              </select>
-            </div>
-
-            {/* Fees */}
-            <div className="mb-4">
-              <label htmlFor="fees" className="block text-gray-700 font-bold mb-2">
-                Fees
-              </label>
-              <input
-                type="number"
-                id="fees"
-                name="fees"
-                className="border rounded w-full py-2 px-3 mb-2"
-                placeholder="Fees for ICU"
-                required
-                value={fees}
-                onChange={(e) => setFees(e.target.value)}
-              />
-            </div>
-
-            <div>
-              <button
-                className="bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded-full w-full focus:outline-none focus:shadow-outline"
-                type="submit"
-              >
-                Add ICU
-              </button>
-            </div>
-          </form>
+                <Button type="submit" variant="success" disabled={loading}>
+                    {loading ? 'Registering...' : 'Register ICU'}
+                </Button>
+            </form>
         </div>
-      </div>
-    </section>
-  );
-}
+    );
+};
 
-export default AddIcu;
+export default Addicu;

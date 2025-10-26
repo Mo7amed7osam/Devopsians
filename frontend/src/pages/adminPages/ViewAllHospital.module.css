@@ -1,99 +1,134 @@
-/* General styles */
-.viewAllHospitals {
-  text-align: center;
-  padding: 20px;
+/* src/pages/adminPages/ViewAllHospital.module.css */
+.listContainer {
+  padding: 30px 20px;
+  background-color: var(--color-background-light, #f8f9fa);
 }
 
-h1 {
-  text-align: center;
-  font-size: 3rem;
-  color: #333;
+.title {
+  color: var(--color-primary-dark, #0056b3);
   margin-bottom: 20px;
-}
-
-.error {
-  color: red;
+  font-size: 26px;
   text-align: center;
-  font-size: 1.2rem;
+}
+
+.controls {
   margin-bottom: 20px;
+  text-align: right;
 }
 
-/* Hospital list and cards */
-.hospitalList {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
-  justify-content: center;
-}
-
-.hospitalCard {
-  background-color: #fff;
-  padding: 20px;
-  border-radius: 10px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  width: 300px;
-  position: relative;
-  text-align: left;
-}
-
-.hospitalCardBlocked {
-  background-color: #f8d7da;
-  border-left: 5px solid #dc3545;
-}
-
-/* Hospital card text */
-.hospitalCard h2 {
-  font-size: 1.5rem;
-  margin-bottom: 10px;
-  color: #007bff;
-}
-
-.hospitalCard p {
-  font-size: 1rem;
-  margin: 5px 0;
-  color: #555;
-}
-
-/* Actions container */
-.hospitalActions {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 15px;
-}
-
-/* Buttons */
-.actionButton {
-  font-size: 1rem;
-  padding: 8px 12px;
-  border: none;
+.searchInput {
+  padding: 10px;
+  border: 1px solid #ccc;
   border-radius: 5px;
+  width: 300px;
+  transition: border-color 0.3s;
+}
+
+.searchInput:focus {
+  border-color: var(--color-primary, #007bff);
+  outline: none;
+}
+
+.hospitalTable {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: white;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.hospitalTable th, .hospitalTable td {
+  padding: 15px;
+  text-align: left;
+  border-bottom: 1px solid #eee;
+}
+
+.hospitalTable th {
+  background-color: var(--color-primary-light, #e9ecef);
+  color: #333;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 14px;
+}
+
+/* New style for the clickable hospital name */
+.hospitalLink {
+  color: var(--color-primary, #007bff);
+  font-weight: 600;
+  text-decoration: none;
   cursor: pointer;
-  transition: background-color 0.3s ease;
+}
+.hospitalLink:hover {
+  text-decoration: underline;
 }
 
-.deleteButton {
-  background-color: #dc3545;
-  color: #fff;
+.star {
+  color: gold;
+  font-size: 1.1em;
 }
 
-.deleteButton:hover {
-  background-color: #b02a37;
+.statusActive {
+  font-weight: 600;
+  color: #155724;
+  background-color: #d4edda;
+  padding: 4px 8px;
+  border-radius: 4px;
 }
 
-.blockButton {
-  background-color: #ffc107;
-  color: #000;
+.statusBlocked {
+  font-weight: 600;
+  color: #721c24;
+  background-color: #f8d7da;
+  padding: 4px 8px;
+  border-radius: 4px;
 }
 
-.blockButton:hover {
-  background-color: #d39e00;
+.loading {
+    text-align: center;
+    padding: 30px;
+    font-size: 1.2em;
+    color: #007bff;
 }
 
-.unblockButton {
-  background-color: #28a745;
-  color: #fff;
+/* --- New Modal Styles --- */
+.modalHeader {
+  text-align: center;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 15px;
+  margin-bottom: 20px;
 }
 
-.unblockButton:hover {
-  background-color: #218838;
+.modalHeader h2 {
+  margin: 0;
+  color: var(--color-primary-dark);
+}
+
+.modalHeader p {
+  color: #6c757d;
+  font-size: 0.9em;
+  margin-top: 5px;
+}
+
+.modalBody {
+  margin-bottom: 25px;
+}
+
+.modalBody p {
+  font-size: 1.1em;
+  margin-bottom: 10px;
+}
+
+.modalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 15px;
+  border-top: 1px solid #eee;
+  padding-top: 20px;
+}
+
+/* Give buttons in the modal a specific width */
+.modalActions > button {
+  width: auto;
+  padding: 10px 20px;
 }

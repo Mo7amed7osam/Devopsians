@@ -1,123 +1,168 @@
-import { BrowserRouter, Route, Routes } from "react-router-dom";
-import Homepage from "./pages/Homepage";
-import PageNotFound from "./pages/PageNotFound";
-import LoginForm from "./pages/auth/LoginForm";
-import RegistrationForm from "./pages/auth/RegisterForm";
-import AdminPage from "./pages/AdminPage";
-import PrivateRoute from "./routes/PrivateRoute";
-import Doctor from "./pages/Doctor";
-// import Manager from "./pages/Manager";
-//import Manager from "./pages/Manager";
-import UserHomeScreen from "./pages/UserHomeScreen";
-import AddHospital from "./pages/adminPages/AddHospital";
-import ManagerDashboard from "./pages/ManagerDashboard";
-import ViewAllHospital from "./pages/adminPages/ViewAllHospital";
-import PatientHomePage from "./pages/PatientHomePage";
-import UpdateMedicalDetails from "./pages/UpdateMedicalDetails";
-import EmployeeManagement from "./pages/EmployeeMgmt";
-import Addicu from "./pages/managerPages/Addicu";
-//import ManagerDashboard from "./pages/Manager";
+// src/App.jsx
+import React, { useEffect } from 'react';
+import { Routes, Route } from 'react-router-dom';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
-function App() {
-  return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Homepage />} />
-        <Route path="/Login" element={<LoginForm />} />
-        <Route path="/Register" element={<RegistrationForm />} />
-        <Route
-          path="/Admin"
-          element={
-            <PrivateRoute requiredRole="Admin">
-              <AdminPage />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/Addhospital"
-          element={
-            <PrivateRoute requiredRole="Admin">
-              <AddHospital />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/ViewHospital"
-          element={
-            <PrivateRoute requiredRole="Admin">
-              <ViewAllHospital />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/Addicu"
-          element={
-            <PrivateRoute requiredRole="Manager">
-              <Addicu />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/ManageEmployees"
-          element={
-            <PrivateRoute requiredRole="Manager">
-              <EmployeeManagement />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/UpdateDetails"
-          element={
-            <PrivateRoute requiredRole="Patient">
-              <UpdateMedicalDetails />
-            </PrivateRoute>
-          }
-        />
+// --- Global Components ---
+import Navigation from './components/Navigation.jsx';
+// import Footer from './components/Footer.jsx';
 
-        <Route
-          path="/Home"
-          element={
-            <PrivateRoute requiredRole="Patient">
-              <UserHomeScreen />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/Doctor"
-          element={
-            <PrivateRoute requiredRole="Doctor">
-              <Doctor />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/PatientProfile"
-          element={
-            <PrivateRoute requiredRole="Patient">
-              <PatientHomePage />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/Manager"
-          element={
-            <PrivateRoute requiredRole="Manager">
-              <ManagerDashboard />
-            </PrivateRoute>
-          }
-        />
-        {/* <Route
-          path="/Addhospital"
-          element={
-            <PrivateRoute requiredRole="Admin">
-              <AddHospital />
-            </PrivateRoute>
-          }
-        /> */}
-        <Route path="*" element={<PageNotFound />} />
-      </Routes>
-    </BrowserRouter>
-  );
-}
+// --- Utilities & Security ---
+import PrivateRoute from './pages/PrivateRoute.jsx';
+import socket from './socket';
+import { useAuth } from './contexts/AuthContext'; 
+
+// --- Import All Pages ---
+import LandingPage from './pages/LandingPage.jsx';
+import ICUSelect from './pages/ICUSelect.jsx';
+import LoginForm from './pages/LoginForm.jsx';
+import RegisterForm from './pages/RegisterForm.jsx';
+import PatientHomePage from './pages/PatientHomePage.jsx';
+import ManagerDashboard from './pages/ManagerDashboard.jsx';
+import AdminPage from './pages/AdminPage.jsx';
+import DoctorPage from './pages/Doctor.jsx';
+// REMOVED EmployeePage, but it's still used by ManagerDashboard
+import EmployeePage from './pages/EmployeeMgmt.jsx'; 
+import PageNotFound from './pages/PageNotFound.jsx';
+import ReceptionistDashboard from './pages/ReceptionistDashboard.jsx';
+
+// --- NEWLY IMPORTED DASHBOARDS ---
+import NurseDashboard from './pages/Nurse.jsx';
+import CleanerDashboard from './pages/Cleaner.jsx';
+import AmbulanceDashboard from './pages/Ambulance.jsx';
+
+
+const App = () => {
+    const { isDarkMode } = useAuth();
+
+    useEffect(() => {
+        if (!socket.connected) {
+            socket.connect();
+        }
+
+        return () => {
+            if (socket.connected) {
+                socket.disconnect();
+            }
+        };
+    }, []);
+
+    useEffect(() => {
+        if (isDarkMode) {
+            document.body.classList.add('dark-mode');
+        } else {
+            document.body.classList.remove('dark-mode');
+        }
+    }, [isDarkMode]);
+
+    return (
+        <div id="app-container">
+            <ToastContainer
+                position="top-right"
+                autoClose={5000}
+                hideProgressBar={false}
+                newestOnTop={false}
+                closeOnClick
+                rtl={false}
+                pauseOnFocusLoss
+                draggable
+                pauseOnHover
+                theme="colored"
+            />
+
+            <Navigation />
+            <main>
+                <Routes>
+                    {/* --- PUBLIC ROUTES --- */}
+                    <Route path="/" element={<LandingPage />} />
+                    <Route path="/find-icu" element={<ICUSelect />} />
+                    <Route path="/login" element={<LoginForm />} />
+                    <Route path="/register" element={<RegisterForm />} />
+
+                    {/* --- PATIENT/ENDUSER ROUTES (Role: patient) --- */}
+                    <Route
+                        path="/patient-dashboard"
+                        element={
+                            <PrivateRoute allowedRoles={['patient']}>
+                                <PatientHomePage />
+                            </PrivateRoute>
+                        }
+                    />
+
+                    {/* --- ADMIN ROUTE (Role: admin) --- */}
+                    <Route
+                        path="/admin"
+                        element={
+                            <PrivateRoute allowedRoles={['admin']}>
+                                <AdminPage />
+                            </PrivateRoute>
+                        }
+                    />
+
+                    {/* --- MANAGER ROUTE (Role: manager) --- */}
+                    <Route
+                        path="/manager"
+                        element={
+                            <PrivateRoute allowedRoles={['manager']}>
+                                <ManagerDashboard />
+                            </PrivateRoute>
+                        }
+                    />
+
+                    {/* --- DOCTOR ROUTE (Role: doctor) --- */}
+                    <Route
+                        path="/doctor"
+                        element={
+                            <PrivateRoute allowedRoles={['doctor']}>
+                                <DoctorPage />
+                            </PrivateRoute>
+                        }
+                    />
+
+                    {/* --- EMPLOYEE ROLE ROUTES (NOW SEPARATED) --- */}
+                    <Route
+                        path="/nurse"
+                        element={
+                            <PrivateRoute allowedRoles={['nurse']}>
+                                {/* UPDATED to use new component */}
+                                <NurseDashboard />
+                            </PrivateRoute>
+                        }
+                    />
+                    <Route
+                        path="/receptionist"
+                        element={
+                            <PrivateRoute allowedRoles={['receptionist']}>
+                                <ReceptionistDashboard />
+                            </PrivateRoute>
+                        }
+                    />
+                    <Route
+                        path="/cleaner"
+                        element={
+                            <PrivateRoute allowedRoles={['cleaner']}>
+                                {/* UPDATED to use new component */}
+                                <CleanerDashboard />
+                            </PrivateRoute>
+                        }
+                    />
+                    {/* NEW ROUTE for Ambulance */}
+                    <Route
+                        path="/ambulance"
+                        element={
+                            <PrivateRoute allowedRoles={['ambulance']}>
+                                <AmbulanceDashboard />
+                            </PrivateRoute>
+                        }
+                    />
+
+                    {/* --- CATCH-ALL ROUTE (MUST BE LAST) --- */}
+                    <Route path="*" element={<PageNotFound />} />
+                </Routes>
+            </main>
+        </div>
+    );
+};
 
 export default App;

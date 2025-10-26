@@ -1,0 +1,63 @@
+/* src/pages/ICUMgmt.module.css */
+.container {
+    padding: 20px 0;
+}
+
+.title {
+    color: #333;
+    margin-bottom: 20px;
+    font-size: 24px;
+}
+
+.controls {
+    margin-bottom: 20px;
+}
+
+.searchInput {
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    width: 300px;
+}
+
+.icuTable {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: white;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.icuTable th, .icuTable td {
+    padding: 15px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+
+.icuTable th {
+    background-color: #f0f4f7;
+    font-weight: 600;
+}
+
+.statusAVAILABLE, .statusOCCUPIED, .statusMAINTENANCE {
+    font-weight: 600;
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+.statusAVAILABLE { color: #28a745; background-color: #d4edda; }
+.statusOCCUPIED { color: #007bff; background-color: #cce5ff; }
+.statusMAINTENANCE { color: #ffc107; background-color: #fff3cd; }
+
+.actions {
+    display: flex;
+    gap: 8px; /* Add space between buttons */
+}
+
+/* Custom class to make buttons smaller for table rows */
+.actionBtn {
+    padding: 6px 12px;
+    font-size: 14px;
+    width: auto; /* Allow button to size to its content */
+}

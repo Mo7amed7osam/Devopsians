@@ -1,0 +1,41 @@
+/* src/components/Map.module.css */
+/* Set a consistent size for the map container */
+.mapWrapper {
+    height: 100%; /* Ensure map takes up available vertical space */
+    width: 100%;
+    min-height: 400px;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.mapContainer {
+    height: 100%;
+    width: 100%;
+}
+
+/* Styles for the popups and markers */
+.hospitalPopup h4 {
+    margin-top: 0;
+    color: var(--color-primary-dark, #0056b3);
+}
+
+.available {
+    font-weight: bold;
+    color: green;
+}
+
+.unavailable {
+    font-weight: bold;
+    color: red;
+}
+
+.reserveButton {
+    background-color: var(--color-primary, #007bff);
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-top: 5px;
+}

@@ -1,0 +1,23 @@
+/* src/components/Logo.module.css */
+.logoContainer {
+  display: flex;
+  align-items: center;
+  padding: 5px 0; /* Keep vertical padding */
+  gap: 10px; /* Keep increased gap */
+  /* --- REMOVED NEGATIVE MARGIN --- */
+}
+
+.logoImage {
+  height: 40px; /* Keep the increased size */
+  width: auto;
+  object-fit: contain;
+}
+
+.logoText {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--color-primary-dark, #007bff);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  line-height: 1;
+}

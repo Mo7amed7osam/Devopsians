@@ -1,0 +1,209 @@
+/* src/pages/NurseDashboard.module.css */
+.container {
+    padding: 30px;
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.title {
+    color: var(--color-primary-dark, #0056b3);
+    border-bottom: 2px solid var(--color-border, #e0e0e0);
+    padding-bottom: 10px;
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+/* Common styling for dashboard sections */
+.taskSection, .vacationSection, .statusSection {
+    background-color: var(--color-background-white, white);
+    padding: 25px;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+    margin-bottom: 30px;
+}
+
+.taskSection h2, .vacationSection h2, .statusSection h2 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    color: var(--color-text-dark, #333);
+    border-bottom: 1px dashed var(--color-border, #eee);
+    padding-bottom: 10px;
+}
+
+
+/* Task List Styling */
+.taskList {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 15px; /* Space between tasks */
+}
+
+.taskItem {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    border: 1px solid var(--color-border, #eee);
+    border-radius: 6px;
+    transition: background-color 0.2s;
+    /* Colored left border based on status */
+    border-left-width: 5px;
+    border-left-style: solid;
+}
+
+/* Status-specific styles for item border and badges */
+.statusPENDING { border-left-color: var(--color-warning, #ffc107); }
+.statusIN_PROGRESS { border-left-color: var(--color-primary, #007bff); }
+.statusDONE { border-left-color: var(--color-success, #28a745); }
+
+/* Status Badge inside the item */
+.statusBadge {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.85em; /* Slightly smaller */
+    font-weight: 600;
+    text-transform: uppercase;
+    margin-right: 10px; /* Space between badge and button */
+}
+/* Colors matching item borders */
+li.statusPENDING .statusBadge { background-color: #fff3cd; color: #856404; }
+li.statusIN_PROGRESS .statusBadge { background-color: #cce5ff; color: #004085; }
+li.statusDONE .statusBadge { background-color: #d4edda; color: #155724; }
+
+
+.taskActions {
+    display: flex;
+    gap: 10px; /* Space between badge and button */
+    align-items: center;
+    flex-shrink: 0; /* Prevent actions area from shrinking */
+}
+
+/* Custom class for smaller action buttons within the list */
+.actionBtn {
+    padding: 6px 12px;
+    font-size: 14px;
+    width: auto; /* Allow button to size based on content */
+    min-width: 90px; /* Ensure buttons like "Start Task" have enough space */
+    text-align: center;
+}
+
+/* Kids Area Status (Relevant for Nurse) */
+.statusSection p { /* General paragraph styling in sections */
+     color: var(--color-text-muted, #6c757d);
+}
+
+.kidsStatus {
+    font-size: 1.1em;
+    margin-bottom: 15px;
+}
+.kidsStatus strong {
+    color: var(--color-primary, #007bff);
+    font-size: 1.3em; /* Make the number stand out */
+}
+.btnReserveSlot { /* If a button exists */
+    background-color: #ffc107;
+    color: #333;
+    padding: 10px 20px; /* Default padding */
+    /* If matching base button, use padding: 12px; */
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: 700;
+    /* width: auto; REMOVED to allow full width */
+    transition: background-color 0.2s;
+}
+.btnReserveSlot:hover {
+     background-color: #e0a800;
+}
+
+/* Vacation Form Styling */
+.vacationForm {
+    display: grid;
+    /* Adjust columns for better layout on smaller screens if needed */
+    grid-template-columns: 1fr 1fr;
+    gap: 20px; /* Increased gap */
+}
+/* Labels added for accessibility */
+.vacationForm label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+    color: var(--color-text-dark, #333);
+    grid-column: 1 / -1; /* Make label span full width above its input */
+}
+/* Place date inputs side-by-side */
+.vacationForm label[for="vacationStart"],
+.vacationForm input#vacationStart {
+    grid-column: 1 / 2;
+}
+.vacationForm label[for="vacationEnd"],
+.vacationForm input#vacationEnd {
+    grid-column: 2 / 3;
+}
+
+.vacationForm input, .vacationForm textarea {
+    padding: 12px; /* Slightly larger padding */
+    border: 1px solid var(--color-border, #ccc);
+    border-radius: 4px;
+    background-color: var(--color-background-white, white); /* Ensure background matches */
+    color: var(--color-text-dark, #333); /* Ensure text color matches */
+}
+.vacationForm textarea {
+    grid-column: 1 / -1;
+    resize: vertical;
+    min-height: 80px; /* Set a minimum height */
+}
+.vacationForm button {
+    grid-column: 1 / -1; /* Button spans full width */
+    margin-top: 10px; /* Add space above button */
+}
+
+
+/* --- Styles for Kids Area Modal Form --- */
+.modalForm {
+    margin-top: 15px; /* Add some space below the title/paragraph */
+}
+
+.modalLabel {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: var(--color-text-dark, #333); /* Ensure label color fits mode */
+}
+/* Ensure dark mode label is light */
+body.dark-mode .modalLabel {
+     color: var(--color-text-dark);
+}
+
+.modalInput {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 15px;
+    border: 1px solid var(--color-border, #ccc);
+    border-radius: 5px;
+    box-sizing: border-box;
+    font-size: 16px;
+    background-color: var(--color-background-white, white); /* Input background */
+    color: var(--color-text-dark, #333); /* Input text color */
+}
+.modalInput:focus {
+    border-color: var(--color-primary);
+    outline: none;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* Ensure dark mode inputs look correct */
+body.dark-mode .modalInput {
+     background-color: #333;
+     color: var(--color-text-dark);
+     border-color: var(--color-border);
+}
+body.dark-mode .modalInput:focus {
+     border-color: var(--color-primary);
+     box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.4);
+}
+
+
+/* --- End of Modal Styles --- */

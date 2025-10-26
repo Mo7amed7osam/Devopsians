@@ -1,72 +1,62 @@
-.container {
-  margin: auto;
-  width: 100%;
-  max-width: 600px;
-  padding: 1.5rem;
-  background: white;
+/* src/pages/adminPages/AddHospital.module.css */
+.cardContainer {
+  background-color: white;
+  padding: 30px;
   border-radius: 10px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  font-family: Arial, sans-serif;
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+  max-width: 600px;
+  margin: 20px auto;
 }
 
-h2 {
-  font-size: 2rem;
-  color: #4a5568; /* Dark gray for the title */
+.title {
+  color: var(--color-primary-dark, #0056b3);
+  margin-top: 0;
+  margin-bottom: 25px;
   text-align: center;
-  margin-bottom: 1.5rem;
+  font-size: 24px;
 }
 
-label {
-  font-weight: bold;
-  color: #4a5568; /* Dark gray for labels */
-  margin-bottom: 0.5rem;
+.subtitle {
+    font-size: 16px;
+    color: #6c757d;
+    margin-top: 20px;
+    margin-bottom: 10px;
+    border-bottom: 1px dashed #e0e0e0;
+    padding-bottom: 5px;
+}
+
+.formGroup {
+  margin-bottom: 15px;
+}
+
+.formGroup label {
   display: block;
+  margin-bottom: 5px;
+  font-weight: 600;
+  color: #333;
 }
 
-input {
+.formGroup input,
+.formGroup textarea {
   width: 100%;
-  padding: 0.75rem;
-  border: 1px solid #cbd5e0; /* Light gray for borders */
-  border-radius: 8px;
-  margin-bottom: 1rem;
-  font-size: 1rem;
-  transition: border-color 0.2s;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  box-sizing: border-box;
+  transition: border-color 0.3s;
 }
 
-input:focus {
-  border-color: #667eea; /* Indigo border on focus */
+.formGroup input:focus {
+  border-color: var(--color-primary, #007bff);
   outline: none;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.3); /* Subtle shadow */
 }
 
-button {
-  background-color: #667eea; /* Indigo background */
-  color: white;
-  font-size: 1.1rem;
-  font-weight: bold;
-  border: none;
-  border-radius: 50px;
-  padding: 0.75rem;
-  width: 100%;
-  cursor: pointer;
-  transition: background-color 0.3s;
+.coordinatesGroup {
+    display: flex;
+    gap: 20px;
 }
 
-button:hover {
-  background-color: #5a67d8; /* Darker indigo on hover */
+.coordinatesGroup .formGroup {
+    flex: 1;
 }
 
-button:focus {
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.5); /* Focus shadow */
-}
-
-@media (max-width: 768px) {
-  .container {
-    padding: 1rem;
-  }
-
-  h2 {
-    font-size: 1.75rem;
-  }
-}

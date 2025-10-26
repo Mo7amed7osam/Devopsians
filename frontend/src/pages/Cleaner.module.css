@@ -1,0 +1,92 @@
+/* src/pages/CleanerDashboard.module.css */
+.container {
+    padding: 30px;
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.title {
+    color: var(--color-primary-dark, #0056b3);
+    border-bottom: 2px solid #e0e0e0;
+    padding-bottom: 10px;
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+.taskSection, .vacationSection { /* Removed statusSection */
+    background-color: white;
+    padding: 25px;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+    margin-bottom: 30px;
+}
+
+.taskList {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.taskItem {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    border: 1px solid #eee;
+    border-radius: 6px;
+    transition: background-color 0.2s;
+    border-left: 5px solid var(--color-primary, #007bff);
+}
+
+.taskActions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.statusBadge {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.9em;
+    font-weight: 600;
+}
+
+/* Status-specific styles for badges */
+.statusPENDING { background-color: #fff3cd; color: #856404; }
+.statusIN_PROGRESS { background-color: #cce5ff; color: #004085; }
+.statusDONE { background-color: #d4edda; color: #155724; }
+
+/* Custom class for small action buttons in a list */
+.actionBtn {
+    padding: 6px 12px;
+    font-size: 14px;
+    width: auto;
+}
+
+.btnSterilize {
+    background-color: #20c997; /* Teal */
+    color: white;
+    width: auto; /* Ensure it doesn't take full width */
+}
+
+
+/* Vacation Form */
+.vacationForm {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+.vacationForm input, .vacationForm textarea {
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+.vacationForm textarea {
+    grid-column: 1 / -1;
+    resize: vertical;
+}
+.vacationForm button {
+    grid-column: 1 / -1;
+}

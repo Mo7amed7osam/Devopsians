@@ -1,0 +1,81 @@
+/* src/pages/ICUSelect.module.css */
+.finderPage {
+    max-width: 1600px;
+    margin: 0 auto;
+    padding: 30px;
+}
+
+.pageHeader {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.pageHeader h1 {
+    color: var(--color-primary-dark);
+    margin-bottom: 5px;
+}
+
+.pageHeader p {
+    color: var(--color-text-muted);
+    font-size: 1.1em;
+}
+
+.controls {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    align-items: center;
+    padding: 20px;
+    background-color: var(--color-background-white);
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+    margin-bottom: 30px;
+}
+
+.controls input,
+.controls select {
+    padding: 12px;
+    font-size: 16px;
+    border-radius: 5px;
+    border: 1px solid var(--color-border);
+}
+
+.controls input {
+    width: 350px;
+}
+
+.controls select {
+    width: 250px;
+}
+
+.controls button {
+    width: auto;
+    height: 48px; 
+    padding: 0 25px;
+}
+
+.contentGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+    align-items: flex-start;
+}
+
+.mapArea {
+    position: sticky;
+    top: 20px;
+    height: calc(100vh - 120px);
+}
+
+.listArea h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+}
+
+
+.loadingState {
+    text-align: center;
+    padding: 50px;
+    font-size: 1.2em;
+    color: var(--color-primary);
+}

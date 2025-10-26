@@ -1,73 +1,59 @@
-.container {
-    margin: auto;
-    width: 100%;
-    max-width: 600px;
-    padding: 1.5rem;
-    background: white;
-    border-radius: 10px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    font-family: Arial, sans-serif;
-  }
-  
-  h2 {
-    font-size: 2rem;
-    color: #4a5568; /* Dark gray for the title */
-    text-align: center;
-    margin-bottom: 1.5rem;
-  }
-  
-  label {
-    font-weight: bold;
-    color: #4a5568; /* Dark gray for labels */
-    margin-bottom: 0.5rem;
-    display: block;
-  }
-  
-  input {
-    width: 100%;
-    padding: 0.75rem;
-    border: 1px solid #cbd5e0; /* Light gray for borders */
-    border-radius: 8px;
-    margin-bottom: 1rem;
-    font-size: 1rem;
-    transition: border-color 0.2s;
-  }
-  
-  input:focus {
-    border-color: #667eea; /* Indigo border on focus */
-    outline: none;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.3); /* Subtle shadow */
-  }
-  
-  button {
-    background-color: #667eea; /* Indigo background */
-    color: white;
-    font-size: 1.1rem;
-    font-weight: bold;
-    border: none;
-    border-radius: 50px;
-    padding: 0.75rem;
-    width: 100%;
-    cursor: pointer;
-    transition: background-color 0.3s;
-  }
-  
-  button:hover {
-    background-color: #5a67d8; /* Darker indigo on hover */
-  }
-  
-  button:focus {
-    outline: none;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.5); /* Focus shadow */
-  }
-  
-  @media (max-width: 768px) {
-    .container {
-      padding: 1rem;
-    }
-  
-    h2 {
-      font-size: 1.75rem;
-    }
-  }
-  
+/* src/pages/managerPages/Addicu.module.css */
+.cardContainer {
+  background-color: white;
+  padding: 30px;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.title {
+  color: var(--color-primary-dark, #0056b3);
+  margin-top: 0;
+  margin-bottom: 10px;
+  font-size: 24px;
+}
+
+.hospitalIdLabel {
+    color: #6c757d;
+    font-size: 14px;
+    margin-bottom: 20px;
+    border-bottom: 1px dashed #e0e0e0;
+    padding-bottom: 10px;
+}
+
+.formGroup {
+  margin-bottom: 15px;
+}
+
+.formGroup label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 600;
+  color: #333;
+}
+
+.formGroup input,
+.formGroup select {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  box-sizing: border-box;
+}
+
+.formGroup input:focus,
+.formGroup select:focus {
+  border-color: var(--color-primary, #007bff);
+  outline: none;
+}
+
+.rowGroup {
+    display: flex;
+    gap: 20px;
+}
+
+.rowGroup .formGroup {
+    flex: 1;
+}

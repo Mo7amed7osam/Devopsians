@@ -1,0 +1,54 @@
+/* src/pages/adminPages/SystemLogs.module.css */
+.logsContainer {
+  padding: 20px 0;
+}
+
+.title {
+  color: var(--color-primary-dark, #0056b3);
+  margin-bottom: 20px;
+  font-size: 22px;
+  text-align: center;
+}
+
+.loading {
+    text-align: center;
+    padding: 30px;
+    font-size: 1.2em;
+    color: var(--color-primary);
+}
+
+.logTable {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: white;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+  border-radius: 8px;
+  overflow: hidden;
+  font-size: 14px; /* Slightly smaller font for logs */
+}
+
+.logTable th, .logTable td {
+  padding: 12px 15px;
+  text-align: left;
+  border-bottom: 1px solid #eee;
+}
+
+.logTable th {
+  background-color: #f0f4f7; /* Lighter header */
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.logTable td:first-child { /* Timestamp */
+  white-space: nowrap;
+  color: #6c757d;
+}
+
+.actionBadge {
+  background-color: #e9ecef;
+  color: #495057;
+  padding: 3px 6px;
+  border-radius: 4px;
+  font-size: 0.85em;
+  font-weight: 600;
+}

@@ -1,77 +1,237 @@
-/* Taken from getting started guide at: https://leafletjs.com/examples/quick-start/ */
-@import "https://unpkg.com/leaflet@1.7.1/dist/leaflet.css";
-@import "https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&display=swap";
+/* src/index.css */
 
-/* These CSS variables are global, so they are available in all CSS modules */
+/* --- 1. CSS Variables (Color Palette) --- */
 :root {
-  --color-brand--1: #ffb545;
-  --color-brand--2: #00c46a;
-
-  --color-dark--0: #242a2e;
-  --color-dark--1: #2d3439;
-  --color-dark--2: #42484d;
-  --color-light--1: #aaa;
-  --color-light--2: #ececec;
-  --color-light--3: #d6dee0;
+  --color-primary: #007bff;
+  --color-primary-dark: #0056b3;
+  --color-primary-light: #e0f7fa;
+  --color-success: #28a745;
+  --color-success-light: #d4edda;
+  --color-warning: #ffc107;
+  --color-danger: #dc3545;
+  --color-background-light: #f8f9fa;
+  --color-background-white: #ffffff;
+  --color-border: #dee2e6;
+  --color-text-dark: #343a40;
+  --color-text-muted: #6c757d;
 }
 
+/* --- 2. Base Reset & Typography --- */
 * {
   margin: 0;
   padding: 0;
-  box-sizing: inherit;
-}
-
-html {
-  font-size: 62.5%;
   box-sizing: border-box;
 }
 
 body {
-  font-family: "Manrope", sans-serif;
-  color: var(--color-light--2);
-  font-weight: 400;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background-color: var(--color-background-light); /* Default light background */
+  color: var(--color-text-dark);
   line-height: 1.6;
 }
 
-label {
-  font-size: 1.6rem;
+h1, h2, h3 {
+  color: var(--color-primary-dark);
+  margin-top: 1.2em;
+  margin-bottom: 0.5em;
   font-weight: 600;
 }
 
-input,
-textarea {
-  width: 100%;
-  padding: 0.8rem 1.2rem;
-  font-family: inherit;
-  font-size: 1.6rem;
+/* --- 3. Global Reusable Element Styles --- */
+
+/* Global button reset */
+button, input[type="submit"] {
+  cursor: pointer;
   border: none;
-  border-radius: 5px;
-  background-color: var(--color-light--3);
-  transition: all 0.2s;
+  transition: background-color 0.2s, box-shadow 0.2s;
 }
 
-input:focus {
+/* Global input styling */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="tel"],
+textarea,
+select {
+  padding: 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+input:focus, textarea:focus, select:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
   outline: none;
-  background-color: #fff;
 }
 
-.cta {
-  display: inline-block;
-  background-color: var(--color-brand--2);
-  color: var(--color-dark--1);
-  text-transform: uppercase;
-  text-decoration: none;
-  font-size: 1.6rem;
+/* Global Table Styles */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 15px;
+}
+.data-table th, .data-table td {
+  padding: 12px 15px;
+  border: 1px solid #e0e0e0;
+  text-align: left;
+}
+.data-table th {
+  background-color: #f0f4f7;
   font-weight: 600;
-  padding: 1rem 3rem;
-  border-radius: 5px;
 }
 
-/*
-"importCSSModule": {
-    "prefix": "csm",
-    "scope": "javascript,typescript,javascriptreact",
-    "body": ["import styles from './${TM_FILENAME_BASE}.module.css'"],
-    "description": "Import CSS Module as `styles`"
-  },
-*/
+/* --- 4. Dark Mode Theme --- */
+body.dark-mode {
+  /* Define dark mode variable values */
+  --color-primary: #007bff;
+  --color-primary-dark: #0069d9;
+  --color-primary-light: #333; /* Darker background for light primary elements */
+
+  --color-background-light: #121212; /* Main dark background for the body */
+  --color-background-white: #1e1e1e; /* Dark background for cards/containers */
+  --color-border: #444; /* Darker borders */
+
+  --color-text-dark: #e0e0e0;   /* Light text for dark backgrounds */
+  --color-text-muted: #888; /* Muted light text */
+}
+
+/* Apply dark background to body when dark mode is active */
+body.dark-mode {
+  background-color: var(--color-background-light);
+  color: var(--color-text-dark);
+}
+
+/* General Dark Mode Adjustments */
+body.dark-mode h1,
+body.dark-mode h2,
+body.dark-mode h3 {
+   color: var(--color-text-dark); /* Make headings light */
+}
+
+/* Make modals dark */
+body.dark-mode .ReactModal__Content {
+  background-color: var(--color-background-white) !important;
+  color: var(--color-text-dark) !important;
+  border-color: var(--color-border) !important;
+}
+
+/* Make tables dark */
+body.dark-mode .data-table th,
+body.dark-mode .logTable th, /* Added from AdminPage.module.css */
+body.dark-mode .icuTable th, /* Added from ICUMgmt.module.css */
+body.dark-mode .hospitalTable th, /* Added for ViewAllHospital */
+body.dark-mode .scheduleTable th /* Added for DoctorPage */
+{
+  background-color: #2a2a2a;
+  color: var(--color-text-dark); /* Ensure header text is light */
+}
+
+body.dark-mode .data-table td,
+body.dark-mode .logTable td,
+body.dark-mode .icuTable td,
+body.dark-mode .hospitalTable td,
+body.dark-mode .scheduleTable td
+{
+   border-color: var(--color-border); /* Darker border for table cells */
+}
+
+/* Make form inputs dark */
+body.dark-mode input[type="text"],
+body.dark-mode input[type="email"],
+body.dark-mode input[type="password"],
+body.dark-mode input[type="number"],
+body.dark-mode input[type="tel"],
+body.dark-mode input[type="date"], /* Added */
+body.dark-mode input[type="time"], /* Added */
+body.dark-mode textarea,
+body.dark-mode select {
+    background-color: #333;
+    color: var(--color-text-dark);
+    border-color: var(--color-border);
+}
+
+body.dark-mode input:focus,
+body.dark-mode textarea:focus,
+body.dark-mode select:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.4); /* Slightly adjust shadow */
+}
+
+/* --- Specific Overrides for Page Containers in Dark Mode --- */
+
+/* Target specific container elements when dark mode is active */
+body.dark-mode #root #app-container > main > div:has(form[class*="LoginForm_formCard"]),
+body.dark-mode #root #app-container > main > div:has(form[class*="RegisterForm_formCard"]),
+body.dark-mode #root #app-container > main > div[class*="Homepage_loadingContainer"] {
+    background-color: var(--color-background-light) !important; /* Force override */
+}
+
+/* Target the form cards themselves on Login/Register pages */
+body.dark-mode form[class*="LoginForm_formCard"],
+body.dark-mode form[class*="RegisterForm_formCard"] {
+    background-color: var(--color-background-white) !important; /* Force override */
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5) !important;
+}
+
+
+/* General card styling override using attribute selectors for CSS Modules */
+body.dark-mode [class*="_formCard"],
+body.dark-mode [class*="_card"],
+body.dark-mode [class*="_welcomeCard"],
+body.dark-mode [class*="_cardContainer"],
+body.dark-mode [class*="_actionGroup"], /* PatientHomePage */
+body.dark-mode [class*="_patientList"], /* DoctorPage */
+body.dark-mode [class*="_detailsPanel"], /* DoctorPage */
+body.dark-mode [class*="_vacationSection"], /* Doctor/Employee */
+body.dark-mode [class*="_appointmentsSection"], /* Doctor */
+body.dark-mode [class*="_taskSection"], /* Employee */
+body.dark-mode [class*="_statusSection"], /* Employee */
+body.dark-mode [class*="_statusPanel"], /* Receptionist */
+body.dark-mode [class*="_listContainer"], /* ViewAllHospital */
+body.dark-mode [class*="_logsContainer"] /* SystemLogs */
+{
+    background-color: var(--color-background-white) !important;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4) !important;
+    color: var(--color-text-dark); /* Ensure text inside cards is light */
+}
+
+/* Ensure headings inside dark cards are also light */
+body.dark-mode [class*="_formCard"] h2, body.dark-mode [class*="_formCard"] h3,
+body.dark-mode [class*="_welcomeCard"] h1,
+body.dark-mode [class*="_card"] h3, body.dark-mode [class*="_card"] h4,
+body.dark-mode [class*="_cardContainer"] h3, body.dark-mode [class*="_cardContainer"] h4,
+body.dark-mode [class*="_actionGroup"] h3,
+body.dark-mode [class*="_patientList"] h3,
+body.dark-mode [class*="_detailsPanel"] h2, body.dark-mode [class*="_detailsPanel"] h3, body.dark-mode [class*="_detailsPanel"] h4,
+body.dark-mode [class*="_vacationSection"] h2,
+body.dark-mode [class*="_appointmentsSection"] h2,
+body.dark-mode [class*="_taskSection"] h2,
+body.dark-mode [class*="_statusSection"] h2,
+body.dark-mode [class*="_statusPanel"] h3, /* Receptionist */
+body.dark-mode [class*="_title"] /* General title classes */
+ {
+   color: var(--color-text-dark) !important; /* Important needed sometimes */
+}
+
+/* Adjust labels */
+body.dark-mode [class*="_label"], /* General labels */
+body.dark-mode label /* Standard labels */
+{
+  color: var(--color-text-muted) !important;
+}
+
+/* Adjust links within specific dark contexts if needed */
+body.dark-mode [class*="LoginForm_linksContainer"] a,
+body.dark-mode [class*="RegisterForm_loginPrompt"] a {
+  color: var(--color-primary); /* Keep links blue */
+}
+body.dark-mode [class*="LoginForm_linksContainer"] a:hover,
+body.dark-mode [class*="RegisterForm_loginPrompt"] a:hover {
+  color: var(--color-primary-dark);
+}
+
+
+/* --- End of Specific Overrides --- */
