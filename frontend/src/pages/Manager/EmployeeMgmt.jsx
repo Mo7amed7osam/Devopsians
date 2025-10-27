@@ -1,15 +1,13 @@
 // src/pages/EmployeeMgmt.jsx
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
-// NOTE: Assuming requestVacation might still be relevant for *any* employee managed here
-import { updateTaskStatus, requestVacation } from '../../utils/api';
+import { updateTaskStatus } from '../../utils/api';
 import styles from './EmployeeMgmt.module.css';
 import Button from '../../components/common/Button';
 
 // Renamed component for clarity, assuming it's used by Manager for various roles
 const GenericEmployeeDashboard = ({ employeeRole = 'Employee' }) => {
     const [tasks, setTasks] = useState([]);
-    const [vacationForm, setVacationForm] = useState({ start: '', end: '', reason: '' });
 
     useEffect(() => {
         // In a real app, you'd fetch tasks based on the employeeRole or managed employees
@@ -29,13 +27,6 @@ const GenericEmployeeDashboard = ({ employeeRole = 'Employee' }) => {
         // Mock API Call: await updateTaskStatus(taskId, newStatus);
         setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: newStatus } : t));
         toast.info(`Task status updated to ${newStatus}.`); // Keep toast notification
-    };
-
-    const handleVacationRequest = async (e) => {
-        e.preventDefault();
-        // Mock API Call: await requestVacation({ ...vacationForm, role: employeeRole });
-        toast.success('Vacation request submitted successfully.');
-        setVacationForm({ start: '', end: '', reason: '' });
     };
 
     return (
@@ -68,19 +59,6 @@ const GenericEmployeeDashboard = ({ employeeRole = 'Employee' }) => {
                         ))}
                     </ul>
                 )}
-            </section>
-
-            {/* --- Kids Area Section REMOVED --- */}
-
-            <section className={styles.vacationSection}>
-                <h2>Request Vacation / Leave</h2>
-                <form onSubmit={handleVacationRequest} className={styles.vacationForm}>
-                    {/* Consider adding labels here for accessibility */}
-                    <input type="date" name="start" value={vacationForm.start} onChange={(e) => setVacationForm({...vacationForm, start: e.target.value})} required placeholder="Start Date" />
-                    <input type="date" name="end" value={vacationForm.end} onChange={(e) => setVacationForm({...vacationForm, end: e.target.value})} required placeholder="End Date" />
-                    <textarea name="reason" value={vacationForm.reason} onChange={(e) => setVacationForm({...vacationForm, reason: e.target.value})} placeholder="Reason for leave" required />
-                    <Button type="submit" variant="secondary">Submit Request</Button>
-                </form>
             </section>
         </div>
     );

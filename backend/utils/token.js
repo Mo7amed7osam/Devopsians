@@ -1,16 +1,20 @@
 import jwt from "jsonwebtoken";
 
 export const jsontoken = (user, message, statusCode, res) => {
+  // Normalize id and role from either full Mongoose doc or a lean object
+  const id = user?._id || user?.id;
+  const role = user?.role;
+
   // Generate JWT token
   const token = jwt.sign(
-    { id: user._id, role: user.role }, // Payload
+    { id, role }, // Payload
     process.env.JWT_SECRET_KEY,           // Secret key
-    { expiresIn: process.env.JWT_EXPIRE || "1d" } // Token expiration
+    { expiresIn: process.env.JWT_EXPIRES || process.env.JWT_EXPIRE || "1d" } // Token expiration
   );
 
   // Determine the cookie name based on the user's role
   let cookieName;
-  switch (user.role) {
+  switch (role) {
     case "Admin":
       cookieName = "adminToken";
       break;
@@ -23,14 +27,11 @@ export const jsontoken = (user, message, statusCode, res) => {
     case "Patient":
       cookieName = "patientToken";
       break;
-    case "Nurse":
-      cookieName = "nurseToken";
-      break;
-    case "Cleaner":
-      cookieName = "cleanerToken";
-      break;
     case "Receptionist":
       cookieName = "receptionistToken";
+      break;
+    case "Ambulance":
+      cookieName = "ambulanceToken";
       break;
     default:
       throw new Error("Invalid user role"); // Handle unexpected roles
@@ -51,6 +52,7 @@ export const jsontoken = (user, message, statusCode, res) => {
     .json({
       success: true,
       message,
+      role, // Provide top-level role for convenience in frontend
       user, // Optionally include user details in the response
       token, // Include the token in the response
     });

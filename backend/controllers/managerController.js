@@ -1,9 +1,8 @@
 import Hospital from "../models/hospitalModel.js";
 import ICU from "../models/icuModel.js";
-// import Task from "../models/taskModel.js"; // TODO: Create taskModel.js
+import Task from "../models/taskModel.js";
 import User from "../models/userModel.js";
 import Service from "../models/serviceModel.js";
-// import VacationRequest from "../models/vacationRequestModel.js"; // TODO: Create vacationRequestModel.js
 import ErrorHandler from "../utils/errorHandler.js";
 import { io } from "../index.js";
 export const assignBackupManager = async (req, res, next) => {
@@ -269,7 +268,7 @@ export const createAndAssignTask = async (req, res, next) => {
     const employee = await User.findById(employeeId);
     if (
       !employee ||
-      !["Nurse", "Cleaner", "Receptionist"].includes(employee.role)
+      !["Doctor", "Receptionist", "Ambulance"].includes(employee.role)
     ) {
       return next(
         new ErrorHandler(
@@ -336,94 +335,6 @@ export const registerVisitorRoom = async (req, res, next) => {
     next(
       new ErrorHandler(
         `Error while registering visitor room: ${error.message}`,
-        500
-      )
-    );
-  }
-};
-
-export const handleVacationRequest = async (req, res, next) => {
-  try {
-    const { employeeId, startDate, endDate } = req.body;
-
-    const newRequest = new VacationRequest({
-      employee: employeeId,
-      startDate,
-      endDate,
-    });
-
-    await newRequest.save();
-
-    res.status(201).json({
-      success: true,
-      message: "Vacation request handled successfully",
-      data: newRequest,
-    });
-  } catch (error) {
-    next(
-      new ErrorHandler(
-        `Error while handling vacation request: ${error.message}`,
-        500
-      )
-    );
-  }
-};
-export const updateVacationRequest = async (req, res, next) => {
-  try {
-    const { requestId } = req.params;
-    const { status } = req.body;
-
-    const vacationRequest = await VacationRequest.findById(requestId);
-
-    if (!vacationRequest) {
-      return next(new ErrorHandler("Vacation request not found", 404));
-    }
-
-    vacationRequest.status = status;
-    await vacationRequest.save();
-
-    res.status(200).json({
-      success: true,
-      message: "Vacation request updated successfully",
-      data: vacationRequest,
-    });
-  } catch (error) {
-    next(
-      new ErrorHandler(
-        `Error while updating vacation request: ${error.message}`,
-        500
-      )
-    );
-  }
-};
-
-export const viewVacationRequests = async (req, res, next) => {
-  try {
-    const { employeeId } = req.query;
-
-    let query = {};
-    if (employeeId) {
-      query.employee = employeeId;
-    }
-
-    const vacationRequests = await VacationRequest.find(query).populate(
-      "employee",
-      "firstName lastName"
-    );
-
-    if (vacationRequests.length === 0) {
-      return next(new ErrorHandler("No vacation requests found", 404));
-    }
-
-    res.status(200).json({
-      success: true,
-      message: "Vacation requests retrieved successfully",
-      data: vacationRequests,
-    });
-  } catch (error) {
-    next(
-      new ErrorHandler(
-        `Error while retrieving vacation requests: ${error.message}`,
         500
       )
     );

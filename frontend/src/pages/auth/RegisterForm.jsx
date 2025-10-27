@@ -73,7 +73,13 @@ import Button from '../../components/common/Button'; // <-- 2. Import Button
 
 const RegisterForm = () => {
     const [formData, setFormData] = useState({
-        name: '', email: '', password: '', medicalHistory: '', currentCondition: ''
+        name: '',
+        email: '',
+        password: '',
+        gender: 'Male',
+        phone: '',
+        medicalHistory: '',
+        currentCondition: ''
     });
     const [message, setMessage] = useState('');
     const [loading, setLoading] = useState(false);
@@ -113,6 +119,20 @@ const RegisterForm = () => {
                 
                 <label className={styles.label}>Password:</label>
                 <input type="password" name="password" value={formData.password} onChange={handleChange} required className={styles.inputField} />
+
+                <div className={styles.row}>
+                    <div className={styles.col}>
+                        <label className={styles.label}>Gender:</label>
+                        <select name="gender" value={formData.gender} onChange={handleChange} className={styles.inputField}>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                        </select>
+                    </div>
+                    <div className={styles.col}>
+                        <label className={styles.label}>Phone:</label>
+                        <input type="tel" name="phone" value={formData.phone} onChange={handleChange} placeholder="e.g., 01001234567" className={styles.inputField} />
+                    </div>
+                </div>
                 
                 <h3 className={styles.subtitle}>Medical Details</h3>
                 <label className={styles.label}>Medical History (Allergies, etc.):</label>

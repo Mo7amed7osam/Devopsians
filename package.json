@@ -11,6 +11,7 @@
     "dev": "concurrently --kill-others-on-fail \"cd frontend && vite\" \"nodemon backend/index.js\"",
     "dev:frontend": "cd frontend && vite --port 5173",
     "dev:backend": "nodemon backend/index.js",
+    "seed": "node backend/seeds/seed.js",
     "build": "cd frontend && vite build",
     "lint": "eslint .",
     "clean": "rimraf node_modules **/node_modules",

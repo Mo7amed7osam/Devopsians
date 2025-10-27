@@ -57,9 +57,8 @@ const userSchema = new mongoose.Schema(
                 "Doctor",
                 "Admin",
                 "Manager",
-                "Nurse",
-                "Cleaner",
                 "Receptionist",
+                "Ambulance",
             ],
         },
         
@@ -114,11 +113,22 @@ const userSchema = new mongoose.Schema(
         // Fields for Receptionists
         assignedHospital: { type: mongoose.Schema.Types.ObjectId, ref: "Hospital" },
 
-        // Fields for Nurses
-        shifts: [{ type: mongoose.Schema.Types.ObjectId, ref: "Shift" }],
-
-        // Fields for Cleaners
-        roomsToClean: [{ type: String }], // List of room identifiers to clean
+        // Fields for Ambulance
+        status: { 
+            type: String, 
+            enum: ["AVAILABLE", "EN_ROUTE", "ARRIVED_HOSPITAL"],
+            default: "AVAILABLE"
+        },
+        currentLocation: {
+            type: {
+                type: String,
+                enum: ['Point'],
+            },
+            coordinates: [Number], // [longitude, latitude]
+        },
+        eta: { type: Number }, // Estimated time of arrival in minutes
+        assignedPatient: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+        destination: { type: String },
 
         // Common timestamps for all roles
     },

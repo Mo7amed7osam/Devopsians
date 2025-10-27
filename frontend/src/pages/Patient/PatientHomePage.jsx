@@ -1,221 +1,234 @@
-import { API_BASE } from "../../utils/api";
-import { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import styles from "./PatientHomePage.module.css"; // Importing the CSS module
-import axios from "axios";
+// src/pages/PatientHomePage.jsx
+import React, { useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
+import axios from 'axios';
+import { getUserId } from '../../utils/cookieUtils';
+import styles from './PatientHomePage.module.css'; 
+import Button from '../../components/common/Button';
+import Modal from '../../components/common/Modal';
+import ICUSelect from './ICUSelect';
 
-function PatientHomePage() {
-  const { userId, icuId } = useParams();
-  const navigate = useNavigate();
-  const [patientDetails, setPatientDetails] = useState(null);
-  const [doctorDetails, setDoctorDetails] = useState(null); // To store assigned doctor's details
-  const [icuDetails, setIcuDetails] = useState(null); // To store ICU details
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [showInvoicePopup, setShowInvoicePopup] = useState(false); // To toggle the invoice popup
-  const [fees, setFees] = useState(null); // To store the calculated fees
+const API_BASE = 'http://localhost:3030';
 
-  useEffect(() => {
-    if (!userId) {
-      setError("User ID is not available.");
-      setLoading(false);
-      return;
-    }
+const PatientHomePage = () => {
+    const [patientData, setPatientData] = useState(null);
+    const [icuData, setIcuData] = useState(null);
+    const [doctorData, setDoctorData] = useState(null);
+    const [newMedicalHistory, setNewMedicalHistory] = useState('');
+    const [loading, setLoading] = useState(true);
+    const [modalType, setModalType] = useState(null);
+    const [ratingTarget, setRatingTarget] = useState('');
+    const [currentRating, setCurrentRating] = useState(0);
+    const [hoverRating, setHoverRating] = useState(0);
+    const [ratingComment, setRatingComment] = useState('');
+    const [ratings, setRatings] = useState({});
 
-    const fetchPatientAndDoctorDetails = async () => {
-      try {
-        console.log("Fetching data for userId:", userId);
-        const response = await axios.get(
-          `${API_BASE}/user/details/${userId}`
-        );
-        console.log("Fetched patient data:", response.data);
+    useEffect(() => {
+        const fetchPatientData = async () => {
+            try {
+                setLoading(true);
+                const userId = getUserId();
+                if (!userId) {
+                    toast.error('User ID not found. Please log in again.');
+                    setLoading(false);
+                    return;
+                }
+                const patientResponse = await axios.get(`${API_BASE}/user/details/${userId}`);
+                const patient = patientResponse.data.user;
+                setPatientData(patient);
+                setNewMedicalHistory(patient.medicalHistory || '');
+                if (patient.assignedDoctor) {
+                    try {
+                        const doctorResponse = await axios.get(`${API_BASE}/user/details/${patient.assignedDoctor}`);
+                        setDoctorData(doctorResponse.data.user);
+                    } catch (err) {
+                        console.error('Failed to fetch doctor data:', err);
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching patient data:', error);
+                toast.error('Failed to load patient data. Please try again.');
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchPatientData();
+    }, []);
 
-        const patient = response.data.user;
-        setPatientDetails(patient);
+    const closeModal = () => {
+        setModalType(null);
+        setCurrentRating(0);
+        setHoverRating(0);
+        setRatingComment('');
+    };
 
-        // Fetch assigned doctor details
-        if (patient.assignedDoctor) {
-          const doctorResponse = await axios.get(
-            `${API_BASE}/user/details/${patient.assignedDoctor}`
-          );
-          console.log("Fetched doctor data:", doctorResponse.data);
-          setDoctorDetails(doctorResponse.data.user);
+    const handleUpdateMedicalHistory = async (e) => {
+        e.preventDefault();
+        try {
+            const userId = getUserId();
+            await axios.patch(`${API_BASE}/user/update/${userId}`, {
+                medicalHistory: newMedicalHistory
+            });
+            toast.success('Medical history updated successfully!');
+            setPatientData(prev => ({ ...prev, medicalHistory: newMedicalHistory }));
+        } catch (error) {
+            console.error('Error updating medical history:', error);
+            toast.error('Failed to update medical history.');
         }
-      } catch (error) {
-        console.error("Error fetching data:", error);
-        setError("Failed to load data. Please try again.");
-      } finally {
-        setLoading(false);
-      }
     };
 
-    fetchPatientAndDoctorDetails();
-  }, [userId]);
-
-  useEffect(() => {
-    if (!icuId) {
-      setError("ICU ID is not available.");
-      return;
-    }
-
-    const fetchICUDetails = async () => {
-      try {
-        console.log("Fetching data for icuId:", icuId);
-        const response = await axios.get(
-          `${API_BASE}/manager/view-icu-byId/${icuId}`
-        );
-        console.log("Fetched ICU data:", response.data);
-
-        const icu = response.data.data;
-        setIcuDetails(icu);
-      } catch (error) {
-        console.error("Error fetching ICU data:", error);
-        setError("Failed to load ICU data. Please try again.");
-      }
+    const handleRate = (type) => {
+        setRatingTarget(type);
+        setCurrentRating(ratings[type] || 0); 
+        setModalType('rating');
     };
 
-    fetchICUDetails();
-  }, [icuId]);
+    const handleRatingSubmit = async (e) => {
+        e.preventDefault();
+        if (currentRating === 0) {
+            toast.error('Please select a rating from 1 to 5.');
+            return;
+        }
+        setRatings(prev => ({ ...prev, [ratingTarget]: currentRating }));
+        toast.success(`Thank you for your feedback on the ${ratingTarget}!`);
+        closeModal();
+    };
+    
+    const handleVisitorSubmit = async (e) => {
+        e.preventDefault();
+        const visitorName = e.target.visitorName.value;
+        const visitTime = e.target.visitTime.value;
+        toast.success(`Reservation request for ${visitorName} at ${visitTime} submitted.`);
+        closeModal();
+    };
 
-  const handleCheckout = async () => {
-    try {
-      const response = await axios.get(
-  `${API_BASE}/manager/calculate-fees/${userId}`
-      );
-      setFees(response.data.data.totalFees);
-      setShowInvoicePopup(true); // Show the popup after fetching fees
-    } catch (error) {
-      console.error("Error calculating fees:", error);
-      setError("Failed to calculate fees. Please try again.");
-    }
-  };
+    const handleKidsAreaSubmit = async (e) => {
+        e.preventDefault();
+        const visitTime = e.target.visitTime.value;
+        toast.success(`Kids area time slot at ${visitTime} has been requested.`);
+        closeModal();
+    };
 
-  // Handle logout function
-  const handleLogout = () => {
-    localStorage.removeItem("userToken");
-    navigate("/login"); // Redirect to login page after logout
-  };
+    if (loading) return <div className={styles.loadingState}>Loading patient dashboard...</div>;
+    if (!patientData) return <div className={styles.errorState}>Could not load patient data.</div>;
 
-  // Handle Pay button click
-  const handlePay = async () => {
-    navigate(`/Home/${userId}`); // Navigate back to UserHomeScreen
-  };
-
-  if (loading) {
-    return <div>Loading...</div>;
-  }
-
-  if (error) {
-    return <div>{error}</div>;
-  }
-
-  if (!patientDetails) {
-    return <div>No patient data available.</div>;
-  }
-
-  return (
-    <div className={styles.container}>
-      <h1>Welcome, {patientDetails.firstName}</h1>
-      <div className={styles.patientInfo}>
-        <h2>Patient Details</h2>
-        <div className={styles.detail}>
-          <strong>First Name:</strong> {patientDetails.firstName}
-        </div>
-        <div className={styles.detail}>
-          <strong>Last Name:</strong> {patientDetails.lastName}
-        </div>
-        <div className={styles.detail}>
-          <strong>Gender:</strong> {patientDetails.gender}
-        </div>
-        <div className={styles.detail}>
-          <strong>Email:</strong> {patientDetails.email}
-        </div>
-        <div className={styles.detail}>
-          <strong>Phone:</strong> {patientDetails.phone}
-        </div>
-        <div className={styles.detail}>
-          <strong>Role:</strong> {patientDetails.role}
-        </div>
-        <div className={styles.detail}>
-          <strong>Current Condition:</strong> {patientDetails.currentCondition}
-        </div>
-        <div className={styles.detail}>
-          <strong>Medical History:</strong> {patientDetails.medicalHistory}
-        </div>
-      </div>
-
-      {doctorDetails && (
-        <div className={styles.doctorInfo}>
-          <h2>Assigned Doctor Details</h2>
-          <div className={styles.detail}>
-            <strong>Name:</strong> {doctorDetails.firstName}{" "}
-            {doctorDetails.lastName}
-          </div>
-          <div className={styles.detail}>
-            <strong>Email:</strong> {doctorDetails.email}
-          </div>
-          <div className={styles.detail}>
-            <strong>Phone:</strong> {doctorDetails.phone}
-          </div>
-        </div>
-      )}
-
-      {icuDetails && (
-        <div className={styles.icuInfo}>
-          <h2>ICU Details</h2>
-          <div className={styles.detail}>
-            <strong>Specialization:</strong> {icuDetails.specialization}
-          </div>
-          <div className={styles.detail}>
-            <strong>Hospital:</strong> {icuDetails.hospital.name}
-          </div>
-          <div className={styles.detail}>
-            <strong>Fees:</strong> {icuDetails.fees}
-          </div>
-        </div>
-      )}
-
-      {/* Checkout Button */}
-      <button onClick={handleCheckout} className={styles.checkoutButton}>
-        Proceed to Checkout
-      </button>
-
-      {/* Invoice Popup */}
-      {showInvoicePopup && (
-        <div className={styles.invoicePopup}>
-          <div className={styles.popupContent}>
-            <h2>Invoice</h2>
-            <p>
-              <strong>Patient Name:</strong> {patientDetails.firstName}{" "}
-              {patientDetails.lastName}
-            </p>
-            <p>
-              <strong>Hospital:</strong> {icuDetails.hospital.name}
-            </p>
-            <p>
-              <strong>Total Amount:</strong> ${fees}
-            </p>
-            <div className={styles.popupButtons}>
-              <button onClick={handlePay} className={styles.payButton}>
-                Pay
-              </button>
-              <button
-                onClick={() => setShowInvoicePopup(false)}
-                className={styles.cancelButton}
-              >
-                Cancel
-              </button>
+    // If patient doesn't have an ICU reserved, show ICU selection
+    if (!icuData && !patientData.reservedICU) {
+        return (
+            <div className={styles.dashboard}>
+                <header className={styles.header}>
+                    <h2 className={styles.welcomeTitle}>Welcome, {patientData.firstName} {patientData.lastName}</h2>
+                    <div className={styles.icuStatus} style={{ color: '#ff9800' }}>
+                        <i className="fas fa-info-circle"></i> You don't have an ICU reserved yet. Please select one below.
+                    </div>
+                </header>
+                <ICUSelect />
             </div>
-          </div>
-        </div>
-      )}
+        );
+    }
 
-      {/* Logout Button */}
-      <button onClick={handleLogout} className={styles.logoutButton}>
-        Logout
-      </button>
-    </div>
-  );
-}
+    return (
+        <div className={styles.dashboard}>
+            <header className={styles.header}>
+                <h2 className={styles.welcomeTitle}>Welcome, {patientData.firstName} {patientData.lastName}</h2>
+                <div className={styles.icuStatus}>
+                    <i className="fas fa-heartbeat"></i> Reserved ICU: <strong>{icuData?.specialization || 'None'}</strong>
+                </div>
+            </header>
+            <section className={styles.infoGrid}>
+                <div className={styles.card}>
+                    <h3>Medicine Schedule</h3>
+                    {doctorData ? (
+                        <p>Assigned Doctor: Dr. {doctorData.firstName} {doctorData.lastName}</p>
+                    ) : (
+                        <p>No doctor assigned yet</p>
+                    )}
+                    {patientData.medicineSchedule ? (
+                        <div>{patientData.medicineSchedule}</div>
+                    ) : (
+                        <p>No medicine schedule available</p>
+                    )}
+                </div>
+                <div className={styles.card}>
+                    <h3>Total Fees</h3>
+                    <p className={styles.feeAmount}>EGP {(patientData.totalFees || 0).toFixed(2)}</p>
+                    <Button variant="secondary">Show Total Fees</Button>
+                </div>
+                <div className={`${styles.card} ${styles.ratingCard}`}>
+                    <h3 className={styles.subtitle}>Update Medical History</h3>
+                    <form onSubmit={handleUpdateMedicalHistory}>
+                        <textarea 
+                            value={newMedicalHistory} 
+                            onChange={(e) => setNewMedicalHistory(e.target.value)}
+                            rows="4"
+                            placeholder="Enter your medical history, allergies, chronic conditions..."
+                            required
+                        />
+                        <Button type="submit" variant="primary">Save History</Button>
+                    </form>
+                </div>
+            </section>
+            <section className={styles.reservationActions}>
+                <div className={styles.actionGroup}>
+                    <h3>Reserve Visitor's Room</h3>
+                    <Button onClick={() => setModalType('visitor')} className={styles.btnAction}>Request Visitor Slot</Button>
+                </div>
+                <div className={styles.actionGroup}>
+                    <h3>Kids Area Access</h3>
+                    <Button onClick={() => setModalType('kids')} className={styles.btnAction}>Reserve Time-Slot</Button>
+                </div>
+                <div className={styles.actionGroup}>
+                    <h3>Service Feedback</h3>
+                    <Button onClick={() => handleRate('Doctor')} className={styles.btnRate}>Rate Doctor</Button>
+                    <Button onClick={() => handleRate('Hospital')} className={styles.btnRate}>Rate Hospital</Button>
+                </div>
+            </section>
+            <Modal isOpen={modalType === 'rating'} onClose={closeModal}>
+                <h2>Rate the {ratingTarget}</h2>
+                <form onSubmit={handleRatingSubmit}>
+                    <div className={styles.starRating}>
+                        {[...Array(5)].map((_, index) => {
+                            const ratingValue = index + 1;
+                            return (
+                                <span 
+                                    key={ratingValue} 
+                                    className={ratingValue <= (hoverRating || currentRating) ? styles.starFilled : styles.starEmpty}
+                                    onClick={() => setCurrentRating(ratingValue)}
+                                    onMouseEnter={() => setHoverRating(ratingValue)}
+                                    onMouseLeave={() => setHoverRating(0)}
+                                >
+                                    ★
+                                </span>
+                            );
+                        })}
+                    </div>
+                    <textarea 
+                        className={styles.modalTextarea}
+                        placeholder="Leave a comment (optional)..."
+                        value={ratingComment}
+                        onChange={(e) => setRatingComment(e.target.value)}
+                    />
+                    <Button type="submit" variant="primary" style={{ width: '100%', marginTop: '20px' }}>Submit Rating</Button>
+                </form>
+            </Modal>
+            <Modal isOpen={modalType === 'visitor'} onClose={closeModal}>
+                <h2>Reserve a Visitor Slot</h2>
+                <form onSubmit={handleVisitorSubmit}>
+                    <input className={styles.modalInput} type="text" name="visitorName" placeholder="Visitor's Full Name" required />
+                    <input className={styles.modalInput} type="time" name="visitTime" required />
+                    <Button type="submit" variant="primary" style={{ width: '100%', marginTop: '20px' }}>Submit Request</Button>
+                </form>
+            </Modal>
+            <Modal isOpen={modalType === 'kids'} onClose={closeModal}>
+                <h2>Reserve Kids Area Time-Slot</h2>
+                <form onSubmit={handleKidsAreaSubmit}>
+                    <p>Please select a 1-hour time slot.</p>
+                    <input className={styles.modalInput} type="time" name="visitTime" required />
+                    <Button type="submit" variant="primary" style={{ width: '100%', marginTop: '20px' }}>Reserve Slot</Button>
+                </form>
+            </Modal>
+        </div>
+    );
+};
 
 export default PatientHomePage;

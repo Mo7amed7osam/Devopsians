@@ -52,19 +52,10 @@ API.interceptors.response.use(
  * @param {Object} credentials - { email, password }
  */
 export const loginUser = async ({ email, password }) => {
-  const res = await API.get(`/users?email=${email}&password=${password}`);
-  if (!res.data || res.data.length === 0) {
-    throw new Error('Invalid email or password');
-  }
-  const user = res.data[0];
-  // Simulate token
-  return {
-    data: {
-      token: 'mock-jwt-token',
-      role: user.role,
-      user,
-    },
-  };
+  // Backend expects userName + password; use email local-part as username
+  const userName = email?.split('@')[0];
+  const res = await API.post('/user/login-user', { userName, password });
+  return res;
 };
 
 /**
@@ -72,20 +63,28 @@ export const loginUser = async ({ email, password }) => {
  * @param {Object} userData - { name, email, password }
  */
 export const registerPatient = async (userData) => {
-  // Check if user already exists
-  const existing = await API.get(`/users?email=${userData.email}`);
-  if (existing.data.length > 0) {
-    throw new Error('User already exists');
-  }
+  // Map simple form to backend expected shape
+  const { name = '', email, password, gender = 'Male', phone = '', medicalHistory, currentCondition } = userData;
+  const [firstName = 'Patient', ...rest] = name.trim().split(' ').filter(Boolean);
+  const lastName = rest.length ? rest.join(' ') : 'User';
+  const userName = email?.split('@')[0];
 
-  const newUser = { ...userData, role: 'patient' };
-  const res = await API.post('/users', newUser);
-  return {
-    data: {
-      message: 'Patient registered successfully!',
-      user: res.data,
-    },
+  const payload = {
+    userName,
+    firstName,
+    lastName,
+    userPass: password,
+    // Backend schema allows only "Male" or "Female"; fall back to Male
+    gender: gender === 'Female' ? 'Female' : 'Male',
+    phone: phone && phone.trim().length ? phone.trim() : '0000000000',
+    role: 'Patient',
+    email,
+    medicalHistory,
+    currentCondition,
   };
+
+  const res = await API.post('/user/create-user', payload);
+  return res;
 };
 
 // ============================================================
@@ -158,28 +157,6 @@ export const fetchSystemLogs = async () => {
   const res = await API.get(`/systemLogs?_sort=timestamp&_order=desc`); // Sort newest first
   return res;
 };
-// ============================================================
-//    EMPLOYEE & VACATION MOCK ENDPOINTS
-// ============================================================
-
-/**
- * Employee submits a vacation request
- */
-export const requestVacation = async (vacationData) => {
-  const res = await API.post('/vacationRequests', vacationData);
-  return res.data;
-};
-
-/**
- * Manager approves a vacation
- */
-export const approveVacation = async (vacationId) => {
-  const res = await API.patch(`/vacationRequests/${vacationId}`, { approved: true });
-  return res.data;
-};
-
-
-
 // ============================================================
 // 🔧 TEMP MOCK PLACEHOLDERS for UI testing (not implemented yet)
 // ============================================================

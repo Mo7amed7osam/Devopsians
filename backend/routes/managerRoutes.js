@@ -10,9 +10,6 @@ import {
   trackEmployeeTasks,
   createAndAssignTask,
   registerVisitorRoom,
-  handleVacationRequest,
-  updateVacationRequest,
-  viewVacationRequests,
   calculateFees,
   viewAllEmployees,
   viewICUById,
@@ -30,9 +27,6 @@ router.delete("/remove-employee/:userId", removeEmployee);
 router.get("/track-employee-tasks", trackEmployeeTasks);
 router.post("/create-and-assign-task", createAndAssignTask);
 router.post("/register-visitor-room", registerVisitorRoom);
-router.post("/handle-vacation-request", handleVacationRequest);
-router.put("/update-vacation-request/:requestId", updateVacationRequest);
-router.get("/view-vacation-requests", viewVacationRequests);
 router.get("/calculate-fees/:userId", calculateFees);
 router.get("/view-icu-byid/:icuId", viewICUById);
 

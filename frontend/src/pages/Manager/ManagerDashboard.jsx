@@ -2,14 +2,12 @@ import React, { useState, useEffect } from 'react';
 import DashBoardCard from '../../components/common/DashBoardCard.jsx';
 import Addicu from './Addicu.jsx';
 import GenericEmployeeDashboard from './EmployeeMgmt.jsx';
-// import VacationRequests from './VacationRequests.jsx'; // Component not found
 import ICUMgmt from './ICUMgmt.jsx';
 import styles from './ManagerDashboard.module.css';
 import DashboardNav from '../../components/common/DashboardNav';
 
 const iconICU = <i className="fas fa-bed"></i>;
 const iconTasks = <i className="fas fa-tasks"></i>;
-const iconVacation = <i className="fas fa-calendar-check"></i>;
 const iconEmployee = <i className="fas fa-user-friends"></i>;
 
 const ManagerDashboard = () => {
@@ -33,7 +31,6 @@ const ManagerDashboard = () => {
     const [dashboardStats, setDashboardStats] = useState({
         totalICUs: 25,
         availableICUs: 12,
-        pendingVacations: 3,
         employeesOnShift: 45
     });
     const handleIcuRegistered = (newIcu) => {
@@ -48,7 +45,6 @@ const ManagerDashboard = () => {
         { id: 'overview', label: 'Overview' },
         { id: 'icuMgmt', label: 'ICU Management' },
         { id: 'employeeMgmt', label: 'Employee & Tasks' },
-        { id: 'vacations', label: 'Vacation Requests' },
         { id: 'addIcu', label: 'Register ICU' },
         { id: 'visitorsKids', label: 'Auxiliary Mgmt' }
     ];
@@ -60,8 +56,6 @@ const ManagerDashboard = () => {
                 return <Addicu hospitalId={hospitalInfo.id} onIcuRegistered={handleIcuRegistered} />;
             case 'employeeMgmt':
                 return <GenericEmployeeDashboard employeeRole="Manager" />;
-            case 'vacations':
-                return <div className={styles.sectionPlaceholder}><h3>Vacation Requests</h3><p>Implementation pending.</p></div>;
             case 'visitorsKids':
                 return <div className={styles.sectionPlaceholder}><h3>Visitors' Room & Kids Area Management</h3><p>Implementation pending.</p></div>;
             case 'overview':
@@ -98,12 +92,6 @@ const ManagerDashboard = () => {
                     value={dashboardStats.employeesOnShift}
                     icon={iconEmployee}
                     color="#17a2b8"
-                />
-                <DashBoardCard
-                    title="Pending Vacations"
-                    value={dashboardStats.pendingVacations}
-                    icon={iconVacation}
-                    color="#ffc107"
                 />
             </section>
             <DashboardNav

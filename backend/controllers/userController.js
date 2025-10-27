@@ -26,17 +26,17 @@ export const createUser = async (req, res, next) => {
             assignedManagers,
             assignedDepartments,
             doctorDepartment,
-            shifts,
         } = req.body;
 
-        if (!userName || !firstName || !lastName || !userPass || !gender || !phone || !role) {
-            return res.status(400).json({ message: "All required fields must be filled" });
+    if (!userName || !firstName || !lastName || !userPass || !gender || !phone || !role || !email) {
+      return res.status(400).json({ message: "All required fields must be filled" });
         }
 
-        const isRegistered = await User.findOne({ userName });
-        if (isRegistered) {
-            return res.status(400).json({ message: "User is already registered" });
-        }
+    // Check for duplicate username or email early to return a clear 400
+    const existingUser = await User.findOne({ $or: [{ userName }, { email }] });
+    if (existingUser) {
+      return res.status(400).json({ message: "Username or email is already registered" });
+    }
 
         // Ensure assignedHospital is only set for roles that require it
         const user = await User.create({
@@ -55,86 +55,53 @@ export const createUser = async (req, res, next) => {
             assignedManagers: role === "Admin" ? assignedManagers : undefined,
             assignedDepartments: role === "Manager" ? assignedDepartments : undefined,
             doctorDepartment: role === "Doctor" ? doctorDepartment : undefined,
-            shifts: ["Doctor", "Nurse", "Cleaner", "Receptionist"].includes(role) ? shifts : undefined,
+            status: role === "Ambulance" ? "AVAILABLE" : undefined,
         });
 
         // Use the organization's token utility function
-        jsontoken(user, "User created successfully", 201, res);
+    jsontoken(user, "User created successfully", 201, res);
     } catch (error) {
-        console.error(error);
-        next(new ErrorHandler("Server error", 500));
+    console.error(error);
+    next(error); // Let centralized error handler map validation/duplicate correctly
     }
 };
 
 export const loginUser = async (req, res, next) => {
-    try {
-        const { userName, password } = req.body;
+  try {
+    const { userName, email, password } = req.body;
 
-        if (!userName || !password) {
-            return next(new ErrorHandler("Please provide username and password", 400));
-        }
+    console.log('Login attempt:', { userName, email, passwordLength: password?.length });
 
-        const user = await User.findOne({ userName }).select("+userPass");
-        if (!user) {
-            return next(new ErrorHandler("Invalid Username or Password", 404));
-        }
-
-        const passwordMatch = await user.comparePassword(password);
-        if (!passwordMatch) {
-            return next(new ErrorHandler("Invalid Username or Password", 404));
-        }
-
-        // Exclude the password from the user data before sending it
-        const userData = {
-            id: user._id,
-            userName: user.userName,
-            role: user.role,
-            firstName: user.firstName,
-            lastName: user.lastName
-        };
-
-        // Use the organization's token utility function
-        const token = jsontoken(userData, "User Login Successfully", 200, res);
-
-        // Send the token and user data to the frontend
-        res.status(200).json({
-            success: true,
-            message: "User Login Successfully",
-            token,
-            user: userData, // Include user ID in the response
-        });
-
-    } catch (error) {
-        console.error(error);
-        next(new ErrorHandler("Server error", 500));
+    if ((!userName && !email) || !password) {
+      return next(new ErrorHandler("Please provide email or username and password", 400));
     }
+
+    const query = email ? { email } : { userName };
+    console.log('Query:', query);
+    
+    const user = await User.findOne(query).select("+userPass");
+    console.log('User found:', user ? `Yes (${user.email})` : 'No');
+    
+    if (!user) {
+      return next(new ErrorHandler("Invalid credentials", 401));
+    }
+
+    const passwordMatch = await user.comparePassword(password);
+    console.log('Password match:', passwordMatch);
+    
+    if (!passwordMatch) {
+      return next(new ErrorHandler("Invalid credentials", 401));
+    }
+
+    // Issue token and respond via shared utility with full user doc
+    jsontoken(user, "User Login Successfully", 200, res);
+    return;
+
+  } catch (error) {
+    console.error('Login error:', error);
+    next(error);
+  }
 };
-
-
-
-
-//   export const verifyToken = async (req, res) => {
-//     const token = req.headers["Authorization"]?.split(" ")[1]; // Extract token from Authorization header
-  
-//     if (!token) {
-//       return res.status(401).json({ message: "No token provided" });
-//     }
-  
-//     try {
-//       const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY); // Verify token with your secret
-//       const user = await User.findById(decoded.userId); // Find user by ID stored in the token
-  
-//       if (!user) {
-//         return res.status(404).json({ message: "User not found" });
-//       }
-  
-//       res.status(200).json({ role: user.role }); // Return user's role
-//     } catch (error) {
-//       console.error("Token verification error:", error);
-//       res.status(401).json({ message: "Invalid token" });
-//     }
-//   }
-
 export const verifyToken = async (req, res) => {
     const token = req.body.token;
   
@@ -142,38 +109,14 @@ export const verifyToken = async (req, res) => {
       return res.status(401).json({ message: "No token provided" });
     }
   
-    // Verify the token (using your authentication logic)
     jwt.verify(token, process.env.JWT_SECRET_KEY, (err, decoded) => {
       if (err) {
         return res.status(401).json({ message: "Invalid token" });
       }
   
-      // Token is valid
       res.status(200).json({ message: "Token verified", role: decoded.role });
     });
   }
-
-
-// app.post("/user/verify-token", (req, res) => {
-//         const token = req.body.token;
-      
-//         if (!token) {
-//           return res.status(401).json({ message: "No token provided" });
-//         }
-      
-//         // Verify the token (using your authentication logic)
-//         jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
-//           if (err) {
-//             return res.status(401).json({ message: "Invalid token" });
-//           }
-      
-//           // Token is valid
-//           res.status(200).json({ message: "Token verified", role: decoded.role });
-//         });
-//       });
-      
-//logout user, update user
-
 export const updateUser = async (userId, updates) => {
     try {
         const updatedUser = await User.findByIdAndUpdate(userId, updates, { new: true });

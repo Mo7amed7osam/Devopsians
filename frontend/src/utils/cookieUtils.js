@@ -97,7 +97,21 @@ export const setUserId = (id) => {
 /**
  * Retrieves the user's stored ID.
  */
-export const getUserId = () => localStorage.getItem(USER_ID_KEY);
+export const getUserId = () => {
+  const stored = localStorage.getItem(USER_ID_KEY);
+  if (stored) return stored;
+  // Fallback: try to decode JWT to obtain user id
+  try {
+    const token = getToken();
+    if (!token) return null;
+    const [, payload] = token.split('.');
+    if (!payload) return null;
+    const decoded = JSON.parse(atob(payload));
+    return decoded?.id || decoded?.userId || null;
+  } catch {
+    return null;
+  }
+};
 
 /**
  * Removes the stored user ID.
@@ -120,9 +134,8 @@ export const saveSession = (token, role, user = null) => {
     if (user.firstName && user.lastName) {
       setUserName(user.firstName, user.lastName);
     }
-    if (user.id) {
-      setUserId(user.id);
-    }
+    const uid = user.id || user._id; // support both shapes
+    if (uid) setUserId(uid);
   }
 };
 

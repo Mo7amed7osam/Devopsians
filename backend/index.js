@@ -14,6 +14,8 @@ import patientRoutes from "./routes/patientRoutes.js";
 import doctorRoutes from "./routes/doctorRoutes.js";
 import managerRoutes from "./routes/managerRoutes.js";
 import receptionistRoutes from "./routes/receptionistRoutes.js";
+import ambulanceRoutes from "./routes/ambulanceRoutes.js";
+import icuRoutes from "./routes/icuRoutes.js";
 import { errorHandler } from "./utils/errorHandler.js";
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
@@ -33,10 +35,7 @@ console.log('Environment variables:', process.env);
 // MongoDB Connection
 (async () => {
   try {
-    await mongoose.connect(mongoUrl, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
+    await mongoose.connect(mongoUrl);
     console.log("Connected to the database");
   } catch (error) {
     console.error("Database connection error:", error);
@@ -45,7 +44,11 @@ console.log('Environment variables:', process.env);
 })();
 
 // Middleware
-const allowedOrigins = [process.env.FRONTEND_URL];
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  'http://localhost:3001',
+  'http://localhost:5173'
+];
 app.use(
   cors({
     origin: allowedOrigins,
@@ -70,8 +73,10 @@ app.use("/patient", patientRoutes);
 app.use("/doctor", doctorRoutes);
 app.use("/manager", managerRoutes);
 app.use("/receptionist", receptionistRoutes);
+app.use("/ambulance", ambulanceRoutes);
 app.use("/user", userRoutes);
 app.use("/hospital", hospitalRoutes);
+app.use("/icu", icuRoutes);
 
 // Error Handling Middleware
 app.use(errorHandler);
@@ -84,7 +89,7 @@ httpServer.listen(port, () => {
 // Set up Socket.IO
 const io = new Server(httpServer, {
   cors: {
-    origin: [process.env.FRONTEND_URL],
+    origin: allowedOrigins,
     methods: ["GET", "POST","PUT","DELETE"],
     credentials: true,
   },

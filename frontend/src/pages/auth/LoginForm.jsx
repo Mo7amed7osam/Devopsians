@@ -26,20 +26,21 @@ const LoginForm = () => {
         try {
             const response = await loginUser(credentials);
             const { token, role, user } = response.data;
+            const effectiveRole = role || user?.role || '';
 
             // Save session with user data
-            saveSession(token, role, user);
-            login(token, role);
+            saveSession(token, effectiveRole, user);
+            login(token, effectiveRole);
 
             let path = '/';
-            switch (role) {
+            const roleKey = (effectiveRole || '').toString().toLowerCase();
+            switch (roleKey) {
                 case 'admin': path = '/admin'; break;
                 case 'manager': path = '/manager'; break;
                 case 'patient': path = '/patient-dashboard'; break;
                 case 'doctor': path = '/doctor'; break;
-                case 'nurse': path = '/nurse'; break;
                 case 'receptionist': path = '/receptionist'; break;
-                case 'cleaner': path = '/cleaner'; break;
+                case 'ambulance': path = '/ambulance'; break;
                 default: path = '/';
             }
             navigate(path, { replace: true });

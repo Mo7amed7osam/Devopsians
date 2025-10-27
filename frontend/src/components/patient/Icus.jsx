@@ -18,20 +18,26 @@ function Icus({ icuList = [], onReserve, loading }) {
     <div className={styles.container}>
       <ul className={styles.icuList}>
         {icuList.map((icu) => (
-          <li key={icu.id} className={styles.icuItem}>
+          <li key={icu._id || icu.id} className={styles.icuItem}>
             <h3 className={styles.hospitalName}>
-              {icu.hospitalName || "Unknown Hospital"}
+              {icu.hospital?.name || "Unknown Hospital"}
             </h3>
             <p className={styles.specialization}>
               Specialization: {icu.specialization}
             </p>
-            <p className={styles.distance}>Distance: {icu.distance}</p>
-            <p className={styles.fees}>Fee: {icu.fee}</p>
+            <p className={styles.distance}>
+              {icu.hospital?.address || "Location unavailable"}
+            </p>
+            <p className={styles.fees}>Fee: {icu.fees} EGP/day</p>
+            <p className={styles.status}>
+              Status: <span className={styles.available}>{icu.status}</span>
+            </p>
             <button
-              onClick={() => onReserve(icu.id)}
+              onClick={() => onReserve(icu._id || icu.id)}
               className={styles.reserveButton}
+              disabled={icu.isReserved || icu.status !== 'Available'}
             >
-              Reserve
+              {icu.isReserved ? 'Reserved' : 'Reserve'}
             </button>
           </li>
         ))}
