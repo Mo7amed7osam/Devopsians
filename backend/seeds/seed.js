@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import dotenv from "dotenv";
+import bcrypt from "bcryptjs";
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import User from "../models/userModel.js";
@@ -55,8 +56,15 @@ const seedUsers = async () => {
   try {
     console.log("👥 Seeding users...");
     
+    // Just use User.create() - the pre-save hook will hash passwords
     const users = await User.create(seedData.users);
     console.log(`✅ Created ${users.length} users`);
+    
+    // Verify password hashing worked
+    console.log('🔐 Verifying password for first user...');
+    const firstUser = await User.findOne({ email: seedData.users[0].email }).select('+userPass');
+    const passwordMatches = await bcrypt.compare('123456', firstUser.userPass);
+    console.log(`   Password verification: ${passwordMatches ? '✅ SUCCESS' : '❌ FAILED'}`);
     
     return users;
   } catch (error) {
@@ -74,7 +82,7 @@ const seedHospitals = async (users) => {
     
     const hospitalsWithManager = seedData.hospitals.map(h => ({
       ...h,
-      manager: manager?._id
+      assignedManager: manager?._id
     }));
     
     const hospitals = await Hospital.create(hospitalsWithManager);

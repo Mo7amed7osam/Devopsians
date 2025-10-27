@@ -49,12 +49,18 @@ API.interceptors.response.use(
 
 /**
  * Simulates a login by finding a matching user in mockData.json
- * @param {Object} credentials - { email, password }
+ * @param {Object} credentials - { emailOrUsername, password }
  */
-export const loginUser = async ({ email, password }) => {
-  // Backend expects userName + password; use email local-part as username
-  const userName = email?.split('@')[0];
-  const res = await API.post('/user/login-user', { userName, password });
+export const loginUser = async ({ emailOrUsername, password }) => {
+  // Check if input looks like an email (contains @)
+  const isEmail = emailOrUsername?.includes('@');
+  
+  const payload = {
+    password,
+    ...(isEmail ? { email: emailOrUsername } : { userName: emailOrUsername })
+  };
+  
+  const res = await API.post('/user/login-user', payload);
   return res;
 };
 

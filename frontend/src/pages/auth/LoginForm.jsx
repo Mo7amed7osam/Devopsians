@@ -8,7 +8,7 @@ import styles from './LoginForm.module.css';
 import Button from '../../components/common/Button';
 
 const LoginForm = () => {
-    const [credentials, setCredentials] = useState({ email: '', password: '' });
+    const [credentials, setCredentials] = useState({ emailOrUsername: '', password: '' });
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
@@ -57,14 +57,15 @@ const LoginForm = () => {
                 <h2 className={styles.title}>Welcome Back</h2>
                 {error && <div className={styles.errorMessage}>{error}</div>}
 
-                <label className={styles.label}>Email:</label>
+                <label className={styles.label}>Email or Username:</label>
                 <input
-                    type="email"
-                    name="email"
-                    value={credentials.email}
+                    type="text"
+                    name="emailOrUsername"
+                    value={credentials.emailOrUsername}
                     onChange={handleChange}
                     disabled={loading}
                     className={styles.inputField}
+                    placeholder="Enter your email or username"
                     required
                 />
                 <label className={styles.label}>Password:</label>
