@@ -4,6 +4,12 @@ Full‑stack hospital management app with a Node.js/Express + MongoDB backend an
 
 Frontend runs on port 80 (Nginx). Backend API runs on port 3030.
 
+## Documentation
+
+Comprehensive system documentation and the development plan for the ICU Reservation & Management System is available in `docs/ICU_Reservation_Management_System_v1.0.md`.
+
+Open `docs/ICU_Reservation_Management_System_v1.0.md` for feature prioritization, roles, user flows, data model, and a suggested development timeline.
+
 ## Tech stack
 
 - Backend: Node.js 20, Express, Mongoose, Socket.IO, JWT, CORS

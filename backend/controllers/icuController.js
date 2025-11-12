@@ -61,20 +61,22 @@ export const reserveICU = async (req, res, next) => {
             return res.status(404).json({ message: 'Patient not found' });
         }
         
-        if (patient.userRole !== 'patient') {
+        // Normalize role check (user model uses `role` with capitalized values)
+        if (!patient.role || patient.role.toLowerCase() !== 'patient') {
             return res.status(400).json({ message: 'User is not a patient' });
         }
-        
+
         // Check if patient already has a reservation
         if (patient.reservedICU) {
             return res.status(400).json({ message: 'Patient already has an ICU reservation' });
         }
-        
-        // Update ICU
+
+        // Update ICU (mark reserved and set reservedBy)
         icu.isReserved = true;
         icu.status = 'Occupied';
+        icu.reservedBy = patientId;
         await icu.save();
-        
+
         // Update patient
         patient.reservedICU = icuId;
         await patient.save();
@@ -125,13 +127,14 @@ export const cancelReservation = async (req, res, next) => {
         }
         
         // Update ICU
-        icu.isReserved = false;
-        icu.status = 'Available';
-        await icu.save();
-        
-        // Update patient
-        patient.reservedICU = null;
-        await patient.save();
+    icu.isReserved = false;
+    icu.status = 'Available';
+    icu.reservedBy = null;
+    await icu.save();
+
+    // Update patient
+    patient.reservedICU = null;
+    await patient.save();
         
         res.status(200).json({
             message: 'ICU reservation cancelled successfully'

@@ -130,6 +130,9 @@ const userSchema = new mongoose.Schema(
         assignedPatient: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
         destination: { type: String },
 
+    // Reservation reference (if a patient has an active ICU reservation)
+    reservedICU: { type: mongoose.Schema.Types.ObjectId, ref: 'ICURoom' },
+
         // Common timestamps for all roles
     },
     {
@@ -149,13 +152,10 @@ userSchema.methods.comparePassword = async function (enteredPassword) {
     return await bcrypt.compare(enteredPassword, this.userPass);
 };
 userSchema.methods.generateJsonWebToken = function () {
-    return jwt.sign(
-        { id: this._id, role: this.role },
-        process.env.JWT_SECRET_KEY,
-        {
-            expiresIn: process.env.JWT_EXPIRES,
-        }
-    );
+    const secret = process.env.JWT_SECRET_KEY || process.env.JWT_SECRET;
+    return jwt.sign({ id: this._id, role: this.role }, secret, {
+        expiresIn: process.env.JWT_EXPIRES,
+    });
 };
 
 const User = mongoose.model("User", userSchema);
