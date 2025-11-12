@@ -16,6 +16,10 @@ import {
   searchHospitalWithFeedbacks,
   viewHospitalsRating,
   viewAnManager,
+  updateUser,
+  deleteUser,
+  blockUser,
+  unblockUser,
 } from "../controllers/adminController.js";
 
 router.post("/add-hospital", addHospital);
@@ -28,6 +32,10 @@ router.post("/create-manager-account", createManagerAccount);
 router.post("/create-admin-account", createAdminAccount);
 router.get("/view-all-admins", viewAllAdmins);
 router.get("/view-all-managers", viewAllManagers);
+router.put('/update-user/:id', updateUser);
+router.delete('/delete-user/:id', deleteUser);
+router.put('/block-user/:id', blockUser);
+router.put('/unblock-user/:id', unblockUser);
 router.get("/search-manager-with-hospitals", searchManagerWithHospitals);
 router.get("/search-hospital-with-feedbacks/:hospitalId",searchHospitalWithFeedbacks);
 router.get("/view-an-managers/:id", viewAnManager);

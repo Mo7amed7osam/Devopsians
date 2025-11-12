@@ -183,7 +183,7 @@ const PatientHomePage = () => {
                     <Button onClick={() => handleRate('Hospital')} className={styles.btnRate}>Rate Hospital</Button>
                 </div>
             </section>
-            <Modal isOpen={modalType === 'rating'} onClose={closeModal}>
+            <Modal isOpen={modalType === 'rating'} onClose={closeModal} contentLabel="rating-modal">
                 <h2>Rate the {ratingTarget}</h2>
                 <form onSubmit={handleRatingSubmit}>
                     <div className={styles.starRating}>
@@ -211,7 +211,7 @@ const PatientHomePage = () => {
                     <Button type="submit" variant="primary" style={{ width: '100%', marginTop: '20px' }}>Submit Rating</Button>
                 </form>
             </Modal>
-            <Modal isOpen={modalType === 'visitor'} onClose={closeModal}>
+            <Modal isOpen={modalType === 'visitor'} onClose={closeModal} contentLabel="visitor-modal">
                 <h2>Reserve a Visitor Slot</h2>
                 <form onSubmit={handleVisitorSubmit}>
                     <input className={styles.modalInput} type="text" name="visitorName" placeholder="Visitor's Full Name" required />
@@ -219,7 +219,7 @@ const PatientHomePage = () => {
                     <Button type="submit" variant="primary" style={{ width: '100%', marginTop: '20px' }}>Submit Request</Button>
                 </form>
             </Modal>
-            <Modal isOpen={modalType === 'kids'} onClose={closeModal}>
+            <Modal isOpen={modalType === 'kids'} onClose={closeModal} contentLabel="kids-modal">
                 <h2>Reserve Kids Area Time-Slot</h2>
                 <form onSubmit={handleKidsAreaSubmit}>
                     <p>Please select a 1-hour time slot.</p>

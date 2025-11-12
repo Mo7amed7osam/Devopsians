@@ -61,6 +61,11 @@ const userSchema = new mongoose.Schema(
                 "Ambulance",
             ],
         },
+        // Whether the user's account is blocked by an admin
+        isBlocked: {
+            type: Boolean,
+            default: false,
+        },
         
         services: [
             {

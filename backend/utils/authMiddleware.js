@@ -5,22 +5,30 @@ import ErrorHandler from '../utils/errorHandler.js';
 // Middleware to check authentication
 export const isAuthenticated = async (req, res, next) => {
     try {
-        // Support different cookie names (legacy and role-based)
-        const cookieCandidates = [
-            'token',
-            'adminToken',
-            'doctorToken',
-            'managerToken',
-            'patientToken',
-            'receptionistToken',
-            'ambulanceToken'
-        ];
-
+        // First, support Authorization: Bearer <token> header (frontend uses this)
         let token;
-        for (const name of cookieCandidates) {
-            if (req.cookies && req.cookies[name]) {
-                token = req.cookies[name];
-                break;
+        const authHeader = req.headers?.authorization || req.headers?.Authorization;
+        if (authHeader && typeof authHeader === 'string' && authHeader.startsWith('Bearer ')) {
+            token = authHeader.split(' ')[1];
+        }
+
+        // If no Authorization header provided, support different cookie names (legacy and role-based)
+        if (!token) {
+            const cookieCandidates = [
+                'token',
+                'adminToken',
+                'doctorToken',
+                'managerToken',
+                'patientToken',
+                'receptionistToken',
+                'ambulanceToken'
+            ];
+
+            for (const name of cookieCandidates) {
+                if (req.cookies && req.cookies[name]) {
+                    token = req.cookies[name];
+                    break;
+                }
             }
         }
 

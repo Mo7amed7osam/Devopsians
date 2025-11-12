@@ -124,6 +124,31 @@
   gap: 30px;
 }
 
+/* Manage Users table */
+.usersPanel {
+  padding: 10px 6px;
+}
+.usersTableWrap {
+  overflow: auto;
+}
+.usersTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+.usersTable th,
+.usersTable td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #e9ecef;
+  text-align: left;
+}
+.usersTable th {
+  background: #f1f5f9;
+  font-weight: 600;
+}
+.usersTable tr:hover td {
+  background: #fbfbfb;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .statsGrid {

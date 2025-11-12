@@ -77,8 +77,37 @@ function Navigation() {
         </div>
         
         <div className={styles.rightSection}>
-          {/* User Info Display */}
-          <div className={styles.userInfo}>
+          {/* User Info Display - clicking navigates to role-specific dashboard */}
+          <div
+            className={styles.userInfo}
+            role="button"
+            tabIndex={0}
+            onClick={() => {
+              // Normalize role string then map to dashboard path
+              const roleKey = (userRole || '').toString().toLowerCase();
+              let dest = '/';
+              if (roleKey.includes('admin')) dest = '/admin';
+              else if (roleKey.includes('manager')) dest = '/manager';
+              else if (roleKey.includes('doctor')) dest = '/doctor';
+              else if (roleKey.includes('receptionist')) dest = '/receptionist';
+              else if (roleKey.includes('ambulance')) dest = '/ambulance';
+              else if (roleKey.includes('patient')) dest = '/patient-dashboard';
+              navigate(dest);
+            }}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault();
+                const roleKey = (userRole || '').toString().toLowerCase();
+                let dest = '/';
+                if (roleKey.includes('admin')) dest = '/admin';
+                else if (roleKey.includes('manager')) dest = '/manager';
+                else if (roleKey.includes('doctor')) dest = '/doctor';
+                else if (roleKey.includes('receptionist')) dest = '/receptionist';
+                else if (roleKey.includes('ambulance')) dest = '/ambulance';
+                else if (roleKey.includes('patient')) dest = '/patient-dashboard';
+                navigate(dest);
+              } }}
+            title={`Go to ${capitalizeRole(userRole)} dashboard`}
+            style={{ cursor: 'pointer' }}
+          >
             <div className={styles.userAvatar}>
               {userName ? userName.charAt(0).toUpperCase() : userRole?.charAt(0).toUpperCase() || 'U'}
             </div>

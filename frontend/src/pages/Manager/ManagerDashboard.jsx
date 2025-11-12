@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import DashBoardCard from '../../components/common/DashBoardCard.jsx';
 import Addicu from './Addicu.jsx';
 import GenericEmployeeDashboard from './EmployeeMgmt.jsx';
+import AddEmployee from '../../components/manager/AddEmployee.jsx';
+import RemoveEmployee from '../../components/manager/RemoveEmployee.jsx';
 import ICUMgmt from './ICUMgmt.jsx';
 import styles from './ManagerDashboard.module.css';
 import DashboardNav from '../../components/common/DashboardNav';
@@ -55,7 +57,24 @@ const ManagerDashboard = () => {
             case 'addIcu':
                 return <Addicu hospitalId={hospitalInfo.id} onIcuRegistered={handleIcuRegistered} />;
             case 'employeeMgmt':
-                return <GenericEmployeeDashboard employeeRole="Manager" />;
+                return (
+                    <div className={styles.employeeMgmtGrid}>
+                        <div className={styles.employeeFormColumn}>
+                            <AddEmployee onEmployeeAction={(data, action) => {
+                                // Simple local handler: show toast and optionally refresh
+                                // In a real app we'd call API to add employee then refresh
+                                console.log('Employee action', action, data);
+                                // show a toast for feedback
+                            }} />
+                            <RemoveEmployee onEmployeeAction={(identifier, action) => {
+                                console.log('Remove action', action, identifier);
+                            }} />
+                        </div>
+                        <div className={styles.employeeTasksColumn}>
+                            <GenericEmployeeDashboard employeeRole="Manager" />
+                        </div>
+                    </div>
+                );
             case 'visitorsKids':
                 return <div className={styles.sectionPlaceholder}><h3>Visitors' Room & Kids Area Management</h3><p>Implementation pending.</p></div>;
             case 'overview':

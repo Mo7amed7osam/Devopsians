@@ -34,20 +34,25 @@ const AddHospital = ({ onHospitalAdded }) => {
             return;
         }
 
+
         try {
             const payload = {
-                ...formData,
+                name: formData.name,
+                address: formData.address,
+                email: formData.email,
+                longitude: parseFloat(formData.longitude),
                 latitude: parseFloat(formData.latitude),
-                longitude: parseFloat(formData.longitude)
+                contactNumber: formData.phone,
             };
-            
-            // MOCK API CALL
-            const response = { data: { name: formData.name } };
-            
-            // 4. Use toast for success message
-            toast.success(`Hospital "${response.data.name}" added successfully!`);
+
+            const response = await addHospital(payload);
+
+            // Use toast for success message
+            const addedName = response?.data?.hospital?.name || response?.data?.name || formData.name;
+            toast.success(`Hospital "${addedName}" added successfully!`);
             setFormData({ name: '', address: '', phone: '', email: '', latitude: '', longitude: '' });
-            
+
+            // Notify parent to refresh list
             onHospitalAdded(response.data);
 
         } catch (error) {

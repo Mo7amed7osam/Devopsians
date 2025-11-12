@@ -1,7 +1,7 @@
 // src/pages/adminPages/ViewAllHospital.jsx
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
-import { viewAllHospitals, blockHospital, unblockHospital, deleteHospitalById } from '../../utils/api';
+import { viewAllHospitals, blockHospital, unblockHospital, deleteHospitalById, viewAnManager } from '../../utils/api';
 import styles from './ViewAllHospital.module.css';
 import Button from '../../components/common/Button';
 import Modal from '../../components/common/Modal'; // 1. Import the Modal component
@@ -12,7 +12,7 @@ const mockHospitals = [
     { id: 'h3', name: 'General City Clinic', rating: 4.1, isBlocked: false, manager: 'Mngr 3', icuCount: 22 },
 ];
 
-const ViewAllHospital = ({ newHospitalAdded }) => {
+const ViewAllHospital = ({ newHospitalAdded, openHospitalId, onAssignManager }) => {
     const [hospitals, setHospitals] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [loading, setLoading] = useState(false);
@@ -20,6 +20,8 @@ const ViewAllHospital = ({ newHospitalAdded }) => {
     // --- State for the Modal ---
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedHospital, setSelectedHospital] = useState(null);
+    const [isManagerModalOpen, setIsManagerModalOpen] = useState(false);
+    const [managerDetails, setManagerDetails] = useState(null);
 
     useEffect(() => {
         const load = async () => {
@@ -39,31 +41,55 @@ const ViewAllHospital = ({ newHospitalAdded }) => {
         load();
     }, [newHospitalAdded]);
 
+    // When parent requests opening a specific hospital, open it after hospitals load
+    useEffect(() => {
+        if (!openHospitalId) return;
+        if (!hospitals || hospitals.length === 0) return;
+        const found = hospitals.find(h => (h._id || h.id) === openHospitalId || (h._id && h._id.toString() === openHospitalId));
+        if (found) {
+            openHospitalDetails(found);
+        }
+    }, [openHospitalId, hospitals]);
+
     // --- Modal Controls ---
     const openHospitalDetails = (hospital) => {
         setSelectedHospital(hospital);
         setIsModalOpen(true);
     };
     const closeModal = () => setIsModalOpen(false);
+    const closeManagerModal = () => setIsManagerModalOpen(false);
+
+    const openManagerDetails = async (managerId) => {
+        try {
+            const res = await viewAnManager(managerId);
+            const manager = res?.data?.data || res?.data;
+            setManagerDetails(manager);
+            setIsManagerModalOpen(true);
+        } catch (err) {
+            console.error('Failed to load manager details', err);
+            toast.error('Failed to load manager details');
+        }
+    };
     
     // --- Action Handlers (now used inside the modal) ---
     const handleBlockToggle = async () => {
         if (!selectedHospital) return;
+        const selectedId = selectedHospital._id || selectedHospital.id;
         const newStatus = !selectedHospital.isBlocked;
         try {
             // Optimistic UI update
-            setHospitals(prev => prev.map(h => h.id === selectedHospital.id ? { ...h, isBlocked: newStatus } : h));
+            setHospitals(prev => prev.map(h => (h._id === selectedId || h.id === selectedId) ? { ...h, isBlocked: newStatus } : h));
             if (newStatus) {
-                await blockHospital(selectedHospital.id);
+                await blockHospital(selectedId);
             } else {
-                await unblockHospital(selectedHospital.id);
+                await unblockHospital(selectedId);
             }
             toast.success(`Hospital has been ${newStatus ? 'blocked' : 'unblocked'}.`);
         } catch (err) {
             console.error('Block/unblock failed', err);
             toast.error('Failed to update hospital status.');
             // rollback optimistic update
-            setHospitals(prev => prev.map(h => h.id === selectedHospital.id ? { ...h, isBlocked: !newStatus } : h));
+            setHospitals(prev => prev.map(h => (h._id === selectedId || h.id === selectedId) ? { ...h, isBlocked: !newStatus } : h));
         } finally {
             closeModal(); // Close modal after action
         }
@@ -74,8 +100,9 @@ const ViewAllHospital = ({ newHospitalAdded }) => {
 
         const performDelete = async () => {
             try {
-                await deleteHospitalById(selectedHospital.id);
-                setHospitals(prev => prev.filter(h => h.id !== selectedHospital.id));
+                const selectedId = selectedHospital._id || selectedHospital.id;
+                await deleteHospitalById(selectedId);
+                setHospitals(prev => prev.filter(h => (h._id || h.id) !== selectedId));
                 toast.success(`Hospital ${selectedHospital.name} has been deleted.`);
             } catch (err) {
                 console.error('Delete hospital failed', err);
@@ -101,10 +128,14 @@ const ViewAllHospital = ({ newHospitalAdded }) => {
         });
     };
 
-    const filteredHospitals = hospitals.filter(h =>
-        h.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (h.manager && h.manager.toLowerCase().includes(searchTerm.toLowerCase()))
-    );
+    const filteredHospitals = hospitals.filter((h) => {
+        const name = h?.name || '';
+        const manager = h?.manager || '';
+        return (
+            name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            manager.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+    });
 
     return (
         <div className={styles.listContainer}>
@@ -134,22 +165,23 @@ const ViewAllHospital = ({ newHospitalAdded }) => {
                         </tr>
                     </thead>
                     <tbody>
-                        {filteredHospitals.map(hospital => (
-                            <tr key={hospital.id}>
+                        {filteredHospitals.map((hospital, idx) => (
+                            <tr key={hospital._id || hospital.id || idx}>
                                 <td>
                                     {/* Make the name clickable to open the modal */}
                                     <a href="#" className={styles.hospitalLink} onClick={(e) => { e.preventDefault(); openHospitalDetails(hospital); }}>
-                                        {hospital.name}
+                                        {hospital.name || 'Unnamed Hospital'}
                                     </a>
                                 </td>
-                                <td>{hospital.rating.toFixed(1)} <span className={styles.star}>★</span></td>
+                                <td>{typeof hospital.rating === 'number' ? hospital.rating.toFixed(1) : 'N/A'} <span className={styles.star}>★</span></td>
                                 <td>{hospital.icuCount}</td>
-                                <td>{hospital.manager}</td>
+                                <td>{hospital.assignedManager ? `${hospital.assignedManager.firstName} ${hospital.assignedManager.lastName}` : (hospital.manager || '—')}</td>
                                 <td>
                                     <span className={hospital.isBlocked ? styles.statusBlocked : styles.statusActive}>
                                         {hospital.isBlocked ? 'BLOCKED' : 'ACTIVE'}
                                     </span>
                                 </td>
+                                {/* Action column removed per request */}
                             </tr>
                         ))}
                     </tbody>
@@ -158,14 +190,27 @@ const ViewAllHospital = ({ newHospitalAdded }) => {
 
             {/* --- HOSPITAL DETAILS MODAL --- */}
             {selectedHospital && (
-                <Modal isOpen={isModalOpen} onClose={closeModal}>
+                <Modal isOpen={isModalOpen} onClose={closeModal} contentLabel={`hospital-${selectedHospital._id || selectedHospital.id}`}>
                     <div className={styles.modalHeader}>
                         <h2>{selectedHospital.name}</h2>
                         <p>ID: {selectedHospital.id}</p>
                     </div>
                     <div className={styles.modalBody}>
-                        <p><strong>Manager:</strong> {selectedHospital.manager}</p>
-                        <p><strong>Rating:</strong> {selectedHospital.rating.toFixed(1)} ★</p>
+                        <p>
+                            <strong>Manager:</strong>{' '}
+                            {selectedHospital.assignedManager ? (
+                                <>
+                                    <span>{`${selectedHospital.assignedManager.firstName} ${selectedHospital.assignedManager.lastName}`}</span>
+                                    <button className={styles.linkButton} onClick={() => openManagerDetails(selectedHospital.assignedManager._id)} style={{ marginLeft: '8px' }}>View Manager</button>
+                                    {typeof onAssignManager === 'function' && (
+                                        <Button size="small" variant="secondary" onClick={() => { closeModal(); onAssignManager(selectedHospital._id || selectedHospital.id); }} style={{ marginLeft: '8px' }}>Change Manager</Button>
+                                    )}
+                                </>
+                            ) : (
+                                (selectedHospital.manager || 'N/A')
+                            )}
+                        </p>
+                        <p><strong>Rating:</strong> {typeof selectedHospital.rating === 'number' ? selectedHospital.rating.toFixed(1) : 'N/A'} ★</p>
                         <p><strong>ICU Capacity:</strong> {selectedHospital.icuCount}</p>
                         <p><strong>Current Status:</strong> {selectedHospital.isBlocked ? 'Blocked' : 'Active'}</p>
                     </div>
@@ -182,6 +227,23 @@ const ViewAllHospital = ({ newHospitalAdded }) => {
                         >
                             Delete Hospital
                         </Button>
+                    </div>
+                </Modal>
+
+            )}
+
+            {/* Manager details modal */}
+            {managerDetails && (
+                <Modal isOpen={isManagerModalOpen} onClose={closeManagerModal} contentLabel={`manager-${managerDetails._id}`}>
+                    <div className={styles.modalHeader}>
+                        <h2>{managerDetails.firstName} {managerDetails.lastName}</h2>
+                        <p>ID: {managerDetails._id}</p>
+                    </div>
+                    <div className={styles.modalBody}>
+                        <p><strong>Email:</strong> {managerDetails.email || 'N/A'}</p>
+                        <p><strong>Phone:</strong> {managerDetails.phone || 'N/A'}</p>
+                        <p><strong>Role:</strong> {managerDetails.role}</p>
+                        <p><strong>Created At:</strong> {new Date(managerDetails.createdAt).toLocaleString()}</p>
                     </div>
                 </Modal>
             )}

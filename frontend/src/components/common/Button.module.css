@@ -11,6 +11,15 @@
   text-align: center;
 }
 
+/* Small button variant (for inline/compact actions) */
+.small {
+  width: auto;
+  padding: 6px 10px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 4px;
+}
+
 .btn:disabled {
   background-color: #cccccc;
   cursor: not-allowed;

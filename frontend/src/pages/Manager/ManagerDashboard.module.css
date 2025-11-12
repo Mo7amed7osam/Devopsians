@@ -85,3 +85,16 @@ body.dark-mode .managerDashboard .sectionPlaceholder {
     border-color: #856404;
     color: #ffc107; /* Lighter warning text */
 }
+
+/* Employee management layout */
+.employeeMgmtGrid {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+}
+.employeeFormColumn {
+    flex: 1 1 40%;
+}
+.employeeTasksColumn {
+    flex: 1 1 60%;
+}

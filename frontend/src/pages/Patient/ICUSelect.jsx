@@ -43,17 +43,15 @@ const ICUSelect = () => {
         if (!userLocation) return;
         setLoading(true);
         try {
-            // Fetch all ICUs from backend
-            const response = await axios.get(`${API_BASE}/icu/all`);
-            const allIcus = response.data.icus || [];
-            
-            // Filter available ICUs only
-            const availableIcus = allIcus.filter(icu => 
-                icu.status === 'Available' && !icu.isReserved
-            );
-            
+            // Fetch available ICUs from backend (public endpoint)
+            const response = await getAvailableICUsFromServer();
+            const allIcus = Array.isArray(response.data) ? response.data : response.data?.icus || response.data?.icusList || [];
+
+            // Filter available ICUs only (controller already returns available, but keep guard)
+            const availableIcus = allIcus.filter(icu => icu && icu.status === 'Available' && !icu.isReserved);
+
             setIcus(availableIcus);
-            
+
             if (availableIcus.length === 0) {
                 toast.info('No available ICUs at the moment. Please try again later.');
             }

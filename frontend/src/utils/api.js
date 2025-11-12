@@ -180,6 +180,11 @@ export const searchManagerWithHospitals = async (queryParams) => await API.get('
 export const searchHospitalWithFeedbacks = async (hospitalId) => await API.get(`/admin/search-hospital-with-feedbacks/${hospitalId}`);
 export const viewAnManager = async (managerId) => await API.get(`/admin/view-an-managers/${managerId}`);
 export const viewHospitalsRating = async () => await API.get('/admin/view-hospitals-rating');
+// --- User management endpoints (admin) ---
+export const deleteUserById = async (userId) => await API.delete(`/admin/delete-user/${userId}`);
+export const blockUserById = async (userId) => await API.put(`/admin/block-user/${userId}`);
+export const unblockUserById = async (userId) => await API.put(`/admin/unblock-user/${userId}`);
+export const updateUserById = async (userId, payload) => await API.put(`/admin/update-user/${userId}`, payload);
 
 /**
  * Fetches system-wide statistics (e.g., total ICUs, occupied count).

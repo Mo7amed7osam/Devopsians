@@ -12,9 +12,10 @@ import styles from './Button.module.css';
  * @param {boolean} [props.disabled=false] - Whether the button is disabled.
  * @param {string} [props.className] - Additional classes to apply.
  */
-const Button = ({ children, onClick, variant = 'primary', type = 'button', disabled = false, className = '' }) => {
-  // Combine the base button style, the variant style, and any extra classes
-  const buttonClasses = `${styles.btn} ${styles[variant]} ${className}`;
+const Button = ({ children, onClick, variant = 'primary', type = 'button', disabled = false, className = '', size = 'normal' }) => {
+  // Combine the base button style, the variant style, size and any extra classes
+  const sizeClass = size === 'small' ? styles.small : '';
+  const buttonClasses = `${styles.btn} ${styles[variant]} ${sizeClass} ${className}`;
 
   return (
     <button

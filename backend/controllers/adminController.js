@@ -95,6 +95,7 @@ export const viewHospitals = async (req, res, next) => {
     let hospitals;
 
     if (longitude && latitude) {
+      // Use aggregation to perform geoNear and populate assignedManager via $lookup
       hospitals = await Hospital.aggregate([
         {
           $geoNear: {
@@ -107,10 +108,26 @@ export const viewHospitals = async (req, res, next) => {
           },
         },
         { $match: query }, // Apply the query filters here
+        // Lookup assignedManager from users collection
+        {
+          $lookup: {
+            from: 'users',
+            localField: 'assignedManager',
+            foreignField: '_id',
+            as: 'assignedManager',
+          },
+        },
+        // unwind so assignedManager is an object (or null)
+        {
+          $unwind: {
+            path: '$assignedManager',
+            preserveNullAndEmptyArrays: true,
+          },
+        },
         { $sort: { distance: 1 } }, // Sort by nearest
       ]);
     } else {
-      hospitals = await Hospital.find(query);
+      hospitals = await Hospital.find(query).populate('assignedManager', 'firstName lastName email');
     }
 
     res.status(200).json({ hospitals });
@@ -121,14 +138,16 @@ export const viewHospitals = async (req, res, next) => {
 
 export const assignManager = async (req, res, next) => {
   try {
-    const { id } = req.params;
+    // Support both patterns: hospital id in params or in request body
+    const hospitalId = req.params?.id || req.body?.hospitalId || req.body?.id;
     const { managerId } = req.body;
 
     if (!managerId) {
       return next(new ErrorHandler("Manager ID is required.", 400));
     }
 
-    const user = await User.findOne(managerId);
+    // Use findById to locate the manager by id
+    const user = await User.findById(managerId);
 
     if (!user) {
       return next(new ErrorHandler("Manager not found.", 404));
@@ -138,8 +157,12 @@ export const assignManager = async (req, res, next) => {
       return next(new ErrorHandler("Only Managers can be assigned", 403));
     }
 
+    if (!hospitalId) {
+      return next(new ErrorHandler("Hospital ID is required.", 400));
+    }
+
     const hospital = await Hospital.findByIdAndUpdate(
-      id,
+      hospitalId,
       { assignedManager: managerId },
       { new: true }
     ).populate("assignedManager", "firstName lastName email");
@@ -148,9 +171,7 @@ export const assignManager = async (req, res, next) => {
       return next(new ErrorHandler("Hospital not found.", 404));
     }
 
-    res
-      .status(200)
-      .json({ message: "Manager assigned successfully.", hospital });
+    res.status(200).json({ message: "Manager assigned successfully.", hospital });
   } catch (error) {
     next(new ErrorHandler(error.message, 500));
   }
@@ -264,89 +285,142 @@ export const viewHospitalsRating = async (req, res, next) => {
   }
 };
 
+/**
+ * Unified user creation helper.
+ * Supports roles: 'Manager' and 'Admin'.
+ * - Manager requires: firstName, lastName, userName, password
+ * - Admin requires: firstName, lastName, email, password
+ */
+const createUserWithRole = async (req, res, next, role) => {
+  try {
+    const { firstName, lastName, userName, email, password } = req.body;
+
+    // Basic required fields for all roles
+    if (!firstName || !lastName || !password) {
+      return next(new ErrorHandler('All fields are required', 400));
+    }
+
+    // Role-specific validation
+    if (role === 'Manager' && !userName) {
+      return next(new ErrorHandler('userName is required for Manager', 400));
+    }
+    if (role === 'Admin' && !email) {
+      return next(new ErrorHandler('email is required for Admin', 400));
+    }
+
+    // Check if username or email already exists
+    let existingUser = null;
+    if (userName) existingUser = await User.findOne({ userName });
+    if (!existingUser && email) existingUser = await User.findOne({ email });
+    if (existingUser) return next(new ErrorHandler('User already exists', 400));
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const payload = {
+      firstName,
+      lastName,
+      userPass: hashedPassword,
+      role,
+    };
+    // supply defaults for required User fields if not provided
+    if (!req.body.gender) payload.gender = 'Male';
+    if (!req.body.phone) payload.phone = '0000000000';
+    if (userName) payload.userName = userName;
+    if (email) payload.email = email;
+
+    const newUser = new User(payload);
+    await newUser.save();
+
+    res.status(201).json({
+      success: true,
+      message: `${role} account created successfully`,
+      data: {
+        id: newUser._id,
+        firstName: newUser.firstName,
+        lastName: newUser.lastName,
+        email: newUser.email,
+        role: newUser.role,
+      },
+    });
+  } catch (error) {
+    console.error('createUserWithRole error:', error);
+    next(new ErrorHandler(error.message, 500));
+  }
+};
+
 export const createManagerAccount = async (req, res, next) => {
   try {
-    const { firstName, lastName, userName, password } = req.body;
+    const { firstName, lastName, userName, password, email, hospitalId } = req.body;
 
-    // Check if all fields are provided
+    // Validate required fields for manager
     if (!firstName || !lastName || !userName || !password) {
-      return next(new ErrorHandler("All fields are required", 400));
+      return next(new ErrorHandler('All fields are required for Manager', 400));
     }
 
-    // Check if the user already exists
-    const existingUser = await User.findOne({ userName });
-    if (existingUser) {
-      return next(new ErrorHandler("User already exists", 400));
-    }
+    // Check if username or email already exists
+    let existingUser = await User.findOne({ userName });
+    if (!existingUser && email) existingUser = await User.findOne({ email });
+    if (existingUser) return next(new ErrorHandler('User already exists', 400));
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const newUser = new User({
       firstName,
       lastName,
-      email,
+      userName,
+      email: email || undefined,
       userPass: hashedPassword,
-      role: "Manager",
+      // fill required fields with sensible defaults if missing
+      gender: req.body.gender || 'Male',
+      phone: req.body.phone || '0000000000',
+      role: 'Manager',
     });
 
     await newUser.save();
 
-    res.status(201).json({
+    let assignedHospital = null;
+    // If hospitalId provided, attempt to assign the created manager
+    if (hospitalId) {
+      const hospital = await Hospital.findById(hospitalId);
+      if (!hospital) {
+        // If hospital does not exist, respond with created manager but warn
+        return res.status(201).json({
+          success: true,
+          message: 'Manager created but hospital not found to assign',
+          data: {
+            id: newUser._id,
+            firstName: newUser.firstName,
+            lastName: newUser.lastName,
+            email: newUser.email,
+            role: newUser.role,
+          },
+        });
+      }
+      hospital.assignedManager = newUser._id;
+      assignedHospital = await hospital.save();
+    }
+
+    // Return manager info (and assigned hospital if applicable)
+    return res.status(201).json({
       success: true,
-      message: "Manager account created successfully",
+      message: 'Manager account created successfully',
       data: {
         id: newUser._id,
         firstName: newUser.firstName,
         lastName: newUser.lastName,
         email: newUser.email,
         role: newUser.role,
+        assignedHospital: assignedHospital ? { id: assignedHospital._id, name: assignedHospital.name } : null,
       },
     });
   } catch (error) {
+    console.error('createManagerAccount error:', error);
     next(new ErrorHandler(error.message, 500));
   }
 };
 
-export const createAdminAccount = async (req, res, next) => {
-  try {
-    const { firstName, lastName, userName, password } = req.body;
-
-    if (!firstName || !lastName || !email || !password) {
-      return next(new ErrorHandler("All fields are required", 400));
-    }
-
-    const existingUser = await User.findOne({ userName });
-    if (existingUser) {
-      return next(new ErrorHandler("User already exists", 400));
-    }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    const newUser = new User({
-      firstName,
-      lastName,
-      email,
-      userPass: hashedPassword,
-      role: "Admin",
-    });
-
-    await newUser.save();
-
-    res.status(201).json({
-      success: true,
-      message: "Admin account created successfully",
-      data: {
-        id: newUser._id,
-        firstName: newUser.firstName,
-        lastName: newUser.lastName,
-        email: newUser.email,
-        role: newUser.role,
-      },
-    });
-  } catch (error) {
-    next(new ErrorHandler(error.message, 500));
-  }
-};
+export const createAdminAccount = async (req, res, next) =>
+  createUserWithRole(req, res, next, 'Admin');
 
 export const viewAllAdmins = async (req, res, next) => {
   try {
@@ -372,6 +446,59 @@ export const viewAllManagers = async (req, res, next) => {
     });
   } catch (error) {
     next(new ErrorHandler(error.message, 500));
+  }
+};
+
+// Admin: update user details
+export const updateUser = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const updates = req.body;
+    const allowed = ['firstName', 'lastName', 'email', 'phone', 'role', 'isBlocked'];
+    const payload = {};
+    Object.keys(updates).forEach(k => { if (allowed.includes(k)) payload[k] = updates[k]; });
+
+    const user = await User.findByIdAndUpdate(id, payload, { new: true }).select('-userPass');
+    if (!user) return next(new ErrorHandler('User not found', 404));
+    res.status(200).json({ success: true, message: 'User updated', data: user });
+  } catch (err) {
+    next(new ErrorHandler(err.message, 500));
+  }
+};
+
+// Admin: delete a user
+export const deleteUser = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const user = await User.findByIdAndDelete(id).select('-userPass');
+    if (!user) return next(new ErrorHandler('User not found', 404));
+    res.status(200).json({ success: true, message: 'User deleted', data: user });
+  } catch (err) {
+    next(new ErrorHandler(err.message, 500));
+  }
+};
+
+// Admin: block user
+export const blockUser = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const user = await User.findByIdAndUpdate(id, { isBlocked: true }, { new: true }).select('-userPass');
+    if (!user) return next(new ErrorHandler('User not found', 404));
+    res.status(200).json({ success: true, message: 'User blocked', data: user });
+  } catch (err) {
+    next(new ErrorHandler(err.message, 500));
+  }
+};
+
+// Admin: unblock user
+export const unblockUser = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const user = await User.findByIdAndUpdate(id, { isBlocked: false }, { new: true }).select('-userPass');
+    if (!user) return next(new ErrorHandler('User not found', 404));
+    res.status(200).json({ success: true, message: 'User unblocked', data: user });
+  } catch (err) {
+    next(new ErrorHandler(err.message, 500));
   }
 };
 export const viewAnManager = async (req, res, next) => {

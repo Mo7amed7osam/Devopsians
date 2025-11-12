@@ -24,16 +24,28 @@ const customStyles = {
   },
 };
 
-// Bind the modal to your app element for accessibility
-ReactModal.setAppElement('#root'); // Or your app's root ID
+// Bind the modal to your app element for accessibility (safe to call once)
+// Ensure we only call setAppElement once (prevents duplicate registration warnings)
+if (typeof window !== 'undefined') {
+  try {
+    if (!window.__REACT_MODAL_APP_ELEMENT_SET__) {
+      ReactModal.setAppElement('#root'); // Or your app's root ID
+      window.__REACT_MODAL_APP_ELEMENT_SET__ = true;
+    }
+  } catch (err) {
+    // setAppElement may throw in non-browser environments; ignore
+  }
+}
 
-const Modal = ({ isOpen, onClose, children }) => {
+const Modal = ({ isOpen, onClose, children, contentLabel = 'Modal' }) => {
   return (
     <ReactModal
       isOpen={isOpen}
       onRequestClose={onClose}
       style={customStyles}
-      contentLabel="Example Modal"
+      contentLabel={contentLabel}
+      // Keep ariaHideApp enabled for accessibility. We guard setAppElement above
+      ariaHideApp={true}
     >
       <button 
         onClick={onClose} 
