@@ -1,0 +1,145 @@
+/* AdminDashboard.module.css */
+.adminDashboard {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 20px;
+  background-color: var(--color-background-light, #f8f9fa);
+  min-height: 100vh;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.header h1 {
+  color: var(--color-primary-dark, #0056b3);
+  font-size: 32px;
+  font-weight: 700;
+}
+
+/* Statistics Grid */
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+/* Tab Navigation */
+.tabsNav {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 30px;
+  flex-wrap: wrap;
+  border-bottom: 2px solid #dee2e6;
+  padding-bottom: 10px;
+}
+
+.tabButton {
+  padding: 12px 20px;
+  background-color: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  color: #6c757d;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.tabButton:hover {
+  color: var(--color-primary, #007bff);
+  border-bottom-color: var(--color-primary, #007bff);
+}
+
+.tabButton.active {
+  color: var(--color-primary, #007bff);
+  border-bottom-color: var(--color-primary, #007bff);
+}
+
+/* Content Area */
+.contentArea {
+  background-color: white;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  min-height: 400px;
+}
+
+/* Form Card (for manager assignment) */
+.formCard {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 30px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.formTitle {
+  text-align: center;
+  margin-bottom: 25px;
+  color: var(--color-primary-dark, #0056b3);
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.formCard input {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 15px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 16px;
+  transition: border-color 0.3s;
+}
+
+.formCard input:focus {
+  border-color: var(--color-primary, #007bff);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+.formCard button[type="submit"] {
+  width: 100%;
+  padding: 14px;
+  background-color: var(--color-primary, #007bff);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.formCard button[type="submit"]:hover {
+  background-color: var(--color-primary-dark, #0056b3);
+}
+
+/* Employee Management Grid */
+.employeeMgmtGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 30px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .statsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .tabsNav {
+    flex-direction: column;
+  }
+
+  .tabButton {
+    width: 100%;
+    text-align: left;
+  }
+
+  .employeeMgmtGrid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -4,7 +4,7 @@ import DashBoardCard from '../../components/common/DashBoardCard.jsx';
 import AddHospital from './AddHospital.jsx';
 import ViewAllHospital from './ViewAllHospital.jsx';
 import SystemLogs from './SystemLogs.jsx';
-import styles from './AdminPage.module.css';
+import styles from './AdminDashboard.module.css';
 import Button from '../../components/common/Button';
 import AddEmployee from '../../components/manager/AddEmployee.jsx';
 import RemoveEmployee from '../../components/manager/RemoveEmployee.jsx';

@@ -126,20 +126,60 @@ export const fetchActiveAmbulances = async () => {
 // ============================================================
 //    MOCK HOSPITAL MANAGEMENT (ADMIN/MANAGER) PLACEHOLDERS
 // ============================================================
+// -----------------------
+// Hospital / Admin APIs
+// -----------------------
 export const addHospital = async (data) => {
-  console.log('Mock addHospital', data);
-  return { data: { success: true } };
+  // Try admin route first, then hospital route
+  try {
+    return await API.post('/admin/add-hospital', data);
+  } catch (err) {
+    return await API.post('/hospital/add-hospital', data);
+  }
 };
 
 export const viewAllHospitals = async () => {
-  console.log('Mock viewAllHospitals');
-  // For now, let's return the mock data directly here for testing AdminPage
-  return { data: [
-    { id: 'h1', name: 'Al-Salam Hospital', rating: 4.8, isBlocked: false, manager: 'Mngr 1', icuCount: 15 },
-    { id: 'h2', name: 'North Star Medical', rating: 3.5, isBlocked: true, manager: 'Mngr 2', icuCount: 8 },
-    { id: 'h3', name: 'General City Clinic', rating: 4.1, isBlocked: false, manager: 'Mngr 3', icuCount: 22 },
-  ] };
+  // There are both /admin/view-hospitals and /hospital/view-hospitals in the backend.
+  // Prefer the admin endpoint but fall back to hospital route if needed.
+  try {
+    return await API.get('/admin/view-hospitals');
+  } catch (err) {
+    return await API.get('/hospital/view-hospitals');
+  }
 };
+
+export const blockHospitalById = async (hospitalId) => {
+  return await API.put(`/admin/block-hospital/${hospitalId}`);
+};
+
+export const unblockHospitalById = async (hospitalId) => {
+  return await API.put(`/admin/unblock-hospital/${hospitalId}`);
+};
+
+export const deleteHospitalById = async (hospitalId) => {
+  return await API.delete(`/admin/delete-hospital/${hospitalId}`);
+};
+
+export const assignManagerToHospital = async (payload) => {
+  // payload could be { managerId, hospitalId }
+  return await API.post('/admin/assign-manager', payload);
+};
+export const assignManagerToHospitalById = async (hospitalId, payload) => await API.put(`/hospital/assign-manager/${hospitalId}`, payload);
+
+export const createManagerAccount = async (managerData) => {
+  return await API.post('/admin/create-manager-account', managerData);
+};
+
+export const createAdminAccount = async (adminData) => {
+  return await API.post('/admin/create-admin-account', adminData);
+};
+
+export const viewAllAdmins = async () => await API.get('/admin/view-all-admins');
+export const viewAllManagers = async () => await API.get('/admin/view-all-managers');
+export const searchManagerWithHospitals = async (queryParams) => await API.get('/admin/search-manager-with-hospitals', { params: queryParams });
+export const searchHospitalWithFeedbacks = async (hospitalId) => await API.get(`/admin/search-hospital-with-feedbacks/${hospitalId}`);
+export const viewAnManager = async (managerId) => await API.get(`/admin/view-an-managers/${managerId}`);
+export const viewHospitalsRating = async () => await API.get('/admin/view-hospitals-rating');
 
 /**
  * Fetches system-wide statistics (e.g., total ICUs, occupied count).
@@ -199,10 +239,6 @@ export const deleteICU = async (icuId) => {
   return { data: { deleted: true } };
 };
 
-export const updateMedicalHistory = async (patientId, history) => {
-  console.log('Mock updateMedicalHistory called', patientId, history);
-  return { data: { success: true } };
-};
 
 export const reserveVisitorsRoom = async (details) => {
   console.log('Mock reserveVisitorsRoom called', details);
@@ -214,14 +250,93 @@ export const rateDoctorAndHospital = async (data) => {
   return { data: { success: true } };
 };
 
-export const blockHospital = async (hospitalId) => {
-  console.log('Mock blockHospital called', hospitalId);
-  return { data: { blocked: true } };
-};
+
 
 export const registerICU = async (icuData) => {
   console.log('Mock registerICU called', icuData);
   return { data: { success: true } };
+};
+
+// ============================================================
+// Ambulance APIs
+// ============================================================
+export const getAllAmbulances = async () => await API.get('/ambulance');
+export const getAmbulanceById = async (ambulanceId) => await API.get(`/ambulance/${ambulanceId}`);
+export const updateAmbulanceStatus = async (ambulanceId, statusPayload) => await API.put(`/ambulance/${ambulanceId}/status`, statusPayload);
+export const assignAmbulance = async (ambulanceId, payload) => await API.post(`/ambulance/${ambulanceId}/assign`, payload);
+
+// ============================================================
+// ICU APIs
+// ============================================================
+export const getAllICUs = async () => await API.get('/icu/all');
+export const getAvailableICUsFromServer = async () => await API.get('/icu/available');
+export const getICUById = async (icuId) => await API.get(`/icu/${icuId}`);
+export const reserveICUOnServer = async (payload) => await API.post('/icu/reserve', payload);
+export const cancelICUReservation = async (payload) => await API.post('/icu/cancel', payload);
+
+// ============================================================
+// Doctor APIs
+// ============================================================
+export const fetchPatientHealthStatus = async (doctorId, patientId) => await API.get(`/doctor/view-health-status/doctor/${doctorId}/patient/${patientId}`);
+export const fetchPatientMedicalHistory = async (doctorId, patientId) => await API.get(`/doctor/view-medical-history/doctor/${doctorId}/patient/${patientId}`);
+export const updatePatientMedicineScheduleOnServer = async (doctorId, patientId, schedule) => await API.put(`/doctor/update-medicine-schedule/doctor/${doctorId}/patient/${patientId}`, schedule);
+export const fetchAssignedPatientsForDoctor = async (doctorId) => await API.get(`/doctor/assigned-patients/doctor/${doctorId}`);
+
+// ============================================================
+// Manager APIs
+// ============================================================
+export const assignBackupManager = async (payload) => await API.post('/manager/assign-backup-manager', payload);
+export const registerICUOnServer = async (icuData) => await API.post('/manager/register-icu', icuData);
+export const deleteICUById = async (icuId) => await API.delete(`/manager/delete-icu/${icuId}`);
+export const updateICUById = async (icuId, updatePayload) => await API.put(`/manager/update-icu/${icuId}`, updatePayload);
+export const viewICUsForManager = async () => await API.get('/manager/view-icus');
+export const addEmployee = async (employeeData) => await API.post('/manager/add-employee', employeeData);
+export const removeEmployee = async (userId) => await API.delete(`/manager/remove-employee/${userId}`);
+export const trackEmployeeTasks = async (params) => await API.get('/manager/track-employee-tasks', { params });
+export const createAndAssignTask = async (taskData) => await API.post('/manager/create-and-assign-task', taskData);
+export const registerVisitorRoomManager = async (roomData) => await API.post('/manager/register-visitor-room', roomData);
+export const calculateFeesForUser = async (userId) => await API.get(`/manager/calculate-fees/${userId}`);
+export const viewICUByIdManager = async (icuId) => await API.get(`/manager/view-icu-byid/${icuId}`);
+export const viewAllEmployeesForManager = async (managerId) => await API.get(`/manager/view-all-employees/${managerId}`);
+
+// ============================================================
+// Patient APIs
+// ============================================================
+export const updateMedicalHistoryForPatient = async (historyPayload) => await API.put('/patient/medical-history', historyPayload);
+export const rateHospitalByPatient = async (ratingPayload) => await API.post('/patient/rate-hospital', ratingPayload);
+export const getMedicineScheduleForUser = async (userId) => await API.get(`/patient/medicine-schedule/${userId}`);
+export const getTotalFeesForUser = async (userId) => await API.get(`/patient/total-fees/${userId}`);
+export const reserveICUForPatient = async (payload) => await API.post('/patient/reserve-icu', payload);
+export const freeICUForPatient = async (payload) => await API.post('/patient/free-icu', payload);
+export const getAvailableICUsPatient = async () => await API.get('/patient/get-available-icus');
+export const reserveVisitorRoomPatient = async (payload) => await API.post('/patient/reserve-visitor-room', payload);
+export const reserveKidsAreaPatient = async (payload) => await API.post('/patient/reserve-kids-area', payload);
+export const getUserReservedServices = async (userId) => await API.get(`/patient/reserved-services/${userId}`);
+
+// ============================================================
+// Receptionist APIs
+// ============================================================
+export const reserveICUReceptionist = async (payload) => await API.post('/receptionist/reserve-icu', payload);
+export const calculateFeeReceptionist = async (params) => await API.get('/receptionist/calculate-fee', { params });
+
+// ============================================================
+// User / Auth helpers
+// ============================================================
+export const verifyToken = async (tokenPayload) => await API.post('/user/verify-token', tokenPayload);
+export const updateUserMedicalDetails = async (userId, payload) => await API.put(`/user/${userId}/update-medical-details`, payload);
+export const showUserDetails = async (userId) => await API.get(`/user/details/${userId}`);
+export const sendEmail = async (payload) => await API.post('/user/send-email', payload);
+
+// Backwards-compatible aliases (older UI code expects these names)
+export const blockHospital = async (hospitalId) => await blockHospitalById(hospitalId);
+export const unblockHospital = async (hospitalId) => await unblockHospitalById(hospitalId);
+export const updateMedicalHistory = async (patientIdOrPayload, maybeHistory) => {
+  // Keep the old signature used in some pages: updateMedicalHistory(patientId, history)
+  if (typeof patientIdOrPayload === 'string' && maybeHistory) {
+    return await updateMedicalHistoryForPatient({ userId: patientIdOrPayload, history: maybeHistory });
+  }
+  // Otherwise assume it's the new payload object
+  return await updateMedicalHistoryForPatient(patientIdOrPayload);
 };
 
 

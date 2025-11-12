@@ -1,7 +1,7 @@
 // src/pages/adminPages/ViewAllHospital.jsx
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
-import { viewAllHospitals, blockHospital } from '../../utils/api';
+import { viewAllHospitals, blockHospital, unblockHospital, deleteHospitalById } from '../../utils/api';
 import styles from './ViewAllHospital.module.css';
 import Button from '../../components/common/Button';
 import Modal from '../../components/common/Modal'; // 1. Import the Modal component
@@ -22,10 +22,21 @@ const ViewAllHospital = ({ newHospitalAdded }) => {
     const [selectedHospital, setSelectedHospital] = useState(null);
 
     useEffect(() => {
-        setLoading(true);
-        // Simulating API call
-        setHospitals(mockHospitals);
-        setLoading(false);
+        const load = async () => {
+            setLoading(true);
+            try {
+                const res = await viewAllHospitals();
+                setHospitals(Array.isArray(res.data) ? res.data : res.data?.hospitals || []);
+            } catch (err) {
+                console.error('Failed to load hospitals', err);
+                toast.error('Failed to load hospitals from server.');
+                // fallback to mock data
+                setHospitals(mockHospitals);
+            } finally {
+                setLoading(false);
+            }
+        };
+        load();
     }, [newHospitalAdded]);
 
     // --- Modal Controls ---
@@ -39,31 +50,49 @@ const ViewAllHospital = ({ newHospitalAdded }) => {
     const handleBlockToggle = async () => {
         if (!selectedHospital) return;
         const newStatus = !selectedHospital.isBlocked;
-        
-        setHospitals(prev => prev.map(h => 
-            h.id === selectedHospital.id ? { ...h, isBlocked: newStatus } : h
-        ));
-        toast.success(`Hospital has been ${newStatus ? 'blocked' : 'unblocked'}.`);
-        closeModal(); // Close modal after action
+        try {
+            // Optimistic UI update
+            setHospitals(prev => prev.map(h => h.id === selectedHospital.id ? { ...h, isBlocked: newStatus } : h));
+            if (newStatus) {
+                await blockHospital(selectedHospital.id);
+            } else {
+                await unblockHospital(selectedHospital.id);
+            }
+            toast.success(`Hospital has been ${newStatus ? 'blocked' : 'unblocked'}.`);
+        } catch (err) {
+            console.error('Block/unblock failed', err);
+            toast.error('Failed to update hospital status.');
+            // rollback optimistic update
+            setHospitals(prev => prev.map(h => h.id === selectedHospital.id ? { ...h, isBlocked: !newStatus } : h));
+        } finally {
+            closeModal(); // Close modal after action
+        }
     };
     
     const handleDelete = async () => {
         if (!selectedHospital) return;
 
-        const performDelete = () => {
-            setHospitals(prev => prev.filter(h => h.id !== selectedHospital.id));
-            toast.success(`Hospital ${selectedHospital.name} has been deleted.`);
-            closeModal();
+        const performDelete = async () => {
+            try {
+                await deleteHospitalById(selectedHospital.id);
+                setHospitals(prev => prev.filter(h => h.id !== selectedHospital.id));
+                toast.success(`Hospital ${selectedHospital.name} has been deleted.`);
+            } catch (err) {
+                console.error('Delete hospital failed', err);
+                toast.error('Failed to delete hospital.');
+            } finally {
+                closeModal();
+            }
         };
 
         const ConfirmationToast = ({ closeToast }) => (
             <div>
                 <p>Are you sure you want to delete this hospital?</p>
-                <Button onClick={() => { performDelete(); closeToast(); }} variant="danger" style={{ marginRight: '10px' }}>Yes, Delete</Button>
+                <Button onClick={async () => { await performDelete(); closeToast(); }} variant="danger" style={{ marginRight: '10px' }}>Yes, Delete</Button>
                 <Button onClick={closeToast} variant="secondary">Cancel</Button>
             </div>
         );
-        
+
         toast.warn(<ConfirmationToast />, {
             position: "top-center",
             autoClose: false,
