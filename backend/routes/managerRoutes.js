@@ -1,5 +1,6 @@
 import express from "express";
 import {
+  getMyHospital,
   assignBackupManager,
   registerICU,
   deleteICU,
@@ -14,22 +15,26 @@ import {
   viewAllEmployees,
   viewICUById,
 } from "../controllers/managerController.js";
+import { isAuthenticated, authorizeRoles } from "../utils/authMiddleware.js";
 
 const router = express.Router();
 
-router.post("/assign-backup-manager", assignBackupManager);
-router.post("/register-icu", registerICU);
-router.delete("/delete-icu/:icuId", deleteICU);
-router.put("/update-icu/:icuId", updateICU);
-router.get("/view-icus", viewICUs);
-router.post("/add-employee", addEmployee);
-router.delete("/remove-employee/:userId", removeEmployee);
-router.get("/track-employee-tasks", trackEmployeeTasks);
-router.post("/create-and-assign-task", createAndAssignTask);
-router.post("/register-visitor-room", registerVisitorRoom);
-router.get("/calculate-fees/:userId", calculateFees);
-router.get("/view-icu-byid/:icuId", viewICUById);
+// Get manager's assigned hospital
+router.get("/my-hospital", isAuthenticated, authorizeRoles("Manager"), getMyHospital);
 
-router.get("/view-all-employees/:managerId", viewAllEmployees);
+// All manager routes require authentication and Manager role
+router.post("/assign-backup-manager", isAuthenticated, authorizeRoles("Admin", "Manager"), assignBackupManager);
+router.post("/register-icu", isAuthenticated, authorizeRoles("Manager"), registerICU);
+router.delete("/delete-icu/:icuId", isAuthenticated, authorizeRoles("Manager"), deleteICU);
+router.put("/update-icu/:icuId", isAuthenticated, authorizeRoles("Manager"), updateICU);
+router.get("/view-icus", isAuthenticated, authorizeRoles("Manager"), viewICUs);
+router.post("/add-employee", isAuthenticated, authorizeRoles("Manager"), addEmployee);
+router.delete("/remove-employee/:userId", isAuthenticated, authorizeRoles("Manager"), removeEmployee);
+router.get("/track-employee-tasks", isAuthenticated, authorizeRoles("Manager"), trackEmployeeTasks);
+router.post("/create-and-assign-task", isAuthenticated, authorizeRoles("Manager"), createAndAssignTask);
+router.post("/register-visitor-room", isAuthenticated, authorizeRoles("Manager"), registerVisitorRoom);
+router.get("/calculate-fees/:userId", isAuthenticated, authorizeRoles("Manager"), calculateFees);
+router.get("/view-icu-byid/:icuId", isAuthenticated, authorizeRoles("Manager"), viewICUById);
+router.get("/view-all-employees/:managerId", isAuthenticated, authorizeRoles("Manager"), viewAllEmployees);
 
 export default router;

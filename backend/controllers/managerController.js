@@ -1,10 +1,38 @@
-import Hospital from "../models/hospitalModel.js";
+import Hospital from "../models/hospitalmodel.js";
 import ICU from "../models/icuModel.js";
 import Task from "../models/taskModel.js";
 import User from "../models/userModel.js";
 import Service from "../models/serviceModel.js";
 import ErrorHandler from "../utils/errorHandler.js";
 import { io } from "../index.js";
+
+// Get manager's assigned hospital
+export const getMyHospital = async (req, res, next) => {
+  try {
+    const managerId = req.user.id; // From auth middleware
+
+    // Find hospital where this manager is assigned
+    const hospital = await Hospital.findOne({ assignedManager: managerId })
+      .select('name address email location contactNumber status');
+
+    if (!hospital) {
+      return res.status(404).json({
+        success: false,
+        message: "No hospital assigned to this manager",
+        data: null
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Hospital info retrieved successfully",
+      data: hospital,
+    });
+  } catch (error) {
+    next(new ErrorHandler(error.message, 500));
+  }
+};
+
 export const assignBackupManager = async (req, res, next) => {
   try {
     const { hospitalId, backupManagerId } = req.body;

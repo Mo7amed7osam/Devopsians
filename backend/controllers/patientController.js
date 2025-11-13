@@ -1,5 +1,5 @@
 import ICU from "../models/icuModel.js";
-import Hospital from "../models/hospitalModel.js";
+import Hospital from "../models/hospitalmodel.js";
 import VisitorRoom from "../models/visitorsRoomModel.js";
 import Service from "../models/serviceModel.js";
 import User from "../models/userModel.js";
