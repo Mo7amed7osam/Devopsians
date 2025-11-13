@@ -26,6 +26,11 @@ const Addicu = ({ hospitalId, onIcuRegistered }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        // Validate hospitalId before proceeding
+        if (!hospitalId || !/^[0-9a-fA-F]{24}$/.test(String(hospitalId))) {
+            toast.error('Invalid or missing hospital ID. Please ensure you are assigned to a hospital.');
+            return;
+        }
         setLoading(true);
 
         try {
@@ -42,12 +47,14 @@ const Addicu = ({ hospitalId, onIcuRegistered }) => {
             const statusMap = {
                 'AVAILABLE': 'Available',
                 'OCCUPIED': 'Occupied',
-                'MAINTENANCE': 'To Be Cleaned'
+                'MAINTENANCE': 'Maintenance'
             };
 
             const payload = {
                 // backend expects 'hospital' or 'hospitalId' named 'hospitalId' in controller
                 hospitalId,
+                room: formData.roomNumber,
+                capacity: Number(formData.capacity) || 1,
                 specialization: specializationMap[formData.specialization] || 'Medical ICU',
                 status: statusMap[formData.initialStatus] || 'Available',
                 fees: parseFloat(formData.feeStructure) || 100,
@@ -58,7 +65,7 @@ const Addicu = ({ hospitalId, onIcuRegistered }) => {
             const createdIcu = res?.data?.data || res?.data || { id: Date.now(), ...payload };
 
             // Use toast for success message
-            toast.success(`ICU Room ${payload.room} added successfully!`);
+            toast.success(`ICU Room ${formData.roomNumber || payload.room} added successfully!`);
             onIcuRegistered(createdIcu);
             setFormData({ roomNumber: '', specialization: 'General', capacity: 1, initialStatus: 'AVAILABLE', feeStructure: 500 });
 

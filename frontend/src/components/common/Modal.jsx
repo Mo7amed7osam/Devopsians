@@ -24,18 +24,7 @@ const customStyles = {
   },
 };
 
-// Bind the modal to your app element for accessibility (safe to call once)
-// Ensure we only call setAppElement once (prevents duplicate registration warnings)
-if (typeof window !== 'undefined') {
-  try {
-    if (!window.__REACT_MODAL_APP_ELEMENT_SET__) {
-      ReactModal.setAppElement('#root'); // Or your app's root ID
-      window.__REACT_MODAL_APP_ELEMENT_SET__ = true;
-    }
-  } catch (err) {
-    // setAppElement may throw in non-browser environments; ignore
-  }
-}
+// Note: ReactModal.setAppElement is called once at app startup (in main.jsx)
 
 const Modal = ({ isOpen, onClose, children, contentLabel = 'Modal' }) => {
   // Avoid mounting the modal component unless it is open. This prevents

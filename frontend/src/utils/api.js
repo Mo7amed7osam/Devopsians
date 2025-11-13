@@ -194,17 +194,19 @@ export const updateUserById = async (userId, payload) => await API.put(`/admin/u
  * Fetches system-wide statistics (e.g., total ICUs, occupied count).
  */
 export const fetchSystemStats = async () => {
-  console.log('Mock fetchSystemStats called');
-  // Simulate fetching all ICUs and calculating stats
-  const allIcus = [ // Example data - ideally fetched from backend
-      { status: 'OCCUPIED'}, { status: 'AVAILABLE' }, { status: 'MAINTENANCE' },
-      { status: 'AVAILABLE'}, { status: 'OCCUPIED' }, { status: 'AVAILABLE' },
-      { status: 'OCCUPIED'}, { status: 'AVAILABLE' }, { status: 'AVAILABLE' },
-  ];
-  const total = allIcus.length;
-  const occupied = allIcus.filter(icu => icu.status === 'OCCUPIED').length;
-  const available = allIcus.filter(icu => icu.status === 'AVAILABLE').length;
-  return { data: { totalIcus: total, occupiedIcus: occupied, availableIcus: available } };
+  // Call backend ICU endpoint to compute system-wide stats
+  try {
+    const res = await API.get('/icu/all');
+    const icus = res?.data?.data || res?.data || [];
+    const icuArray = Array.isArray(icus) ? icus : [];
+    const total = icuArray.length;
+    const occupied = icuArray.filter(i => (i.status || '').toString().toLowerCase() === 'occupied').length;
+    const available = icuArray.filter(i => (i.status || '').toString().toLowerCase() === 'available').length;
+    return { data: { totalIcus: total, occupiedIcus: occupied, availableIcus: available } };
+  } catch (err) {
+    // Fallback: return zeros if backend is unavailable or unauthorized
+    return { data: { totalIcus: 0, occupiedIcus: 0, availableIcus: 0 } };
+  }
 };
 export const fetchSystemLogs = async () => {
   console.log('Mock fetchSystemLogs called');

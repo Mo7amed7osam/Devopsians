@@ -30,9 +30,22 @@ const ICURoomSchema = new mongoose.Schema(
                 "Infectious Disease ICU",
             ],
         },
+        // Room identifier (e.g., "101", "A-12") — stored as string to allow flexible formats
+        room: {
+            type: String,
+            required: true,
+            trim: true,
+        },
+        // Number of beds/capacity for the ICU room
+        capacity: {
+            type: Number,
+            required: true,
+            default: 1,
+            min: 1,
+        },
         status: {
             type: String,
-            enum: ['Occupied', 'Available', 'To Be Cleaned', 'Cleaned'],
+            enum: ['Occupied', 'Available', 'Maintenance'],
             default: 'Available',
         },
         fees: {

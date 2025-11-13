@@ -5,6 +5,16 @@ import { BrowserRouter } from 'react-router-dom';
 import App from './App.jsx';
 import { AuthProvider } from './contexts/AuthContext.jsx'; // 1. Import AuthProvider
 import './index.css';
+import ReactModal from 'react-modal';
+
+// Ensure ReactModal knows the app element once at startup to avoid duplicate registration warnings
+if (typeof window !== 'undefined') {
+  try {
+    ReactModal.setAppElement('#root');
+  } catch (err) {
+    // ignore in non-browser environments
+  }
+}
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

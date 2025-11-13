@@ -170,6 +170,20 @@ export const assignManager = async (req, res, next) => {
       return next(new ErrorHandler("Hospital not found.", 404));
     }
 
+    // Also ensure the manager user document references this hospital for two-way consistency
+    try {
+      const managerUser = await User.findById(managerId).select('+userPass');
+      if (managerUser) {
+        managerUser.hospitalId = managerUser.hospitalId && Array.isArray(managerUser.hospitalId)
+          ? Array.from(new Set([...managerUser.hospitalId.map(String), String(hospital._id)])).map(id => id)
+          : [hospital._id];
+        await managerUser.save();
+      }
+    } catch (err) {
+      // Non-fatal: log and continue
+      console.warn('Failed to update manager user with hospitalId:', err.message || err);
+    }
+
     res.status(200).json({ message: "Manager assigned successfully.", hospital });
   } catch (error) {
     next(new ErrorHandler(error.message, 500));
@@ -395,6 +409,20 @@ export const createManagerAccount = async (req, res, next) => {
       }
       hospital.assignedManager = newUser._id;
       assignedHospital = await hospital.save();
+
+      // Also record the hospital on the manager user for two-way consistency.
+      // The User model stores hospitalId (array) for admins; we'll add the assigned
+      // hospital id to that array for managers so the manager document reflects
+      // the hospital assignment as well.
+      try {
+        newUser.hospitalId = newUser.hospitalId && Array.isArray(newUser.hospitalId)
+          ? Array.from(new Set([...newUser.hospitalId.map(String), String(assignedHospital._id)])).map(id => id)
+          : [assignedHospital._id];
+        await newUser.save();
+      } catch (err) {
+        // Non-fatal: if saving the user fails, log but continue returning success for hospital assignment
+        console.warn('Failed to persist hospitalId on manager user:', err.message || err);
+      }
     }
 
     // Return manager info (and assigned hospital if applicable)

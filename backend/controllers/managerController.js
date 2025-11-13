@@ -63,7 +63,7 @@ export const assignBackupManager = async (req, res, next) => {
 
 export const registerICU = async (req, res, next) => {
   try {
-    const { hospitalId, specialization, status, fees, isReserved, reservedBy } =
+    const { hospitalId, specialization, status, fees, isReserved, reservedBy, room, capacity } =
       req.body;
 
     // Ensure the hospital exists
@@ -72,15 +72,17 @@ export const registerICU = async (req, res, next) => {
       return next(new ErrorHandler("Hospital not found", 404));
     }
 
-    if (!specialization || !status || !fees) {
+    if (!specialization || !status || fees === undefined || !room || capacity === undefined) {
       return next(
-        new ErrorHandler("Specialization, status, and fees are required", 400)
+        new ErrorHandler("Specialization, status, fees, room and capacity are required", 400)
       );
     }
 
     const icuData = {
       hospital: hospitalId,
       specialization,
+      room,
+      capacity: Number(capacity),
       status,
       fees,
       isReserved,

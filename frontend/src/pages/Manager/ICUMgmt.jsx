@@ -46,7 +46,14 @@ const ICUMgmt = ({ hospitalId, refresh = 0 }) => {
         const statuses = ['AVAILABLE', 'OCCUPIED', 'MAINTENANCE'];
         const currentIndex = statuses.indexOf(currentStatus);
         const nextIndex = (currentIndex + 1) % statuses.length; // Cycle to the next status
-        const newStatus = statuses[nextIndex];
+        const newStatusKey = statuses[nextIndex];
+        // Map frontend keys to backend enum values
+        const statusMap = {
+            'AVAILABLE': 'Available',
+            'OCCUPIED': 'Occupied',
+            'MAINTENANCE': 'Maintenance'
+        };
+        const newStatus = statusMap[newStatusKey] || 'Available';
         try {
             await updateICUById(icuId, { status: newStatus });
             setIcus(prev => prev.map(icu => {
@@ -125,15 +132,23 @@ const ICUMgmt = ({ hospitalId, refresh = 0 }) => {
                     <tbody>
                         {filteredIcus.map(icu => {
                             const uid = icu._id || icu.id;
+                            // Fee field may be named 'fees' on the backend; keep a fallback to older 'fee'
+                            const feeValue = icu.fees ?? icu.fee ?? icu.price ?? '—';
+                            // Normalize status to match CSS classes (e.g., statusAVAILABLE)
+                            const rawStatus = (icu.status || '').toString();
+                            const statusKey = rawStatus.toUpperCase().replace(/\s+|_/g, '');
+                            const statusClass = styles[`status${statusKey}`] || '';
+                            const displayStatus = rawStatus.toString().toUpperCase();
+
                             return (
                                 <tr key={uid}>
                                     <td>{icu.room}</td>
                                     <td>{icu.specialization}</td>
                                     <td>{icu.capacity}</td>
-                                    <td>EGP {icu.fee}</td>
+                                    <td>EGP {feeValue}</td>
                                     <td>
-                                        <span className={styles[`status${(icu.status || '').replace('_', '')}`]}>
-                                            {icu.status}
+                                        <span className={statusClass}>
+                                            {displayStatus}
                                         </span>
                                     </td>
                                     <td className={styles.actions}>

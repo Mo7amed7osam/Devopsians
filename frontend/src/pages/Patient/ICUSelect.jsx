@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { toast } from 'react-toastify';
 import axios from 'axios';
+import { getAvailableICUsFromServer } from '../../utils/api';
 import MapComponent from '../../components/patient/Map.jsx';
 import Icus from '../../components/patient/Icus.jsx';
 import { getUserId } from '../../utils/cookieUtils';
