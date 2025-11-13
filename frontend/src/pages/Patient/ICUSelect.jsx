@@ -49,7 +49,7 @@ const ICUSelect = () => {
             const allIcus = Array.isArray(response.data) ? response.data : response.data?.icus || response.data?.icusList || [];
 
             // Filter available ICUs only (controller already returns available, but keep guard)
-            const availableIcus = allIcus.filter(icu => icu && icu.status === 'Available' && !icu.isReserved);
+            const availableIcus = allIcus.filter(icu => icu && (icu.status || '').toString().toLowerCase() === 'available' && !icu.isReserved);
 
             setIcus(availableIcus);
 

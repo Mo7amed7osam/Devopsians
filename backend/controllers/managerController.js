@@ -92,7 +92,7 @@ export const registerICU = async (req, res, next) => {
     const newICU = new ICU(icuData);
     await newICU.save();
 
-    const updatedICUs = await ICU.find({ status: "Available" })
+    const updatedICUs = await ICU.find({ status: { $regex: '^available$', $options: 'i' } })
       .populate("hospital", "name address")
       .exec();
 

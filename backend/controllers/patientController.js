@@ -8,7 +8,7 @@ import { app, io } from "../index.js";
 
 export const fetchAvailableICUs = async (longitude, latitude) => {
   // Fetch available ICUs from the database
-  const icus = await ICU.find({ status: "Available" })
+  const icus = await ICU.find({ status: { $regex: '^available$', $options: 'i' } })
     .populate("hospital", "name address location")
     .exec();
 
@@ -114,7 +114,7 @@ export const reserveICU = async (req, res) => {
     await newService.save();
 
     // Fetch updated ICU list and emit
-    const updatedICUs = await ICU.find({ status: "Available" })
+    const updatedICUs = await ICU.find({ status: { $regex: '^available$', $options: 'i' } })
       .populate("hospital", "name address")
       .exec();
     io.emit("icuUpdated", updatedICUs);
@@ -164,7 +164,7 @@ export const freeICU = async (req, res) => {
     await icu.save();
 
     // Fetch updated ICU list and emit
-    const updatedICUs = await ICU.find({ status: "Available" })
+    const updatedICUs = await ICU.find({ status: { $regex: '^available$', $options: 'i' } })
       .populate("hospital", "name address")
       .exec();
     io.emit("icuUpdated", updatedICUs);

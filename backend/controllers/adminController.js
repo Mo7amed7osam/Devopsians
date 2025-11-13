@@ -222,7 +222,7 @@ export const blockHospital = async (req, res, next) => {
       { status: "Occupied" } // Set status to 'Occupied'
     );
     
-    const updatedICUs = await ICU.find({ status: 'Available',  }).populate('hospital', 'name address').exec();
+  const updatedICUs = await ICU.find({ status: { $regex: '^available$', $options: 'i' } }).populate('hospital', 'name address').exec();
     io.emit('icuUpdated', updatedICUs);
     res
       .status(200)
@@ -250,7 +250,7 @@ export const unblockHospital = async (req, res, next) => {
       { status: "Available" } // Set status to 'Occupied'
     );
 
-    const updatedICUs = await ICU.find({ status: 'Available',  }).populate('hospital', 'name address').exec();
+  const updatedICUs = await ICU.find({ status: { $regex: '^available$', $options: 'i' } }).populate('hospital', 'name address').exec();
     io.emit('icuUpdated', updatedICUs);
 
     res

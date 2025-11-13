@@ -149,9 +149,9 @@ export const cancelReservation = async (req, res, next) => {
 export const getAvailableICUs = async (req, res, next) => {
     try {
         const icus = await ICU.find({
-            status: 'Available',
-            isReserved: false
-        })
+                status: { $regex: '^available$', $options: 'i' },
+                isReserved: false
+            })
         .populate('hospital', 'name address contactNumber location')
         .lean();
         
