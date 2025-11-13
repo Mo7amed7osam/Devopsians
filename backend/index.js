@@ -11,7 +11,6 @@ import hospitalRoutes from "./routes/hospitalRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import patientRoutes from "./routes/patientRoutes.js";
-import doctorRoutes from "./routes/doctorRoutes.js";
 import managerRoutes from "./routes/managerRoutes.js";
 import receptionistRoutes from "./routes/receptionistRoutes.js";
 import ambulanceRoutes from "./routes/ambulanceRoutes.js";
@@ -70,7 +69,6 @@ app.use(
 // Routes
 app.use("/admin", adminRoutes);
 app.use("/patient", patientRoutes);
-app.use("/doctor", doctorRoutes);
 app.use("/manager", managerRoutes);
 app.use("/receptionist", receptionistRoutes);
 app.use("/ambulance", ambulanceRoutes);

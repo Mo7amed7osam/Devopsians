@@ -25,13 +25,9 @@ import PatientHomePage from './pages/Patient/PatientHomePage.jsx';
 
 // --- Import Manager Pages ---
 import ManagerDashboard from './pages/Manager/ManagerDashboard.jsx';
-import EmployeePage from './pages/Manager/EmployeeMgmt.jsx';
 
 // --- Import Admin Pages ---
 import AdminDashboard from './pages/Admin/AdminDashboard.jsx';
-
-// --- Import Doctor Pages ---
-import DoctorPage from './pages/Doctor/Doctor.jsx';
 
 // --- Import Shared Pages ---
 import ReceptionistPanel from './pages/Receptionist/ReceptionistPanel.jsx';
@@ -115,15 +111,7 @@ const App = () => {
                         }
                     />
 
-                    {/* --- DOCTOR ROUTE (Role: doctor) --- */}
-                    <Route
-                        path="/doctor"
-                        element={
-                            <PrivateRoute allowedRoles={['doctor']}>
-                                <DoctorPage />
-                            </PrivateRoute>
-                        }
-                    />
+                    {/* --- Doctor route removed from project --- */}
 
                     {/* --- EMPLOYEE ROLE ROUTES (NOW SEPARATED) --- */}
                     <Route

@@ -1,7 +1,7 @@
 // src/pages/managerPages/Addicu.jsx
 import React, { useState } from 'react';
 import { toast } from 'react-toastify'; // 1. Import toast
-import { registerICU } from '../../utils/api'; 
+import { registerICUOnServer } from '../../utils/api'; 
 import styles from './Addicu.module.css';
 import Button from '../../components/common/Button';
 
@@ -29,12 +29,37 @@ const Addicu = ({ hospitalId, onIcuRegistered }) => {
         setLoading(true);
 
         try {
-            const payload = { ...formData, hospitalId, capacity: parseInt(formData.capacity) };
-            const mockResponse = { data: { id: Date.now(), ...payload } }; // Mock response
-            
-            // 3. Use toast for success message
-            toast.success(`ICU Room ${payload.roomNumber} added successfully!`);
-            onIcuRegistered(mockResponse.data);
+            // Map frontend-friendly values to backend expected fields/values
+            const specializationMap = {
+                'General': 'Medical ICU',
+                'Cardiology': 'Cardiac ICU',
+                'Neurology': 'Neurological ICU',
+                'Pediatrics': 'Pediatric ICU',
+                'Neonatal': 'Neonatal ICU',
+                'Surgical': 'Surgical ICU'
+            };
+
+            const statusMap = {
+                'AVAILABLE': 'Available',
+                'OCCUPIED': 'Occupied',
+                'MAINTENANCE': 'To Be Cleaned'
+            };
+
+            const payload = {
+                // backend expects 'hospital' or 'hospitalId' named 'hospitalId' in controller
+                hospitalId,
+                specialization: specializationMap[formData.specialization] || 'Medical ICU',
+                status: statusMap[formData.initialStatus] || 'Available',
+                fees: parseFloat(formData.feeStructure) || 100,
+                isReserved: false,
+            };
+
+            const res = await registerICUOnServer(payload);
+            const createdIcu = res?.data?.data || res?.data || { id: Date.now(), ...payload };
+
+            // Use toast for success message
+            toast.success(`ICU Room ${payload.room} added successfully!`);
+            onIcuRegistered(createdIcu);
             setFormData({ roomNumber: '', specialization: 'General', capacity: 1, initialStatus: 'AVAILABLE', feeStructure: 500 });
 
         } catch (error) {

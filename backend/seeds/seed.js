@@ -240,7 +240,6 @@ const seedDatabase = async () => {
     console.log(`   - ${services.length} services`);
     console.log("\n🎉 You can now login with:");
     console.log("   Admin:        admin@demo.com / 123456");
-    console.log("   Doctor:       doctor@demo.com / 123456");
     console.log("   Manager:      manager@demo.com / 123456");
     console.log("   Patient:      patient@demo.com / 123456");
     console.log("   Receptionist: receptionist@demo.com / 123456");

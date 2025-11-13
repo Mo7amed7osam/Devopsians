@@ -1,12 +1,12 @@
 // src/pages/ICUMgmt.jsx
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify'; // 1. Import toast
-import { viewHospitalICUs, deleteICU } from '../../utils/api';
+import { viewICUsForManager, deleteICUById, updateICUById } from '../../utils/api';
 import styles from './ICUMgmt.module.css';
 import socket from '../../utils/realtime';
 import Button from '../../components/common/Button';
 
-const ICUMgmt = ({ hospitalId }) => {
+const ICUMgmt = ({ hospitalId, refresh = 0 }) => {
     const [icus, setIcus] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -16,12 +16,9 @@ const ICUMgmt = ({ hospitalId }) => {
         const loadIcus = async () => {
             setLoading(true);
             try {
-                const mockIcus = [
-                    { id: 'icu01', room: '101', specialization: 'Cardiology', status: 'AVAILABLE', capacity: 1, fee: 600 },
-                    { id: 'icu02', room: '102', specialization: 'Neurology', status: 'OCCUPIED', capacity: 1, fee: 800 },
-                    { id: 'icu03', room: '103', specialization: 'General', status: 'MAINTENANCE', capacity: 2, fee: 500 },
-                ];
-                setIcus(mockIcus);
+                const res = await viewICUsForManager();
+                const icuArray = res?.data?.data || res?.data || [];
+                setIcus(Array.isArray(icuArray) ? icuArray : []);
             } catch (error) {
                 console.error('Failed to load ICUs:', error);
                 toast.error('Failed to load ICUs.');
@@ -31,37 +28,52 @@ const ICUMgmt = ({ hospitalId }) => {
         };
 
         loadIcus();
-        
+
         socket.on('icuStatusUpdate', (update) => {
-            setIcus(prev => prev.map(icu => 
-                icu.id === update.icuId ? { ...icu, status: update.newStatus } : icu
-            ));
+            setIcus(prev => prev.map(icu => {
+                const uid = icu._id || icu.id;
+                return uid === update.icuId ? { ...icu, status: update.newStatus } : icu;
+            }));
         });
-        
+
         return () => {
             socket.off('icuStatusUpdate');
         };
-    }, [hospitalId]);
+    }, [hospitalId, refresh]);
 
     // 2. Replaced 'prompt' with a status cycle for better UX
-    const handleStatusUpdate = (icuId, currentStatus) => {
+    const handleStatusUpdate = async (icuId, currentStatus) => {
         const statuses = ['AVAILABLE', 'OCCUPIED', 'MAINTENANCE'];
         const currentIndex = statuses.indexOf(currentStatus);
         const nextIndex = (currentIndex + 1) % statuses.length; // Cycle to the next status
         const newStatus = statuses[nextIndex];
-
-        setIcus(prev => prev.map(icu => 
-            icu.id === icuId ? { ...icu, status: newStatus } : icu
-        ));
-        
-        toast.info(`ICU ${icuId} status updated to ${newStatus}.`);
+        try {
+            await updateICUById(icuId, { status: newStatus });
+            setIcus(prev => prev.map(icu => {
+                const uid = icu._id || icu.id;
+                return uid === icuId ? { ...icu, status: newStatus } : icu;
+            }));
+            toast.info(`ICU ${icuId} status updated to ${newStatus}.`);
+        } catch (err) {
+            console.error('Failed to update ICU status', err);
+            toast.error('Failed to update ICU status.');
+        }
     };
     
    
     const handleDelete = (icuId) => {
-        const performDelete = () => {
-            setIcus(prev => prev.filter(icu => icu.id !== icuId));
-            toast.success(`ICU ${icuId} has been deleted.`);
+        const performDelete = async () => {
+            try {
+                await deleteICUById(icuId);
+                setIcus(prev => prev.filter(icu => {
+                    const uid = icu._id || icu.id;
+                    return uid !== icuId;
+                }));
+                toast.success(`ICU ${icuId} has been deleted.`);
+            } catch (err) {
+                console.error('Failed to delete ICU', err);
+                toast.error('Failed to delete ICU.');
+            }
         };
 
         const ConfirmationToast = ({ closeToast }) => (
@@ -71,7 +83,7 @@ const ICUMgmt = ({ hospitalId }) => {
                 <Button onClick={closeToast} variant="secondary">Cancel</Button>
             </div>
         );
-        
+
         toast.warn(<ConfirmationToast />, {
             position: "top-center",
             autoClose: false,
@@ -81,7 +93,7 @@ const ICUMgmt = ({ hospitalId }) => {
     };
 
     const filteredIcus = icus.filter(icu =>
-        icu.room.includes(searchTerm) || icu.specialization.toLowerCase().includes(searchTerm.toLowerCase())
+        (icu.room || '').toString().includes(searchTerm) || (icu.specialization || '').toString().toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     return (
@@ -111,27 +123,30 @@ const ICUMgmt = ({ hospitalId }) => {
                         </tr>
                     </thead>
                     <tbody>
-                        {filteredIcus.map(icu => (
-                            <tr key={icu.id}>
-                                <td>{icu.room}</td>
-                                <td>{icu.specialization}</td>
-                                <td>{icu.capacity}</td>
-                                <td>EGP {icu.fee}</td>
-                                <td>
-                                    <span className={styles[`status${icu.status.replace('_', '')}`]}>
-                                        {icu.status}
-                                    </span>
-                                </td>
-                                <td className={styles.actions}>
-                                    <Button onClick={() => handleStatusUpdate(icu.id, icu.status)} variant="primary" className={styles.actionBtn}>
-                                        Update
-                                    </Button>
-                                    <Button onClick={() => handleDelete(icu.id)} variant="danger" className={styles.actionBtn}>
-                                        Delete
-                                    </Button>
-                                </td>
-                            </tr>
-                        ))}
+                        {filteredIcus.map(icu => {
+                            const uid = icu._id || icu.id;
+                            return (
+                                <tr key={uid}>
+                                    <td>{icu.room}</td>
+                                    <td>{icu.specialization}</td>
+                                    <td>{icu.capacity}</td>
+                                    <td>EGP {icu.fee}</td>
+                                    <td>
+                                        <span className={styles[`status${(icu.status || '').replace('_', '')}`]}>
+                                            {icu.status}
+                                        </span>
+                                    </td>
+                                    <td className={styles.actions}>
+                                        <Button onClick={() => handleStatusUpdate(uid, icu.status)} variant="primary" className={styles.actionBtn}>
+                                            Update
+                                        </Button>
+                                        <Button onClick={() => handleDelete(uid)} variant="danger" className={styles.actionBtn}>
+                                            Delete
+                                        </Button>
+                                    </td>
+                                </tr>
+                            );
+                        })}
                     </tbody>
                 </table>
             )}

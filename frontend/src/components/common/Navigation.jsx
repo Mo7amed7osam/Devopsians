@@ -17,7 +17,6 @@ function Navigation() {
     const roleColors = {
       admin: styles.adminBadge,
       manager: styles.managerBadge,
-      doctor: styles.doctorBadge,
       receptionist: styles.receptionistBadge,
       ambulance: styles.ambulanceBadge,
       patient: styles.patientBadge,
@@ -88,7 +87,6 @@ function Navigation() {
               let dest = '/';
               if (roleKey.includes('admin')) dest = '/admin';
               else if (roleKey.includes('manager')) dest = '/manager';
-              else if (roleKey.includes('doctor')) dest = '/doctor';
               else if (roleKey.includes('receptionist')) dest = '/receptionist';
               else if (roleKey.includes('ambulance')) dest = '/ambulance';
               else if (roleKey.includes('patient')) dest = '/patient-dashboard';
@@ -99,7 +97,6 @@ function Navigation() {
                 let dest = '/';
                 if (roleKey.includes('admin')) dest = '/admin';
                 else if (roleKey.includes('manager')) dest = '/manager';
-                else if (roleKey.includes('doctor')) dest = '/doctor';
                 else if (roleKey.includes('receptionist')) dest = '/receptionist';
                 else if (roleKey.includes('ambulance')) dest = '/ambulance';
                 else if (roleKey.includes('patient')) dest = '/patient-dashboard';

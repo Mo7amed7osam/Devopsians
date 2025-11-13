@@ -24,7 +24,7 @@ const AdminDashboard = () => {
     const [isUserModalOpen, setIsUserModalOpen] = useState(false);
     const [selectedUser, setSelectedUser] = useState(null);
         const [isEditingUser, setIsEditingUser] = useState(false);
-        const [editForm, setEditForm] = useState({ firstName: '', lastName: '', email: '', phone: '', role: '' });
+            const [editForm, setEditForm] = useState({ firstName: '', lastName: '', email: '', phone: '', role: '', password: '' });
     const [dashboardStats, setDashboardStats] = useState({
         totalHospitals: 0,
         totalManagers: 8,
@@ -80,8 +80,8 @@ const AdminDashboard = () => {
                         : (adminsRes?.data?.data || adminsRes?.data?.admins || adminsRes?.data || []);
 
                     const combined = [
-                        ...managersArray.map(m => ({ ...m, role: 'manager', id: m._id || m.id })),
-                        ...adminsArray.map(a => ({ ...a, role: 'admin', id: a._id || a.id })),
+                        ...managersArray.map(m => ({ ...m, role: m.role || 'Manager', id: m._id || m.id })),
+                        ...adminsArray.map(a => ({ ...a, role: a.role || 'Admin', id: a._id || a.id })),
                     ];
                     setUsersList(combined);
                 } catch (err) {
@@ -113,8 +113,8 @@ const AdminDashboard = () => {
                     ? adminsRes.data
                     : (adminsRes?.data?.data || adminsRes?.data?.admins || adminsRes?.data || []);
                 const combined = [
-                    ...managersArray.map(m => ({ ...m, role: 'manager', id: m._id || m.id })),
-                    ...adminsArray.map(a => ({ ...a, role: 'admin', id: a._id || a.id })),
+                    ...managersArray.map(m => ({ ...m, role: m.role || 'Manager', id: m._id || m.id })),
+                    ...adminsArray.map(a => ({ ...a, role: a.role || 'Admin', id: a._id || a.id })),
                 ];
                 setUsersList(combined);
             } catch (err) {
@@ -129,7 +129,7 @@ const AdminDashboard = () => {
         setSelectedUser(user);
         setIsUserModalOpen(true);
         setIsEditingUser(false);
-        setEditForm({ firstName: user.firstName || '', lastName: user.lastName || '', email: user.email || '', phone: user.phone || '', role: user.role || '' });
+        setEditForm({ firstName: user.firstName || '', lastName: user.lastName || '', email: user.email || '', phone: user.phone || '', role: user.role || '', password: '' });
     };
 
     const handleDeleteUser = async (user) => {
@@ -181,6 +181,10 @@ const AdminDashboard = () => {
         if (!selectedUser || !selectedUser.id) return;
         try {
             const payload = { firstName: editForm.firstName, lastName: editForm.lastName, email: editForm.email, phone: editForm.phone, role: editForm.role };
+            // include password only if admin entered a new one
+            if (editForm.password && editForm.password.trim().length >= 6) {
+                payload.password = editForm.password;
+            }
             const res = await updateUserById(selectedUser.id, payload);
             // optimistic update
             setUsersList(prev => prev.map(u => (u.id === selectedUser.id ? { ...u, ...payload } : u)));
@@ -262,10 +266,10 @@ const AdminDashboard = () => {
                 return (
                     <form onSubmit={handleManagerSubmit} className={styles.formCard}>
                         <h3 className={styles.formTitle}>Add & Assign Manager</h3>
-                        <input type="text" name="name" value={managerForm.name} onChange={handleManagerChange} placeholder="Name" required />
-                        <input type="email" name="email" value={managerForm.email} onChange={handleManagerChange} placeholder="Email" required />
-                        <input type="password" name="password" value={managerForm.password} onChange={handleManagerChange} placeholder="Initial Password" required />
-                        <input type="tel" name="phone" value={managerForm.phone} onChange={handleManagerChange} placeholder="Phone (optional)" />
+                        <input type="text" name="name" value={managerForm.name ?? ''} onChange={handleManagerChange} placeholder="Name" required />
+                        <input type="email" name="email" value={managerForm.email ?? ''} onChange={handleManagerChange} placeholder="Email" required />
+                        <input type="password" name="password" value={managerForm.password ?? ''} onChange={handleManagerChange} placeholder="Initial Password" required />
+                        <input type="tel" name="phone" value={managerForm.phone ?? ''} onChange={handleManagerChange} placeholder="Phone (optional)" />
                         <label htmlFor="gender">Gender</label>
                         <select name="gender" id="gender" value={managerForm.gender} onChange={handleManagerChange}>
                             <option value="Male">Male</option>
@@ -305,7 +309,7 @@ const AdminDashboard = () => {
                                             <td>{u.createdAt ? new Date(u.createdAt).toLocaleString() : '—'}</td>
                                             <td style={{ display: 'flex', gap: 8 }}>
                                                 <Button size="small" variant="secondary" onClick={() => openUserModal(u)}>View</Button>
-                                                <Button size="small" variant="primary" onClick={() => { setSelectedUser(u); setIsEditingUser(true); setEditForm({ firstName: u.firstName || '', lastName: u.lastName || '', email: u.email || '', phone: u.phone || '', role: u.role || '' }); setIsUserModalOpen(true); }}>Edit</Button>
+                                                <Button size="small" variant="primary" onClick={() => { setSelectedUser(u); setIsEditingUser(true); setEditForm({ firstName: u.firstName || '', lastName: u.lastName || '', email: u.email || '', phone: u.phone || '', role: u.role || '', password: '' }); setIsUserModalOpen(true); }}>Edit</Button>
                                                 <Button size="small" variant="danger" onClick={() => handleDeleteUser(u)}>Delete</Button>
                                                 <Button size="small" variant="secondary" onClick={() => handleBlockToggleUser(u)}>{(u.isBlocked || u.blocked) ? 'Unblock' : 'Block'}</Button>
                                             </td>
@@ -331,20 +335,22 @@ const AdminDashboard = () => {
                                     ) : (
                                         <div className={styles.formCard}>
                                             <label>Name</label>
-                                            <input name="firstName" value={editForm.firstName} onChange={handleEditChange} placeholder="First name" />
-                                            <input name="lastName" value={editForm.lastName} onChange={handleEditChange} placeholder="Last name" />
+                                            <input name="firstName" value={editForm.firstName ?? ''} onChange={handleEditChange} placeholder="First name" />
+                                            <input name="lastName" value={editForm.lastName ?? ''} onChange={handleEditChange} placeholder="Last name" />
                                             <label>Email</label>
-                                            <input name="email" value={editForm.email} onChange={handleEditChange} placeholder="Email" />
+                                            <input name="email" value={editForm.email ?? ''} onChange={handleEditChange} placeholder="Email" />
                                             <label>Phone</label>
-                                            <input name="phone" value={editForm.phone} onChange={handleEditChange} placeholder="Phone" />
+                                            <input name="phone" value={editForm.phone ?? ''} onChange={handleEditChange} placeholder="Phone" />
+                                            <label>New Password</label>
+                                            <input name="password" value={editForm.password ?? ''} onChange={handleEditChange} placeholder="Leave blank to keep current password" type="password" />
                                             <label>Role</label>
                                             <select name="role" value={editForm.role} onChange={handleEditChange}>
-                                                <option value="admin">Admin</option>
-                                                <option value="manager">Manager</option>
-                                                <option value="doctor">Doctor</option>
-                                                <option value="receptionist">Receptionist</option>
-                                                <option value="ambulance">Ambulance</option>
-                                                <option value="patient">Patient</option>
+                                                <option value="Admin">Admin</option>
+                                                <option value="Manager">Manager</option>
+                                                {/* Doctor role removed from project */}
+                                                <option value="Receptionist">Receptionist</option>
+                                                <option value="Ambulance">Ambulance</option>
+                                                <option value="Patient">Patient</option>
                                             </select>
                                             <div style={{ marginTop: 12, display: 'flex', gap: 8 }}>
                                                 <Button size="small" variant="primary" onClick={handleSaveUser}>Save</Button>

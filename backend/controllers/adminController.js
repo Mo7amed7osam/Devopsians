@@ -453,14 +453,63 @@ export const viewAllManagers = async (req, res, next) => {
 export const updateUser = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const updates = req.body;
+    const updates = req.body || {};
+    // Allowed non-sensitive fields
     const allowed = ['firstName', 'lastName', 'email', 'phone', 'role', 'isBlocked'];
-    const payload = {};
-    Object.keys(updates).forEach(k => { if (allowed.includes(k)) payload[k] = updates[k]; });
 
-    const user = await User.findByIdAndUpdate(id, payload, { new: true }).select('-userPass');
+    // Normalize role casing if provided (be forgiving of lowercase client input)
+    if (updates.role && typeof updates.role === 'string') {
+      const roleMap = {
+        admin: 'Admin',
+        manager: 'Manager',
+        doctor: 'Doctor',
+        receptionist: 'Receptionist',
+        ambulance: 'Ambulance',
+        patient: 'Patient',
+      };
+      const candidate = updates.role;
+      const normalized = roleMap[candidate.toLowerCase()] || candidate;
+      // If normalized is not one of the allowed enum values, reject early
+      const allowedRoles = Object.values(roleMap);
+      if (!allowedRoles.includes(normalized)) {
+        return next(new ErrorHandler('Invalid role value provided', 400));
+      }
+      updates.role = normalized;
+    }
+
+    // Find user and apply updates (so pre-save middleware runs for password hashing)
+    const user = await User.findById(id).select('+userPass');
     if (!user) return next(new ErrorHandler('User not found', 404));
-    res.status(200).json({ success: true, message: 'User updated', data: user });
+
+    // Apply allowed fields
+    Object.keys(updates).forEach(k => {
+      if (allowed.includes(k)) user[k] = updates[k];
+    });
+
+    // Handle password update explicitly (frontend sends `password`)
+    if (updates.password) {
+      if (typeof updates.password !== 'string' || updates.password.length < 6) {
+        return next(new ErrorHandler('Password must be at least 6 characters', 400));
+      }
+      // Hash and set userPass so pre-save hashing isn't duplicated
+      const hashed = await bcrypt.hash(updates.password, 10);
+      user.userPass = hashed;
+    }
+
+    try {
+      await user.save();
+    } catch (saveErr) {
+      // If validation failed, return 400 with friendly message
+      if (saveErr && saveErr.name === 'ValidationError') {
+        return next(new ErrorHandler(saveErr.message, 400));
+      }
+      // otherwise rethrow
+      throw saveErr;
+    }
+
+    const safeUser = user.toObject();
+    delete safeUser.userPass;
+    res.status(200).json({ success: true, message: 'User updated', data: safeUser });
   } catch (err) {
     next(new ErrorHandler(err.message, 500));
   }

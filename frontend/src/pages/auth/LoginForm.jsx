@@ -37,9 +37,8 @@ const LoginForm = () => {
             switch (roleKey) {
                 case 'admin': path = '/admin'; break;
                 case 'manager': path = '/manager'; break;
-                case 'patient': path = '/patient-dashboard'; break;
-                case 'doctor': path = '/doctor'; break;
-                case 'receptionist': path = '/receptionist'; break;
+                    case 'patient': path = '/patient-dashboard'; break;
+                    case 'receptionist': path = '/receptionist'; break;
                 case 'ambulance': path = '/ambulance'; break;
                 default: path = '/';
             }

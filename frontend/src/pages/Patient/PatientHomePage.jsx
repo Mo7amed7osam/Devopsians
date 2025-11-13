@@ -13,7 +13,7 @@ const API_BASE = 'http://localhost:3030';
 const PatientHomePage = () => {
     const [patientData, setPatientData] = useState(null);
     const [icuData, setIcuData] = useState(null);
-    const [doctorData, setDoctorData] = useState(null);
+    // Doctor role removed — no doctor-specific data fetched
     const [newMedicalHistory, setNewMedicalHistory] = useState('');
     const [loading, setLoading] = useState(true);
     const [modalType, setModalType] = useState(null);
@@ -37,14 +37,7 @@ const PatientHomePage = () => {
                 const patient = patientResponse.data.user;
                 setPatientData(patient);
                 setNewMedicalHistory(patient.medicalHistory || '');
-                if (patient.assignedDoctor) {
-                    try {
-                        const doctorResponse = await axios.get(`${API_BASE}/user/details/${patient.assignedDoctor}`);
-                        setDoctorData(doctorResponse.data.user);
-                    } catch (err) {
-                        console.error('Failed to fetch doctor data:', err);
-                    }
-                }
+                // Do not fetch assigned doctor details (doctor role removed)
             } catch (error) {
                 console.error('Error fetching patient data:', error);
                 toast.error('Failed to load patient data. Please try again.');
@@ -138,11 +131,7 @@ const PatientHomePage = () => {
             <section className={styles.infoGrid}>
                 <div className={styles.card}>
                     <h3>Medicine Schedule</h3>
-                    {doctorData ? (
-                        <p>Assigned Doctor: Dr. {doctorData.firstName} {doctorData.lastName}</p>
-                    ) : (
-                        <p>No doctor assigned yet</p>
-                    )}
+                    <p>Assigned Provider: Not available</p>
                     {patientData.medicineSchedule ? (
                         <div>{patientData.medicineSchedule}</div>
                     ) : (
@@ -179,7 +168,6 @@ const PatientHomePage = () => {
                 </div>
                 <div className={styles.actionGroup}>
                     <h3>Service Feedback</h3>
-                    <Button onClick={() => handleRate('Doctor')} className={styles.btnRate}>Rate Doctor</Button>
                     <Button onClick={() => handleRate('Hospital')} className={styles.btnRate}>Rate Hospital</Button>
                 </div>
             </section>

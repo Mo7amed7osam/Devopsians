@@ -38,6 +38,11 @@ if (typeof window !== 'undefined') {
 }
 
 const Modal = ({ isOpen, onClose, children, contentLabel = 'Modal' }) => {
+  // Avoid mounting the modal component unless it is open. This prevents
+  // React-Modal from attempting to register multiple modal instances when
+  // modals are rapidly opened/closed or when multiple wrappers exist.
+  if (!isOpen) return null;
+
   return (
     <ReactModal
       isOpen={isOpen}

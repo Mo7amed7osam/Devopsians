@@ -1,17 +1,6 @@
 export const seedData = {
   users: [
     { 
-      userName: "doctor1",
-      firstName: "Ahmed", 
-      lastName: "Hassan",
-      email: "doctor@demo.com", 
-      userPass: "123456", 
-      role: "Doctor",
-      phone: "+201234567890",
-      gender: "Male",
-      doctorDepartment: "Cardiology"
-    },
-    { 
       userName: "admin1",
       firstName: "Admin", 
       lastName: "User",

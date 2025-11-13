@@ -249,14 +249,6 @@ export const reserveVisitorsRoom = async (details) => {
   console.log('Mock reserveVisitorsRoom called', details);
   return { data: { success: true } };
 };
-
-export const rateDoctorAndHospital = async (data) => {
-  console.log('Mock rateDoctorAndHospital called', data);
-  return { data: { success: true } };
-};
-
-
-
 export const registerICU = async (icuData) => {
   console.log('Mock registerICU called', icuData);
   return { data: { success: true } };
@@ -279,13 +271,7 @@ export const getICUById = async (icuId) => await API.get(`/icu/${icuId}`);
 export const reserveICUOnServer = async (payload) => await API.post('/icu/reserve', payload);
 export const cancelICUReservation = async (payload) => await API.post('/icu/cancel', payload);
 
-// ============================================================
-// Doctor APIs
-// ============================================================
-export const fetchPatientHealthStatus = async (doctorId, patientId) => await API.get(`/doctor/view-health-status/doctor/${doctorId}/patient/${patientId}`);
-export const fetchPatientMedicalHistory = async (doctorId, patientId) => await API.get(`/doctor/view-medical-history/doctor/${doctorId}/patient/${patientId}`);
-export const updatePatientMedicineScheduleOnServer = async (doctorId, patientId, schedule) => await API.put(`/doctor/update-medicine-schedule/doctor/${doctorId}/patient/${patientId}`, schedule);
-export const fetchAssignedPatientsForDoctor = async (doctorId) => await API.get(`/doctor/assigned-patients/doctor/${doctorId}`);
+// Doctor APIs removed — doctor role/pages have been removed from the frontend.
 
 // ============================================================
 // Manager APIs
