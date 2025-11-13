@@ -1,4 +1,4 @@
-import Hospital from "../models/hospitalModel.js";
+import Hospital from "../models/hospitalmodel.js";
 import ICU from "../models/icuModel.js";
 import Task from "../models/taskModel.js";
 import User from "../models/userModel.js";

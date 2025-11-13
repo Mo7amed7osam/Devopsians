@@ -1,5 +1,5 @@
 import { ErrorHandler } from "../utils/errorHandler.js";
-import Hospital from "../models/hospitalModel.js";
+import Hospital from "../models/hospitalmodel.js";
 import ICU from "../models/icuModel.js";
 import User from "../models/userModel.js";
 import Feedback from "../models/feedbackModel.js";

@@ -4,7 +4,7 @@ import bcrypt from "bcryptjs";
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import User from "../models/userModel.js";
-import Hospital from "../models/hospitalModel.js";
+import Hospital from "../models/hospitalmodel.js";
 import ICU from "../models/icuModel.js";
 import Task from "../models/taskModel.js";
 import Feedback from "../models/feedbackModel.js";
