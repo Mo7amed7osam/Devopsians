@@ -1,5 +1,6 @@
 import express from "express";
 import {
+  getMyHospital,
   assignBackupManager,
   registerICU,
   deleteICU,
@@ -17,6 +18,9 @@ import {
 import { isAuthenticated, authorizeRoles } from "../utils/authMiddleware.js";
 
 const router = express.Router();
+
+// Get manager's assigned hospital
+router.get("/my-hospital", isAuthenticated, authorizeRoles("Manager"), getMyHospital);
 
 // All manager routes require authentication and Manager role
 router.post("/assign-backup-manager", isAuthenticated, authorizeRoles("Admin", "Manager"), assignBackupManager);

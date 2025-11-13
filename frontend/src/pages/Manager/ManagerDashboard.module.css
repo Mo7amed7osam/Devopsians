@@ -98,3 +98,71 @@ body.dark-mode .managerDashboard .sectionPlaceholder {
 .employeeTasksColumn {
     flex: 1 1 60%;
 }
+
+/* Hospital details styling */
+.hospitalDetails {
+    text-align: left;
+    margin-top: 20px;
+}
+
+.hospitalDetails p {
+    margin: 12px 0;
+    font-size: 16px;
+    color: var(--color-text-dark, #333);
+}
+
+.hospitalDetails strong {
+    color: var(--color-primary-dark, #0056b3);
+    margin-right: 8px;
+}
+
+.statusActive {
+    color: #28a745;
+    font-weight: bold;
+}
+
+.statusBlocked {
+    color: #dc3545;
+    font-weight: bold;
+}
+
+.noHospital {
+    color: #856404;
+    font-size: 18px;
+    margin-top: 20px;
+}
+
+.loadingContainer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 400px;
+    font-size: 18px;
+    color: var(--color-primary-dark, #0056b3);
+}
+
+.noHospitalContainer {
+    background-color: #fff3cd;
+    border: 2px solid #ffc107;
+    padding: 40px;
+    border-radius: 8px;
+    text-align: center;
+    margin: 40px auto;
+    max-width: 600px;
+    color: #856404;
+}
+
+.noHospitalContainer p {
+    font-size: 18px;
+    margin: 15px 0;
+}
+
+body.dark-mode .hospitalDetails p {
+    color: var(--color-text-dark);
+}
+
+body.dark-mode .noHospitalContainer {
+    background-color: #332701;
+    border-color: #856404;
+    color: #ffc107;
+}

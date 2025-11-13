@@ -3,7 +3,6 @@ import Hospital from "../models/hospitalmodel.js";
 import ICU from "../models/icuModel.js";
 import User from "../models/userModel.js";
 import Feedback from "../models/feedbackModel.js";
-import bcrypt from "bcryptjs";
 import validator from "validator";
 import { io } from "../index.js";
 
@@ -314,12 +313,11 @@ const createUserWithRole = async (req, res, next, role) => {
     if (!existingUser && email) existingUser = await User.findOne({ email });
     if (existingUser) return next(new ErrorHandler('User already exists', 400));
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-
+    // Don't hash the password here - let the User model's pre-save hook handle it
     const payload = {
       firstName,
       lastName,
-      userPass: hashedPassword,
+      userPass: password, // Store plain password, model will hash it
       role,
     };
     // supply defaults for required User fields if not provided
@@ -329,7 +327,7 @@ const createUserWithRole = async (req, res, next, role) => {
     if (email) payload.email = email;
 
     const newUser = new User(payload);
-    await newUser.save();
+    await newUser.save(); // pre-save hook will hash the password
 
     res.status(201).json({
       success: true,
@@ -362,21 +360,20 @@ export const createManagerAccount = async (req, res, next) => {
     if (!existingUser && email) existingUser = await User.findOne({ email });
     if (existingUser) return next(new ErrorHandler('User already exists', 400));
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-
+    // Don't hash the password here - let the User model's pre-save hook handle it
     const newUser = new User({
       firstName,
       lastName,
       userName,
       email: email || undefined,
-      userPass: hashedPassword,
+      userPass: password, // Store plain password, model will hash it
       // fill required fields with sensible defaults if missing
       gender: req.body.gender || 'Male',
       phone: req.body.phone || '0000000000',
       role: 'Manager',
     });
 
-    await newUser.save();
+    await newUser.save(); // pre-save hook will hash the password
 
     let assignedHospital = null;
     // If hospitalId provided, attempt to assign the created manager

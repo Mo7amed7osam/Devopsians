@@ -7,6 +7,8 @@ import RemoveEmployee from '../../components/manager/RemoveEmployee.jsx';
 import ICUMgmt from './ICUMgmt.jsx';
 import styles from './ManagerDashboard.module.css';
 import DashboardNav from '../../components/common/DashboardNav';
+import { getManagerHospital } from '../../utils/api';
+import { toast } from 'react-toastify';
 
 const iconICU = <i className="fas fa-bed"></i>;
 const iconTasks = <i className="fas fa-tasks"></i>;
@@ -16,25 +18,57 @@ const ManagerDashboard = () => {
     // --- Journey Section ---
     const journeySection = (
       <section className="p-4 bg-slate-800 text-gray-100 rounded-xl mb-6">
-        <h2 className="text-2xl font-semibold mb-2">🧠 Manager Journey</h2>
-        <ul className="list-disc ml-6 space-y-1">
-          <li>Login → Access Manager Dashboard</li>
-          <li>View ICU occupancy and pending reservations</li>
-          <li>Approve or reject new ICU reservations</li>
-          <li>Monitor live ambulance activity and ETA</li>
-          <li>Handle emergency overrides or bed reassignments</li>
-          <li>View alerts for delayed check-outs or double bookings</li>
-        </ul>
       </section>
     );
     // ...existing code...
     const [activeTab, setActiveTab] = useState('overview');
-    const [hospitalInfo, setHospitalInfo] = useState({ id: 'HOSP_XYZ', name: 'General City Clinic' });
+    const [hospitalInfo, setHospitalInfo] = useState(null);
+    const [loading, setLoading] = useState(true);
     const [dashboardStats, setDashboardStats] = useState({
         totalICUs: 25,
         availableICUs: 12,
         employeesOnShift: 45
     });
+
+    // Fetch manager's assigned hospital on mount
+    useEffect(() => {
+        const fetchHospitalInfo = async () => {
+            try {
+                setLoading(true);
+                const response = await getManagerHospital();
+                if (response.data.success && response.data.data) {
+                    const hospital = response.data.data;
+                    setHospitalInfo({
+                        id: hospital._id,
+                        name: hospital.name,
+                        address: hospital.address,
+                        email: hospital.email,
+                        contactNumber: hospital.contactNumber,
+                        status: hospital.status
+                    });
+                } else {
+                    toast.error('No hospital assigned to you. Please contact admin.');
+                }
+            } catch (error) {
+                console.error('Error fetching hospital info:', error);
+                toast.error('Failed to load hospital information');
+                // Set default fallback
+                setHospitalInfo({
+                    id: null,
+                    name: 'No Hospital Assigned',
+                    address: 'N/A',
+                    email: 'N/A',
+                    contactNumber: 'N/A',
+                    status: 'N/A'
+                });
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchHospitalInfo();
+    }, []);
+
     const handleIcuRegistered = (newIcu) => {
         setDashboardStats(prev => ({
             ...prev,
@@ -48,9 +82,16 @@ const ManagerDashboard = () => {
         { id: 'icuMgmt', label: 'ICU Management' },
         { id: 'employeeMgmt', label: 'Employee & Tasks' },
         { id: 'addIcu', label: 'Register ICU' },
-        { id: 'visitorsKids', label: 'Auxiliary Mgmt' }
     ];
     const renderContent = () => {
+        if (!hospitalInfo || !hospitalInfo.id) {
+            return (
+                <div className={styles.noHospitalContainer}>
+                    <p>⚠️ No hospital assigned. Please contact administrator.</p>
+                </div>
+            );
+        }
+
         switch (activeTab) {
             case 'icuMgmt':
                 return <ICUMgmt hospitalId={hospitalInfo.id} />;
@@ -82,11 +123,47 @@ const ManagerDashboard = () => {
                 return (
                     <div className={styles.overviewPanel}>
                         <h3 className={styles.sectionTitle}>Hospital Overview</h3>
-                        <p>Managing: <strong>{hospitalInfo.name} ({hospitalInfo.id})</strong></p>
+                        {hospitalInfo && hospitalInfo.id ? (
+                            <div className={styles.hospitalDetails}>
+                                <p><strong>Hospital Name:</strong> {hospitalInfo.name}</p>
+                                <p><strong>Hospital ID:</strong> {hospitalInfo.id}</p>
+                                <p><strong>Address:</strong> {hospitalInfo.address}</p>
+                                <p><strong>Email:</strong> {hospitalInfo.email}</p>
+                                <p><strong>Contact:</strong> {hospitalInfo.contactNumber}</p>
+                                <p><strong>Status:</strong> <span className={hospitalInfo.status === 'Active' ? styles.statusActive : styles.statusBlocked}>{hospitalInfo.status}</span></p>
+                            </div>
+                        ) : (
+                            <p className={styles.noHospital}>No hospital assigned. Please contact your administrator.</p>
+                        )}
                     </div>
                 );
         }
     };
+
+    if (loading) {
+        return (
+            <div className={styles.managerDashboard}>
+                <div className={styles.loadingContainer}>
+                    <p>Loading hospital information...</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (!hospitalInfo || !hospitalInfo.id) {
+        return (
+            <div className={styles.managerDashboard}>
+                <header className={styles.header}>
+                    <h1>Manager Dashboard</h1>
+                </header>
+                <div className={styles.noHospitalContainer}>
+                    <p>⚠️ No hospital has been assigned to you yet.</p>
+                    <p>Please contact your administrator to assign you to a hospital.</p>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className={styles.managerDashboard}>
             {journeySection}
