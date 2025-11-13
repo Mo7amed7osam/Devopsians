@@ -31,7 +31,7 @@ import EmployeePage from './pages/Manager/EmployeeMgmt.jsx';
 import AdminDashboard from './pages/Admin/AdminDashboard.jsx';
 
 // --- Import Doctor Pages ---
-import DoctorPage from './pages/Doctor/Doctor.jsx';
+import DoctorPage from './pages/doctor/Doctor.jsx';
 
 // --- Import Shared Pages ---
 import ReceptionistPanel from './pages/Receptionist/ReceptionistPanel.jsx';
