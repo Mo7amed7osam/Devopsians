@@ -9,11 +9,11 @@ import { isAuthenticated, authorizeRoles } from "../utils/authMiddleware.js";
 
 const router = express.Router();
 
-// Get all active ambulances - accessible by admin, manager, receptionist
+// Get all active ambulances - accessible by admin, manager, receptionist, and ambulance crew
 router.get(
   "/",
   isAuthenticated,
-  authorizeRoles("Admin", "Manager", "Receptionist"),
+  authorizeRoles("Admin", "Manager", "Receptionist", "Ambulance"),
   getAllAmbulances
 );
 

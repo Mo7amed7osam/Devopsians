@@ -1,16 +1,42 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
+import { useEffect } from "react";
 import { clearSession, getRole, getUserName, getToken } from "../../utils/cookieUtils";
 import styles from "./Navigation.module.css";
 
 function Navigation() {
   const navigate = useNavigate();
+  const location = useLocation();
   const userRole = getRole();
   const userName = getUserName();
   const isLoggedIn = !!getToken();
 
+  // Prevent back navigation when logged in
+  useEffect(() => {
+    if (isLoggedIn) {
+      // Replace current history entry to prevent going back
+      window.history.pushState(null, null, window.location.pathname);
+      
+      const handlePopState = (event) => {
+        // When user tries to go back, push them forward again
+        window.history.pushState(null, null, window.location.pathname);
+        
+        // Optionally show a message
+        // toast.info("Please use the logout button to exit");
+      };
+      
+      window.addEventListener('popstate', handlePopState);
+      
+      return () => {
+        window.removeEventListener('popstate', handlePopState);
+      };
+    }
+  }, [isLoggedIn, location.pathname]);
+
   const handleLogout = () => {
     clearSession();
-    navigate("/login");
+    // Clear history and redirect to login
+    window.history.pushState(null, null, '/login');
+    navigate("/login", { replace: true });
   };
 
   const getRoleBadge = () => {

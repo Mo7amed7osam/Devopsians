@@ -132,10 +132,18 @@ const userSchema = new mongoose.Schema(
         },
         eta: { type: Number }, // Estimated time of arrival in minutes
         assignedPatient: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+        assignedHospital: { type: mongoose.Schema.Types.ObjectId, ref: "Hospital" },
         destination: { type: String },
 
     // Reservation reference (if a patient has an active ICU reservation)
     reservedICU: { type: mongoose.Schema.Types.ObjectId, ref: 'ICURoom' },
+    
+    // Patient check-in status
+    patientStatus: {
+        type: String,
+        enum: ['RESERVED', 'CHECKED_IN', 'CHECKED_OUT'],
+        default: null
+    },
 
         // Common timestamps for all roles
     },

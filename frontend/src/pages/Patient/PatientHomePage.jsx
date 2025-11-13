@@ -1,14 +1,13 @@
 // src/pages/PatientHomePage.jsx
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
-import axios from 'axios';
 import { getUserId } from '../../utils/cookieUtils';
+import { cancelICUReservation, getICUById, showUserDetails, updateUserMedicalDetails } from '../../utils/api';
+import socket from '../../utils/socket';
 import styles from './PatientHomePage.module.css'; 
 import Button from '../../components/common/Button';
 import Modal from '../../components/common/Modal';
 import ICUSelect from './ICUSelect';
-
-const API_BASE = 'http://localhost:3030';
 
 const PatientHomePage = () => {
     const [patientData, setPatientData] = useState(null);
@@ -22,6 +21,7 @@ const PatientHomePage = () => {
     const [hoverRating, setHoverRating] = useState(0);
     const [ratingComment, setRatingComment] = useState('');
     const [ratings, setRatings] = useState({});
+    const [cancelLoading, setCancelLoading] = useState(false);
 
     useEffect(() => {
         const fetchPatientData = async () => {
@@ -33,11 +33,21 @@ const PatientHomePage = () => {
                     setLoading(false);
                     return;
                 }
-                const patientResponse = await axios.get(`${API_BASE}/user/details/${userId}`);
+                const patientResponse = await showUserDetails(userId);
                 const patient = patientResponse.data.user;
                 setPatientData(patient);
                 setNewMedicalHistory(patient.medicalHistory || '');
-                // Do not fetch assigned doctor details (doctor role removed)
+                
+                // Fetch ICU details only if patient is checked in (not just reserved)
+                if (patient.reservedICU && patient.patientStatus === 'CHECKED_IN') {
+                    try {
+                        const icuResponse = await getICUById(patient.reservedICU);
+                        setIcuData(icuResponse.data);
+                    } catch (icuError) {
+                        console.error('Error fetching ICU data:', icuError);
+                        // Don't show error toast - ICU might not be accessible yet
+                    }
+                }
             } catch (error) {
                 console.error('Error fetching patient data:', error);
                 toast.error('Failed to load patient data. Please try again.');
@@ -46,6 +56,27 @@ const PatientHomePage = () => {
             }
         };
         fetchPatientData();
+
+        // Listen for real-time check-in notification
+        const userId = getUserId();
+        if (userId && socket) {
+            socket.on('patientCheckedIn', (data) => {
+                if (data.patientId === userId) {
+                    toast.success(`You have been checked in to ${data.hospitalName} - Room ${data.room}!`);
+                    // Reload patient data to show ICU details
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 2000);
+                }
+            });
+        }
+
+        // Cleanup socket listener
+        return () => {
+            if (socket) {
+                socket.off('patientCheckedIn');
+            }
+        };
     }, []);
 
     const closeModal = () => {
@@ -59,7 +90,7 @@ const PatientHomePage = () => {
         e.preventDefault();
         try {
             const userId = getUserId();
-            await axios.patch(`${API_BASE}/user/update/${userId}`, {
+            await updateUserMedicalDetails(userId, {
                 medicalHistory: newMedicalHistory
             });
             toast.success('Medical history updated successfully!');
@@ -102,20 +133,56 @@ const PatientHomePage = () => {
         closeModal();
     };
 
+    const handleCancelReservation = async () => {
+        if (!window.confirm('Are you sure you want to cancel your ICU reservation?')) {
+            return;
+        }
+
+        try {
+            setCancelLoading(true);
+            const userId = getUserId();
+            
+            await cancelICUReservation({
+                icuId: patientData.reservedICU,
+                patientId: userId
+            });
+            
+            toast.success('ICU reservation cancelled successfully!');
+            
+            // Refresh the page to show ICU selection again
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
+
+        } catch (error) {
+            console.error('Error cancelling reservation:', error);
+            const errorMessage = error.response?.data?.message || 'Failed to cancel reservation. Please try again.';
+            toast.error(errorMessage);
+        } finally {
+            setCancelLoading(false);
+        }
+    };
+
     if (loading) return <div className={styles.loadingState}>Loading patient dashboard...</div>;
     if (!patientData) return <div className={styles.errorState}>Could not load patient data.</div>;
 
-    // If patient doesn't have an ICU reserved, show ICU selection
-    if (!icuData && !patientData.reservedICU) {
+    // If patient doesn't have an ICU reserved or is waiting for check-in approval
+    if (!patientData.reservedICU || patientData.patientStatus === 'RESERVED') {
         return (
             <div className={styles.dashboard}>
                 <header className={styles.header}>
                     <h2 className={styles.welcomeTitle}>Welcome, {patientData.firstName} {patientData.lastName}</h2>
-                    <div className={styles.icuStatus} style={{ color: '#ff9800' }}>
-                        <i className="fas fa-info-circle"></i> You don't have an ICU reserved yet. Please select one below.
-                    </div>
+                    {patientData.patientStatus === 'RESERVED' ? (
+                        <div className={styles.icuStatus} style={{ color: '#2196f3' }}>
+                            <i className="fas fa-clock"></i> Your ICU reservation is pending. Waiting for receptionist approval...
+                        </div>
+                    ) : (
+                        <div className={styles.icuStatus} style={{ color: '#ff9800' }}>
+                            <i className="fas fa-info-circle"></i> You don't have an ICU reserved yet. Please select one below.
+                        </div>
+                    )}
                 </header>
-                <ICUSelect />
+                {!patientData.reservedICU && <ICUSelect />}
             </div>
         );
     }
@@ -127,8 +194,28 @@ const PatientHomePage = () => {
                 <div className={styles.icuStatus}>
                     <i className="fas fa-heartbeat"></i> Reserved ICU: <strong>{icuData?.specialization || 'None'}</strong>
                 </div>
+                {patientData.reservedICU && (
+                    <Button 
+                        onClick={handleCancelReservation} 
+                        disabled={cancelLoading}
+                        variant="secondary"
+                        style={{ marginTop: '10px', backgroundColor: '#d32f2f', color: 'white' }}
+                    >
+                        {cancelLoading ? 'Cancelling...' : 'Cancel ICU Reservation'}
+                    </Button>
+                )}
             </header>
             <section className={styles.infoGrid}>
+                {icuData && (
+                    <div className={styles.card}>
+                        <h3>Your Reserved ICU</h3>
+                        <p><strong>Hospital:</strong> {icuData.hospital?.name || 'N/A'}</p>
+                        <p><strong>Specialization:</strong> {icuData.specialization}</p>
+                        <p><strong>Room:</strong> {icuData.room}</p>
+                        <p><strong>Status:</strong> <span style={{ color: '#4caf50', fontWeight: 'bold' }}>{icuData.status}</span></p>
+                        <p><strong>Daily Fee:</strong> {icuData.fees} EGP</p>
+                    </div>
+                )}
                 <div className={styles.card}>
                     <h3>Medicine Schedule</h3>
                     <p>Assigned Provider: Not available</p>

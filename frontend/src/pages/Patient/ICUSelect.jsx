@@ -1,19 +1,17 @@
 // src/pages/ICUSelect.jsx
 import React, { useState, useEffect, useCallback } from 'react';
 import { toast } from 'react-toastify';
-import axios from 'axios';
-import { getAvailableICUsFromServer } from '../../utils/api';
+import { getAvailableICUsFromServer, fetchNearbyHospitalsPublic, reserveICUOnServer } from '../../utils/api';
 import MapComponent from '../../components/patient/Map.jsx';
 import Icus from '../../components/patient/Icus.jsx';
 import { getUserId } from '../../utils/cookieUtils';
 import styles from './ICUSelect.module.css'; 
 import Button from '../../components/common/Button';
 
-const API_BASE = 'http://localhost:3030';
-
 const ICUSelect = () => {
     const [userLocation, setUserLocation] = useState(null);
     const [icus, setIcus] = useState([]);
+    const [hospitals, setHospitals] = useState([]);
     const [filters, setFilters] = useState({ specialization: '', searchTerm: '' });
     const [loading, setLoading] = useState(false);
 
@@ -39,7 +37,7 @@ const ICUSelect = () => {
         }
     }, []);
     
-    // --- Load ICUs from Backend ---
+    // --- Load ICUs and Hospitals from Backend ---
     const loadICUs = useCallback(async () => {
         if (!userLocation) return;
         setLoading(true);
@@ -64,9 +62,23 @@ const ICUSelect = () => {
         }
     }, [userLocation]);
 
+    // --- Load Nearby Hospitals (Public API - no auth required) ---
+    const loadNearbyHospitals = useCallback(async () => {
+        if (!userLocation) return;
+        try {
+            const response = await fetchNearbyHospitalsPublic(userLocation.lat, userLocation.lng, 50000); // 50km radius
+            const hospitalList = response.data?.hospitals || [];
+            setHospitals(hospitalList);
+        } catch (err) {
+            console.error("Failed to load nearby hospitals:", err);
+            // Don't show error toast - this is optional feature for map display
+        }
+    }, [userLocation]);
+
     useEffect(() => {
         loadICUs();
-    }, [loadICUs]);
+        loadNearbyHospitals();
+    }, [loadICUs, loadNearbyHospitals]);
 
     // --- Handle ICU Reservation ---
     const handleReserve = async (icuId) => {
@@ -79,15 +91,15 @@ const ICUSelect = () => {
 
             setLoading(true);
             
-            // Call backend API to reserve ICU
-            await axios.post(`${API_BASE}/icu/reserve`, {
+            // Call backend API to reserve ICU using authenticated API instance
+            await reserveICUOnServer({
                 icuId,
                 patientId: userId
             });
             
-            toast.success('Successfully reserved ICU! Refreshing dashboard...');
+            toast.success('ICU reservation submitted! Waiting for receptionist approval...');
             
-            // Refresh the page to show the patient dashboard with reserved ICU
+            // Refresh the page to show waiting status
             setTimeout(() => {
                 window.location.reload();
             }, 1500);
@@ -104,6 +116,25 @@ const ICUSelect = () => {
     const handleFilterChange = (e) => {
         setFilters({ ...filters, [e.target.name]: e.target.value });
     };
+
+    // Apply filters to ICU list
+    const filteredIcus = icus.filter(icu => {
+        // Filter by specialization
+        if (filters.specialization && icu.specialization !== filters.specialization) {
+            return false;
+        }
+        
+        // Filter by hospital name (search term)
+        if (filters.searchTerm) {
+            const hospitalName = (icu.hospital?.name || '').toLowerCase();
+            const searchLower = filters.searchTerm.toLowerCase();
+            if (!hospitalName.includes(searchLower)) {
+                return false;
+            }
+        }
+        
+        return true;
+    });
 
     if (!userLocation) return <div className={styles.loadingState}>Finding your location...</div>;
     
@@ -124,13 +155,13 @@ const ICUSelect = () => {
                 />
                 <select name="specialization" value={filters.specialization} onChange={handleFilterChange}>
                     <option value="">All Specializations</option>
-                    <option value="Cardiac ICU">Cardiac ICU</option>
-                    <option value="Neurological ICU">Neurological ICU</option>
-                    <option value="Pediatric ICU">Pediatric ICU</option>
-                    <option value="Medical ICU">Medical ICU</option>
                     <option value="Surgical ICU">Surgical ICU</option>
+                    <option value="Cardiac ICU">Cardiac ICU</option>
+                    <option value="Neonatal ICU">Neonatal ICU</option>
+                    <option value="Pediatric ICU">Pediatric ICU</option>
+                    <option value="Neurological ICU">Neurological ICU</option>
                 </select>
-                <Button onClick={loadICUs} disabled={loading} variant="primary">
+                <Button onClick={() => { loadICUs(); loadNearbyHospitals(); }} disabled={loading} variant="primary">
                     {loading ? 'Searching...' : 'Refresh'}
                 </Button>
             </div>
@@ -138,15 +169,16 @@ const ICUSelect = () => {
             <div className={styles.contentGrid}>
                 <div className={styles.mapArea}>
                     <MapComponent 
-                        icus={icus} 
+                        icus={filteredIcus}
+                        hospitals={hospitals}
                         latitude={userLocation.lat} 
                         longitude={userLocation.lng} 
                     />
                 </div>
                 
                 <div className={styles.listArea}>
-                    <h3>{icus.length} Available ICUs</h3>
-                    <Icus icuList={icus} onReserve={handleReserve} loading={loading} />
+                    <h3>{filteredIcus.length} Available ICUs</h3>
+                    <Icus icuList={filteredIcus} onReserve={handleReserve} loading={loading} />
                 </div>
             </div>
         </div>

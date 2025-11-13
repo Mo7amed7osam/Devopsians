@@ -63,13 +63,14 @@ export const assignBackupManager = async (req, res, next) => {
 
 export const registerICU = async (req, res, next) => {
   try {
-    const { hospitalId, specialization, status, fees, isReserved, reservedBy, room, capacity } =
+    const managerId = req.user.id; // Get manager ID from auth middleware
+    const { specialization, status, fees, isReserved, reservedBy, room, capacity } =
       req.body;
 
-    // Ensure the hospital exists
-    const hospital = await Hospital.findById(hospitalId);
+    // Find the hospital assigned to this manager
+    const hospital = await Hospital.findOne({ assignedManager: managerId });
     if (!hospital) {
-      return next(new ErrorHandler("Hospital not found", 404));
+      return next(new ErrorHandler("No hospital assigned to this manager", 404));
     }
 
     if (!specialization || !status || fees === undefined || !room || capacity === undefined) {
@@ -79,7 +80,7 @@ export const registerICU = async (req, res, next) => {
     }
 
     const icuData = {
-      hospital: hospitalId,
+      hospital: hospital._id, // Use the manager's assigned hospital
       specialization,
       room,
       capacity: Number(capacity),
@@ -150,12 +151,18 @@ export const updateICU = async (req, res, next) => {
 
 export const viewICUs = async (req, res, next) => {
   try {
-    const { hospitalId, specialization } = req.query;
+    const managerId = req.user.id; // Get manager ID from auth middleware
+    const { specialization } = req.query;
 
-    let query = {};
-    if (hospitalId) {
-      query.hospital = hospitalId;
+    // Find the hospital assigned to this manager
+    const hospital = await Hospital.findOne({ assignedManager: managerId });
+    if (!hospital) {
+      return next(new ErrorHandler("No hospital assigned to this manager", 404));
     }
+
+    // Build query to filter by manager's hospital
+    let query = { hospital: hospital._id };
+    
     if (specialization) {
       query.specialization = specialization;
     }
@@ -163,9 +170,11 @@ export const viewICUs = async (req, res, next) => {
     const icus = await ICU.find(query).populate("hospital", "name address");
 
     if (icus.length === 0) {
-      return next(
-        new ErrorHandler("No ICUs found for the given criteria", 404)
-      );
+      return res.status(200).json({
+        success: true,
+        message: "No ICUs found for your hospital",
+        data: [],
+      });
     }
 
     res.status(200).json({

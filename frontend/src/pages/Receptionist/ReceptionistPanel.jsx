@@ -2,68 +2,133 @@ import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import styles from './ReceptionistDashboard.module.css';
 import Button from '../../components/common/Button';
-import { fetchActiveReservations, fetchActiveAmbulances } from '../../utils/api';
+import { getICURequests, fetchActiveAmbulances, checkInPatient, checkOutPatient } from '../../utils/api';
+import socket from '../../utils/socket';
 
 const ReceptionistPanel = () => {
     const [reservations, setReservations] = useState([]);
     const [ambulances, setAmbulances] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [actionLoading, setActionLoading] = useState(null);
 
     useEffect(() => {
-        const loadData = async () => {
-            setLoading(true);
-            try {
-                const [resResponse, ambResponse] = await Promise.all([
-                    fetchActiveReservations(),
-                    fetchActiveAmbulances()
-                ]);
-                setReservations(resResponse.data);
-                setAmbulances(ambResponse.data.filter(a => a.status === 'EN_ROUTE'));
-            } catch (err) {
-                toast.error("Failed to fetch dashboard data.");
-                console.error(err);
-            } finally {
-                setLoading(false);
+        loadData();
+
+        // Listen for real-time ambulance updates
+        if (socket) {
+            socket.on('ambulanceStatusUpdate', (data) => {
+                setAmbulances(prev => 
+                    prev.map(amb => 
+                        amb._id === data.ambulanceId 
+                            ? { ...amb, status: data.status, currentLocation: data.location, eta: data.eta }
+                            : amb
+                    ).filter(amb => amb.status === 'EN_ROUTE') // Keep only EN_ROUTE ambulances
+                );
+            });
+
+            socket.on('ambulanceAssigned', (data) => {
+                toast.info(`🚑 Ambulance assigned to ${data.destination}`);
+                loadData(); // Reload to get new assignments
+            });
+        }
+
+        return () => {
+            if (socket) {
+                socket.off('ambulanceStatusUpdate');
+                socket.off('ambulanceAssigned');
             }
         };
-        loadData();
     }, []);
 
-    const handleCheckIn = (reservationId, patientName, icuRoom) => {
-        toast.success(`Checked in  to ICU Room .`);
-        setReservations(prev => prev.filter(res => res.id !== reservationId));
+    const loadData = async () => {
+        setLoading(true);
+        try {
+            const [resResponse, ambResponse] = await Promise.all([
+                getICURequests(),
+                fetchActiveAmbulances()
+            ]);
+            
+            // Handle ICU requests data
+            const icuRequests = resResponse.data?.requests || resResponse.data?.data || [];
+            setReservations(icuRequests);
+            
+            // Handle ambulance data - filter for en route ambulances
+            const ambulanceData = ambResponse.data?.ambulances || ambResponse.data?.data || [];
+            const enRouteAmbulances = ambulanceData.filter(a => a.status === 'EN_ROUTE');
+            setAmbulances(enRouteAmbulances);
+        } catch (err) {
+            toast.error("Failed to fetch dashboard data.");
+            console.error(err);
+        } finally {
+            setLoading(false);
+        }
     };
 
-    const handleCheckOut = (e) => {
+    const handleCheckIn = async (icuId, patientId, icuRoom) => {
+        try {
+            setActionLoading(icuId);
+            await checkInPatient({ icuId, patientId });
+            toast.success(`Patient checked in to ICU Room ${icuRoom}`);
+            setReservations(prev => prev.filter(res => res._id !== icuId));
+        } catch (err) {
+            console.error('Check-in error:', err);
+            toast.error(err.response?.data?.message || 'Failed to check in patient');
+        } finally {
+            setActionLoading(null);
+        }
+    };
+
+    const handleCheckOut = async (e) => {
         e.preventDefault();
-        const patientId = e.target.patientId.value;
-        if (!patientId) {
+        const patientIdOrRoom = e.target.patientId.value.trim();
+        
+        if (!patientIdOrRoom) {
             toast.warn("Please enter a Patient ID or Room #.");
             return;
         }
-        toast.info(`Patient  checked out. ICU set to MAINTENANCE.`);
-        e.target.reset();
+
+        try {
+            setActionLoading('checkout');
+            
+            // Try to find ICU by patient ID first, or by room number
+            const icuToCheckout = reservations.find(res => 
+                res.reservedBy?._id === patientIdOrRoom || 
+                res.reservedBy === patientIdOrRoom ||
+                res.room === patientIdOrRoom
+            );
+
+            if (!icuToCheckout) {
+                toast.error(`No active ICU found for: ${patientIdOrRoom}`);
+                setActionLoading(null);
+                return;
+            }
+
+            await checkOutPatient({ 
+                icuId: icuToCheckout._id, 
+                patientId: icuToCheckout.reservedBy?._id || icuToCheckout.reservedBy 
+            });
+            
+            toast.success(`Patient discharged. ICU Room ${icuToCheckout.room} is now Available`);
+            e.target.reset();
+            
+            // Refresh data
+            await loadData();
+        } catch (err) {
+            console.error('Check-out error:', err);
+            toast.error(err.response?.data?.message || 'Failed to check out patient');
+        } finally {
+            setActionLoading(null);
+        }
     };
 
     return (
         <div className={styles.dashboard}>
-            <section className="p-4 bg-slate-800 text-gray-100 rounded-xl mb-6">
-                <h2 className="text-2xl font-semibold mb-2">💼 Receptionist Journey</h2>
-                <ul className="list-disc ml-6 space-y-1">
-                    <li>Login → Access Reception Panel</li>
-                    <li>View ICU bed availability in real time</li>
-                    <li>Create and submit new ICU reservation requests</li>
-                    <li>Confirm patient check-ins and check-outs</li>
-                    <li>Receive ambulance arrival notifications</li>
-                    <li>Keep all data synced with the system automatically</li>
-                </ul>
-            </section>
             <header className={styles.header}>
-                <h1>Receptionist Dashboard</h1>
-                <p>Manage patient arrivals, departures, and ambulance coordination.</p>
+                <h1>🏥 Receptionist Dashboard</h1>
+                <p>Manage patient arrivals, departures, and real-time ambulance coordination.</p>
             </header>
             <section className={styles.statusPanel}>
-                <h3>Live Ambulance Status</h3>
+                <h3>🚑 Live Ambulance Tracking ({ambulances.length} En Route)</h3>
                 {loading ? (
                     <div className={styles.placeholder}>Loading...</div>
                 ) : (
@@ -71,17 +136,39 @@ const ReceptionistPanel = () => {
                         {ambulances.length === 0 ? (
                             <p className={styles.noAmbulance}>No ambulances currently en route.</p>
                         ) : (
-                            ambulances.map(amb => (
-                                <div key={amb.id} className={styles.ambulanceItem}>
-                                    <span className={`${styles.statusBadge} `}>EN ROUTE</span>
-                                    <div className={styles.ambulanceInfo}>
-                                        <strong>{amb.patientName}</strong> (Driver: {amb.driver})
+                            ambulances.map(amb => {
+                                const hasLocation = amb.currentLocation && amb.currentLocation.coordinates;
+                                return (
+                                    <div key={amb._id} className={styles.ambulanceItem}>
+                                        <span className={`${styles.statusBadge} ${styles.statusEnRoute}`}>
+                                            🚨 EN ROUTE
+                                        </span>
+                                        <div className={styles.ambulanceInfo}>
+                                            <strong>{amb.firstName} {amb.lastName}</strong> ({amb.userName})
+                                            {amb.assignedPatient && (
+                                                <div><small>Patient: {amb.assignedPatient}</small></div>
+                                            )}
+                                        </div>
+                                        <div className={styles.ambulanceEta}>
+                                            {amb.destination && (
+                                                <div><strong>📍 {amb.destination}</strong></div>
+                                            )}
+                                            {amb.eta ? (
+                                                <div style={{ color: '#ff6b6b', fontWeight: 'bold' }}>
+                                                    ⏱️ ETA: {amb.eta} min
+                                                </div>
+                                            ) : (
+                                                <div>⏱️ ETA: Calculating...</div>
+                                            )}
+                                            {hasLocation && (
+                                                <div style={{ fontSize: '0.85em', color: '#4caf50' }}>
+                                                    � Location Active
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
-                                    <div className={styles.ambulanceEta}>
-                                        ETA: <strong>{amb.etaMinutes} mins</strong>
-                                    </div>
-                                </div>
-                            ))
+                                );
+                            })
                         )}
                     </div>
                 )}
@@ -95,35 +182,68 @@ const ReceptionistPanel = () => {
                         <div className={styles.placeholder}>No pending arrivals.</div>
                     ) : (
                         <div className={styles.reservationList}>
-                            {reservations.map(res => (
-                                <div key={res.id} className={styles.reservationItem}>
-                                    <div className={styles.patientInfo}>
-                                        <span className={styles.patientName}>{res.patientName}</span>
-                                        <span className={styles.roomInfo}>To: ICU Room {res.icuRoom} ({res.specialization})</span>
+                            {reservations.map(res => {
+                                const patientInfo = res.reservedBy;
+                                const patientName = patientInfo?.firstName && patientInfo?.lastName 
+                                    ? `${patientInfo.firstName} ${patientInfo.lastName}`
+                                    : `Patient ID: ${patientInfo?._id || patientInfo || 'Unknown'}`;
+                                const patientId = patientInfo?._id || patientInfo;
+                                
+                                return (
+                                    <div key={res._id} className={styles.reservationItem}>
+                                        <div className={styles.patientInfo}>
+                                            <span className={styles.patientName}>
+                                                {patientName}
+                                            </span>
+                                            <span className={styles.roomInfo}>
+                                                Room: {res.room} ({res.specialization})
+                                            </span>
+                                            <span className={styles.hospitalInfo}>
+                                                Hospital: {res.hospital?.name || 'N/A'}
+                                            </span>
+                                            {patientInfo?.email && (
+                                                <span className={styles.patientEmail}>
+                                                    Email: {patientInfo.email}
+                                                </span>
+                                            )}
+                                            {patientInfo?.phone && (
+                                                <span className={styles.patientPhone}>
+                                                    Phone: {patientInfo.phone}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <Button 
+                                            variant="success" 
+                                            className={styles.actionBtn}
+                                            onClick={() => handleCheckIn(res._id, patientId, res.room)}
+                                            disabled={actionLoading === res._id}
+                                        >
+                                            {actionLoading === res._id ? 'Checking in...' : 'Check-In'}
+                                        </Button>
                                     </div>
-                                    <Button 
-                                        variant="success" 
-                                        className={styles.actionBtn}
-                                        onClick={() => handleCheckIn(res.id, res.patientName, res.icuRoom)}
-                                    >
-                                        Check-In
-                                    </Button>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     )}
                 </section>
                 <section className={styles.formCard}>
                     <h3>Patient Check-Out</h3>
-                    <p>Discharge a patient and mark their ICU as "Maintenance".</p>
+                    <p>Discharge a patient and mark their ICU as "Available".</p>
                     <form onSubmit={handleCheckOut} className={styles.checkoutForm}>
                         <input 
                             type="text" 
                             name="patientId"
                             placeholder="Enter Patient ID or Room #" 
-                            className={styles.inputField} 
+                            className={styles.inputField}
+                            disabled={actionLoading === 'checkout'}
                         />
-                        <Button type="submit" variant="secondary">Check-Out Patient</Button>
+                        <Button 
+                            type="submit" 
+                            variant="secondary"
+                            disabled={actionLoading === 'checkout'}
+                        >
+                            {actionLoading === 'checkout' ? 'Processing...' : 'Check-Out Patient'}
+                        </Button>
                     </form>
                 </section>
             </div>

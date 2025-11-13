@@ -1,8 +1,11 @@
 import express from 'express';
-import { addHospital , blockHospital, viewHospitals, assignManager, unblockHospital, deleteHospital } from '../controllers/adminController.js';
+import { addHospital , blockHospital, viewHospitals, assignManager, unblockHospital, deleteHospital, viewNearbyHospitalsPublic } from '../controllers/adminController.js';
 import { isAuthenticated, authorizeRoles } from '../utils/authMiddleware.js';
 
 const router = express.Router();
+
+// Public route - Get nearby hospitals without authentication (for map feature)
+router.get('/nearby', viewNearbyHospitalsPublic);
 
 // Add a hospital - Admin only
 router.post('/add-hospital', isAuthenticated, authorizeRoles('Admin'), addHospital);

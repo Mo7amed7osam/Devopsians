@@ -117,3 +117,72 @@
     background-color: var(--color-warning, #ffc107);
     color: #333;
 }
+
+.reservationList {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.reservationItem {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    padding: 15px;
+    border-radius: 8px;
+    background-color: #f8f9fa;
+    border: 1px solid #e0e0e0;
+    transition: all 0.2s ease;
+}
+
+.reservationItem:hover {
+    background-color: #e9ecef;
+    border-color: #007bff;
+}
+
+.patientInfo {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    flex: 1;
+}
+
+.patientName {
+    font-size: 1.1em;
+    font-weight: 600;
+    color: #333;
+}
+
+.roomInfo {
+    font-size: 0.95em;
+    color: #555;
+}
+
+.hospitalInfo {
+    font-size: 0.9em;
+    color: #666;
+}
+
+.patientEmail {
+    font-size: 0.85em;
+    color: #007bff;
+}
+
+.patientPhone {
+    font-size: 0.85em;
+    color: #28a745;
+}
+
+.actionBtn {
+    white-space: nowrap;
+    min-width: 120px;
+}
+
+.checkoutForm {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-top: 15px;
+}

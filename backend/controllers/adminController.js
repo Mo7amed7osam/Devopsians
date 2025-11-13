@@ -135,6 +135,55 @@ export const viewHospitals = async (req, res, next) => {
   }
 };
 
+// Public endpoint to view nearby hospitals (no authentication required)
+export const viewNearbyHospitalsPublic = async (req, res, next) => {
+  try {
+    const { longitude, latitude, maxDistance = 50000 } = req.query; // maxDistance in meters (default 50km)
+
+    if (!longitude || !latitude) {
+      return next(new ErrorHandler("Longitude and latitude are required", 400));
+    }
+
+    // Use aggregation to perform geoNear for nearby hospitals
+    const hospitals = await Hospital.aggregate([
+      {
+        $geoNear: {
+          near: {
+            type: "Point",
+            coordinates: [parseFloat(longitude), parseFloat(latitude)],
+          },
+          distanceField: "distance",
+          maxDistance: parseInt(maxDistance),
+          spherical: true,
+        },
+      },
+      {
+        $match: { status: "Active" }, // Only return active hospitals
+      },
+      {
+        $project: {
+          name: 1,
+          address: 1,
+          email: 1,
+          contactNumber: 1,
+          location: 1,
+          distance: 1,
+          status: 1,
+        },
+      },
+      { $sort: { distance: 1 } }, // Sort by nearest
+    ]);
+
+    res.status(200).json({ 
+      success: true,
+      count: hospitals.length,
+      hospitals 
+    });
+  } catch (error) {
+    next(new ErrorHandler(error.message, 500));
+  }
+};
+
 export const assignManager = async (req, res, next) => {
   try {
     // Support both patterns: hospital id in params or in request body

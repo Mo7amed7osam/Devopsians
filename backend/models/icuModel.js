@@ -61,6 +61,10 @@ const ICURoomSchema = new mongoose.Schema(
             type: mongoose.Schema.Types.ObjectId,
             ref: 'User',
         },
+        checkedInAt: {
+            type: Date,
+            default: null,
+        },
     },
     {
         timestamps: true,

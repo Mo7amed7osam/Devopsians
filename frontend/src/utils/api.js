@@ -107,18 +107,25 @@ export const reserveICU = async (icuId, patientId) => {
 };
 
 /**
- * Fetches all reservations with a 'PENDING_ARRIVAL' status.
+ * Fetches all ICU reservations (for receptionist to see pending check-ins)
  */
 export const fetchActiveReservations = async () => {
-  const res = await API.get(`/reservations?status=PENDING_ARRIVAL`);
-  return res;
+  // Get all ICUs and filter for reserved ones
+  try {
+    const res = await API.get('/icu/all');
+    return res;
+  } catch (err) {
+    // If all fails due to permissions, try available endpoint
+    const res = await API.get('/icu/available');
+    return res;
+  }
 };
 
 /**
  * Fetches all active ambulances.
  */
 export const fetchActiveAmbulances = async () => {
-  const res = await API.get(`/ambulances`);
+  const res = await API.get('/ambulance');
   return res;
 };
 
@@ -126,9 +133,9 @@ export const fetchActiveAmbulances = async () => {
 // ============================================================
 //    MOCK HOSPITAL MANAGEMENT (ADMIN/MANAGER) PLACEHOLDERS
 // ============================================================
-// -----------------------
-// Hospital / Admin APIs
-// -----------------------
+// ============================================================
+// Hospital APIs
+// ============================================================
 export const addHospital = async (data) => {
   // Try admin route first, then hospital route
   try {
@@ -146,6 +153,15 @@ export const viewAllHospitals = async () => {
   } catch (err) {
     return await API.get('/hospital/view-hospitals');
   }
+};
+
+// Public endpoint to fetch nearby hospitals (no authentication required)
+export const fetchNearbyHospitalsPublic = async (latitude, longitude, maxDistance = 50000) => {
+  // Use axios directly without the interceptor to avoid sending auth token
+  const response = await axios.get('http://localhost:3030/hospital/nearby', {
+    params: { latitude, longitude, maxDistance }
+  });
+  return response;
 };
 
 export const blockHospitalById = async (hospitalId) => {
@@ -313,7 +329,10 @@ export const getUserReservedServices = async (userId) => await API.get(`/patient
 // ============================================================
 // Receptionist APIs
 // ============================================================
+export const getICURequests = async () => await API.get('/receptionist/icu-requests');
 export const reserveICUReceptionist = async (payload) => await API.post('/receptionist/reserve-icu', payload);
+export const checkInPatient = async (payload) => await API.post('/receptionist/check-in', payload);
+export const checkOutPatient = async (payload) => await API.post('/receptionist/check-out', payload);
 export const calculateFeeReceptionist = async (params) => await API.get('/receptionist/calculate-fee', { params });
 
 // ============================================================

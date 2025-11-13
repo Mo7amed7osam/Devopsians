@@ -79,6 +79,7 @@ export const reserveICU = async (req, res, next) => {
 
         // Update patient
         patient.reservedICU = icuId;
+        patient.patientStatus = 'RESERVED'; // Set patient status to RESERVED
         await patient.save();
         
         // Populate hospital details before sending response
@@ -134,6 +135,7 @@ export const cancelReservation = async (req, res, next) => {
 
     // Update patient
     patient.reservedICU = null;
+    patient.patientStatus = null; // Clear patient status
     await patient.save();
         
         res.status(200).json({

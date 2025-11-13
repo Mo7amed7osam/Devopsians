@@ -1,4 +1,5 @@
 import User from "../models/userModel.js";
+import Hospital from "../models/hospitalmodel.js";
 import ErrorHandler from "../utils/errorHandler.js";
 import { io } from "../index.js";
 
@@ -8,7 +9,10 @@ export const getAllAmbulances = async (req, res, next) => {
     const ambulances = await User.find({ 
       role: "Ambulance",
       status: { $in: ["AVAILABLE", "EN_ROUTE", "ARRIVED_HOSPITAL"] }
-    }).select("-userPass");
+    })
+    .populate('assignedHospital', 'name address location')
+    .populate('assignedPatient', 'firstName lastName')
+    .select("-userPass");
 
     res.status(200).json({
       success: true,
@@ -99,27 +103,37 @@ export const assignAmbulance = async (req, res, next) => {
       return next(new ErrorHandler("Ambulance is not available", 400));
     }
 
+    // Get hospital details for accurate location
+    let hospitalDetails = null;
+    if (hospitalId) {
+      hospitalDetails = await Hospital.findById(hospitalId);
+      if (!hospitalDetails) {
+        return next(new ErrorHandler("Hospital not found", 404));
+      }
+    }
+
     ambulance.status = "EN_ROUTE";
     ambulance.assignedPatient = patientId;
     ambulance.assignedHospital = hospitalId;
-    ambulance.destination = destination;
+    ambulance.destination = destination || hospitalDetails?.name || 'Hospital';
 
     await ambulance.save();
 
-    // Emit socket event
+    // Emit socket event with hospital location
     if (io) {
       io.emit("ambulanceAssigned", {
         ambulanceId: ambulance._id,
         patientId,
         hospitalId,
-        destination,
+        destination: ambulance.destination,
+        hospitalLocation: hospitalDetails?.location,
       });
     }
 
     res.status(200).json({
       success: true,
       message: "Ambulance assigned successfully",
-      ambulance,
+      ambulance: await ambulance.populate('assignedHospital', 'name address location'),
     });
   } catch (error) {
     console.error("Error assigning ambulance:", error);
