@@ -129,6 +129,17 @@ export const fetchActiveAmbulances = async () => {
   return res;
 };
 
+// ---- Meta APIs: categories and specializations ----
+export const getICUSpecializations = async () => {
+  const res = await API.get('/meta/icu-specializations');
+  return res?.data?.specializations || [];
+};
+
+export const getServiceCategories = async () => {
+  const res = await API.get('/meta/service-categories');
+  return res?.data?.categories || [];
+};
+
 
 // ============================================================
 //    MOCK HOSPITAL MANAGEMENT (ADMIN/MANAGER) PLACEHOLDERS
@@ -354,6 +365,45 @@ export const updateMedicalHistory = async (patientIdOrPayload, maybeHistory) => 
   // Otherwise assume it's the new payload object
   return await updateMedicalHistoryForPatient(patientIdOrPayload);
 };
+
+// ============================================================
+// Ambulance Request APIs
+// ============================================================
+
+/**
+ * Patient creates ambulance request
+ * @param {Object} payload - { pickupLocation, pickupCoordinates, urgency, notes }
+ */
+export const createAmbulanceRequest = async (payload) => await API.post('/ambulance/request', payload);
+
+/**
+ * Ambulance crew fetches active requests sorted by distance
+ * @param {Object} location - { latitude, longitude } - ambulance's current location
+ */
+export const getActiveAmbulanceRequests = async (location) => {
+  // Backend expects JSON string with GeoJSON-like coordinates: { coordinates: [lng, lat] }
+  const params = location && typeof location.latitude === 'number' && typeof location.longitude === 'number'
+    ? { location: JSON.stringify({ coordinates: [location.longitude, location.latitude] }) }
+    : {};
+  return await API.get('/ambulance/requests', { params });
+};
+
+/**
+ * Ambulance accepts a request (locks it to them)
+ * @param {String} requestId - ID of the ambulance request
+ */
+export const acceptAmbulanceRequest = async (requestId) => await API.post(`/ambulance/requests/${requestId}/accept`);
+
+/**
+ * Patient cancels their ambulance request
+ * @param {String} requestId - ID of the ambulance request
+ */
+export const cancelAmbulanceRequest = async (requestId) => await API.delete(`/ambulance/requests/${requestId}/cancel`);
+
+/**
+ * Patient fetches their active ambulance request
+ */
+export const getMyAmbulanceRequest = async () => await API.get('/ambulance/my-request');
 
 
 // ============================================================

@@ -1,8 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 import { toast } from 'react-toastify';
 import styles from './Ambulance.module.css';
 import Button from '../../components/common/Button';
-import { getAllAmbulances, updateAmbulanceStatus } from '../../utils/api';
+import { 
+    getAllAmbulances, 
+    updateAmbulanceStatus, 
+    getActiveAmbulanceRequests, 
+    acceptAmbulanceRequest 
+} from '../../utils/api';
 import { getUserId, getToken } from '../../utils/cookieUtils';
 import socket from '../../utils/socket';
 
@@ -15,12 +23,15 @@ const AmbulancePanel = () => {
     const [currentLocation, setCurrentLocation] = useState(null);
     const [distance, setDistance] = useState(null);
     const [directions, setDirections] = useState(null);
+    const [mapCenter, setMapCenter] = useState({ lat: 30.0444, lng: 31.2357 });
+    const [selectedRequest, setSelectedRequest] = useState(null);
     const myAmbulanceId = getUserId();
     const gpsIntervalRef = useRef(null);
     const mockIntervalRef = useRef(null);
 
     useEffect(() => {
         loadData();
+        loadAmbulanceRequests(); // Load sorted requests on mount
 
         // Listen for real-time ambulance status updates
         if (socket) {
@@ -56,31 +67,26 @@ const AmbulancePanel = () => {
             socket.on('ambulancePickupRequest', (data) => {
                 console.log('🔔 Received pickup request:', data);
                 
-                // Add to pickup requests list
-                setPickupRequests(prev => {
-                    // Check if request already exists
-                    const exists = prev.find(req => req.patientId === data.patientId);
-                    if (!exists) {
-                        console.log('✅ Adding new pickup request to list');
-                        toast.info(`🚑 New pickup request from ${data.patientName} to ${data.hospitalName}!`, {
-                            autoClose: 8000,
-                            position: "top-right"
-                        });
-                        return [...prev, data];
-                    }
-                    console.log('⚠️ Request already exists in list');
-                    return prev;
+                toast.info(`🚑 New pickup request from ${data.patientName || 'patient'} - tap to refresh list`, {
+                    autoClose: 8000,
+                    position: "top-right",
+                    onClick: () => loadAmbulanceRequests()
                 });
+                
+                // Reload requests to get updated list with distance sorting
+                loadAmbulanceRequests();
             });
 
             // Listen for when a pickup request is taken by another ambulance
             socket.on('pickupRequestTaken', (data) => {
-                setPickupRequests(prev => prev.filter(req => req.patientId !== data.patientId));
                 if (data.ambulanceId !== myAmbulanceId) {
-                    toast.info(`Pickup request for patient was accepted by another ambulance`, {
+                    toast.info(`Pickup request was accepted by another ambulance`, {
                         autoClose: 5000
                     });
                 }
+                
+                // Reload requests to remove the taken request
+                loadAmbulanceRequests();
             });
 
             // Listen for successful acceptance
@@ -124,12 +130,56 @@ const AmbulancePanel = () => {
             const myAmb = ambulanceData.find(a => a._id === myAmbulanceId);
             if (myAmb) {
                 setMyAmbulance(myAmb);
+                
+                // If ambulance has location, reload requests sorted by distance
+                if (myAmb.currentLocation?.coordinates) {
+                    loadAmbulanceRequests({
+                        latitude: myAmb.currentLocation.coordinates[1],
+                        longitude: myAmb.currentLocation.coordinates[0]
+                    });
+                }
             }
         } catch (err) {
             toast.error(err.response?.data?.message || "Failed to fetch ambulance data.");
             console.error(err);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const loadAmbulanceRequests = async (location = null) => {
+        try {
+            // If we have ambulance location, use it for distance sorting
+            const loc = location || (myAmbulance?.currentLocation?.coordinates 
+                ? { 
+                    latitude: myAmbulance.currentLocation.coordinates[1], 
+                    longitude: myAmbulance.currentLocation.coordinates[0] 
+                } 
+                : null);
+            
+            const response = await getActiveAmbulanceRequests(loc);
+            const requests = response.data?.data || [];
+            
+            // Transform to match old format for UI compatibility
+            const transformedRequests = requests.map(req => ({
+                patientId: req.patient?._id,
+                patientName: req.patient ? `${req.patient.firstName} ${req.patient.lastName}` : 'Unknown Patient',
+                patientPhone: req.patient?.phone,
+                pickupLocation: req.pickupLocation,
+                hospitalName: req.hospital?.name || 'Hospital',
+                specialization: req.icu?.specialization || 'General',
+                room: req.icu?.room || 'N/A',
+                timestamp: req.createdAt,
+                urgency: req.urgency,
+                distance: req.distance, // Distance in km (if location was provided)
+                requestId: req._id,
+                pickupCoords: req.pickupCoordinates?.coordinates, // [lng, lat]
+                hospitalCoords: req.hospital?.location?.coordinates // [lng, lat]
+            }));
+            
+            setPickupRequests(transformedRequests);
+        } catch (err) {
+            console.error('Failed to load ambulance requests:', err);
         }
     };
 
@@ -173,7 +223,7 @@ const AmbulancePanel = () => {
         }
     };
 
-    const handleAcceptPickupRequest = async (patientId) => {
+    const handleAcceptPickupRequest = async (requestId) => {
         // Check if ambulance is available
         if (myAmbulance?.status !== 'AVAILABLE') {
             toast.error('You must be AVAILABLE to accept pickup requests');
@@ -187,40 +237,25 @@ const AmbulancePanel = () => {
         }
 
         try {
-            const token = getToken();
-            const response = await fetch(`http://localhost:3030/ambulance/${myAmbulanceId}/accept-pickup`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                credentials: 'include',
-                body: JSON.stringify({
-                    patientId: patientId
-                })
-            });
-
-            const data = await response.json();
+            const response = await acceptAmbulanceRequest(requestId);
             
-            if (!response.ok) {
-                throw new Error(data.message || 'Failed to accept pickup');
-            }
-
-            toast.success('✅ Pickup request accepted! You are now en route.');
-            
-            // Remove this request from the list
-            setPickupRequests(prev => prev.filter(req => req.patientId !== patientId));
-            
-            // Reload ambulance data
-            await loadData();
-            
-            // Start GPS tracking
-            if (!gpsTracking) {
-                startGPSTracking();
+            if (response.data?.success) {
+                toast.success('✅ Pickup request accepted! You are now en route.');
+                
+                // Remove this request from the list
+                setPickupRequests(prev => prev.filter(req => req.requestId !== requestId));
+                
+                // Reload ambulance data
+                await loadData();
+                
+                // Start GPS tracking
+                if (!gpsTracking) {
+                    startGPSTracking();
+                }
             }
         } catch (err) {
             console.error('Accept pickup request error:', err);
-            toast.error(err.message || 'Failed to accept pickup request');
+            toast.error(err.response?.data?.message || 'Failed to accept pickup request');
         }
     };
 
@@ -391,9 +426,30 @@ const AmbulancePanel = () => {
     };
 
     const startGPSTracking = () => {
+        if (gpsTracking) return;
         setGpsTracking(true);
-        toast.info('🎭 Starting location tracking (Demo Mode)');
-        useMockLocation();
+        if (typeof navigator !== 'undefined' && navigator.geolocation) {
+            toast.info('📡 Starting GPS tracking');
+            try {
+                const watchId = navigator.geolocation.watchPosition(
+                    (pos) => updateLocation(pos),
+                    (err) => {
+                        console.warn('Geolocation error:', err);
+                        toast.warn('GPS unavailable. Using demo movement.');
+                        useMockLocation();
+                    },
+                    { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
+                );
+                gpsIntervalRef.current = watchId; // reuse ref to store watchId
+            } catch (e) {
+                console.warn('Geolocation watch failed, using mock:', e);
+                toast.warn('GPS unavailable. Using demo movement.');
+                useMockLocation();
+            }
+        } else {
+            toast.warn('GPS not supported. Using demo movement.');
+            useMockLocation();
+        }
     };
 
     // Mock location for testing/demo purposes
@@ -434,7 +490,9 @@ const AmbulancePanel = () => {
 
     const stopGPSTracking = () => {
         if (gpsIntervalRef.current) {
-            clearInterval(gpsIntervalRef.current);
+            // Clear geolocation watcher if set; if mock interval id accidentally here, clear it as interval
+            try { navigator?.geolocation && navigator.geolocation.clearWatch(gpsIntervalRef.current); } catch {}
+            try { clearInterval(gpsIntervalRef.current); } catch {}
             gpsIntervalRef.current = null;
         }
         if (mockIntervalRef.current) {
@@ -472,10 +530,16 @@ const AmbulancePanel = () => {
     };
 
     const calculateDistanceAndETA = (currentLoc) => {
-        // For demo purposes, using mock destination
-        // In production, use actual hospital coordinates from myAmbulance.assignedHospital
-        const destinationLat = 30.0444; // Cairo example
-        const destinationLng = 31.2357;
+        // Prefer selected request's pickup as destination for routing visualization
+        let destinationLat = 30.0444;
+        let destinationLng = 31.2357;
+        if (selectedRequest?.pickupCoords && selectedRequest.pickupCoords.length === 2) {
+            destinationLng = selectedRequest.pickupCoords[0];
+            destinationLat = selectedRequest.pickupCoords[1];
+        } else if (myAmbulance?.assignedHospital?.location?.coordinates?.length === 2) {
+            destinationLng = myAmbulance.assignedHospital.location.coordinates[0];
+            destinationLat = myAmbulance.assignedHospital.location.coordinates[1];
+        }
 
         // Haversine formula for distance
         const R = 6371; // Earth's radius in km
@@ -499,6 +563,27 @@ const AmbulancePanel = () => {
         // Generate simple directions
         const bearing = calculateBearing(currentLoc.lat, currentLoc.lng, destinationLat, destinationLng);
         setDirections(getDirectionFromBearing(bearing));
+    };
+
+    // Helper component to fly map to a center
+    const FlyTo = ({ center }) => {
+        const map = useMap();
+        useEffect(() => {
+            if (center) map.flyTo([center.lat, center.lng], 13);
+        }, [center]);
+        return null;
+    };
+
+    // Haversine distance (km) for client-side labels
+    const distanceKm = (lat1, lon1, lat2, lon2) => {
+        const R = 6371;
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                  Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                  Math.sin(dLon/2) * Math.sin(dLon/2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        return R * c;
     };
 
     const calculateBearing = (lat1, lon1, lat2, lon2) => {
@@ -531,19 +616,48 @@ const AmbulancePanel = () => {
                     
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
                         {pickupRequests.map((request) => (
-                            <div key={request.patientId} style={{
+                            <div key={request.requestId || request.patientId} style={{
                                 padding: '15px',
                                 backgroundColor: 'white',
-                                border: '2px solid #ff9800',
+                                border: request.urgency === 'critical' ? '3px solid #dc3545' : 
+                                        request.urgency === 'urgent' ? '2px solid #ffc107' : '2px solid #ff9800',
                                 borderRadius: '8px',
                                 display: 'flex',
                                 justifyContent: 'space-between',
                                 alignItems: 'center'
                             }}>
                                 <div>
-                                    <h4 style={{ margin: '0 0 8px 0', color: '#0d47a1' }}>
-                                        👤 {request.patientName}
-                                    </h4>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                                        <h4 style={{ margin: 0, color: '#0d47a1' }}>
+                                            👤 {request.patientName}
+                                        </h4>
+                                        {request.urgency && (
+                                            <span style={{
+                                                padding: '4px 8px',
+                                                borderRadius: '12px',
+                                                fontSize: '0.75em',
+                                                fontWeight: 'bold',
+                                                textTransform: 'uppercase',
+                                                backgroundColor: request.urgency === 'critical' ? '#dc3545' : 
+                                                                request.urgency === 'urgent' ? '#ffc107' : '#6c757d',
+                                                color: request.urgency === 'urgent' ? '#000' : '#fff'
+                                            }}>
+                                                {request.urgency}
+                                            </span>
+                                        )}
+                                        {request.distance !== undefined && (
+                                            <span style={{
+                                                padding: '4px 8px',
+                                                borderRadius: '12px',
+                                                fontSize: '0.75em',
+                                                fontWeight: 'bold',
+                                                backgroundColor: '#007bff',
+                                                color: '#fff'
+                                            }}>
+                                                📏 {Number(request.distance).toFixed(1)} km away
+                                            </span>
+                                        )}
+                                    </div>
                                     <p style={{ margin: '4px 0', fontSize: '0.95em' }}>
                                         <strong>📍 Pickup Location:</strong> {request.pickupLocation}
                                     </p>
@@ -564,7 +678,7 @@ const AmbulancePanel = () => {
                                 </div>
                                 <Button 
                                     variant="success"
-                                    onClick={() => handleAcceptPickupRequest(request.patientId)}
+                                    onClick={() => handleAcceptPickupRequest(request.requestId)}
                                     style={{ minWidth: '120px' }}
                                 >
                                     ✅ Accept Pickup
@@ -651,6 +765,156 @@ const AmbulancePanel = () => {
                     >
                         ✅ Mark AVAILABLE
                     </Button>
+                </div>
+            </section>
+
+            {/* Requests Sidebar + Map Section */}
+            <section className={styles.statusPanel}>
+                <h3>Pickup Requests</h3>
+                <div className={styles.requestsLayout}>
+                    {/* Sidebar list */}
+                    <aside className={styles.requestsSidebar}>
+                        <div className={styles.requestsList}>
+                            {pickupRequests.length === 0 ? (
+                                <div className={styles.placeholder}>No pending pickup requests</div>
+                            ) : (
+                                pickupRequests.map((req) => (
+                                    <div key={req.requestId} className={styles.requestItem}>
+                                        <div className={styles.requestHeader}>
+                                            <strong>👤 {req.patientName}</strong>
+                                            {req.urgency && (
+                                                <span style={{
+                                                    padding: '2px 8px', borderRadius: '12px', fontSize: '0.75em', fontWeight: 'bold',
+                                                    backgroundColor: req.urgency === 'critical' ? '#dc3545' : req.urgency === 'urgent' ? '#ffc107' : '#6c757d',
+                                                    color: req.urgency === 'urgent' ? '#000' : '#fff'
+                                                }}>
+                                                    {req.urgency}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div className={styles.requestMeta}>
+                                            <div>📍 {req.pickupLocation}</div>
+                                            <div>🏥 {req.hospitalName}</div>
+                                            {(() => {
+                                                const hasServerDist = req.distance !== undefined && req.distance !== null;
+                                                const hasCoords = currentLocation && Array.isArray(req.pickupCoords) && req.pickupCoords.length === 2;
+                                                const computed = hasCoords ? distanceKm(currentLocation.lat, currentLocation.lng, req.pickupCoords[1], req.pickupCoords[0]) : null;
+                                                const shown = hasServerDist ? Number(req.distance) : computed;
+                                                return shown != null ? (
+                                                    <div>📏 {Number(shown).toFixed(1)} km away</div>
+                                                ) : null;
+                                            })()}
+                                            <div>🕒 {new Date(req.timestamp).toLocaleTimeString()}</div>
+                                        </div>
+                                        <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                                            <Button
+                                                variant="secondary"
+                                                onClick={() => { setSelectedRequest(req); req.pickupCoords && setMapCenter({ lat: req.pickupCoords[1], lng: req.pickupCoords[0] }); }}
+                                            >
+                                                View on map
+                                            </Button>
+                                            <Button
+                                                variant="success"
+                                                onClick={() => handleAcceptPickupRequest(req.requestId)}
+                                            >
+                                                On my way
+                                            </Button>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </aside>
+                    {/* Map */}
+                    <div style={{ height: 450, width: '100%', borderRadius: 8, overflow: 'hidden' }}>
+                    <MapContainer center={[mapCenter.lat, mapCenter.lng]} zoom={12} style={{ height: '100%', width: '100%' }}>
+                        <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution='&copy; OpenStreetMap contributors' />
+                        <FlyTo center={mapCenter} />
+                        {/* Ambulance current location marker */}
+                        {currentLocation && (
+                            <Marker position={[currentLocation.lat, currentLocation.lng]} icon={L.icon({
+                                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+                                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+                                iconSize: [25,41], iconAnchor: [12,41]
+                            })}>
+                                <Popup>
+                                    <strong>My Ambulance</strong>
+                                    <div>Status: {myAmbulance?.status || 'N/A'}</div>
+                                </Popup>
+                            </Marker>
+                        )}
+                        {/* Pickup requests markers */}
+                        {pickupRequests.map((req) => 
+                            req.pickupCoords?.length === 2 && (
+                                <Marker key={req.requestId}
+                                    position={[req.pickupCoords[1], req.pickupCoords[0]]}
+                                    icon={L.icon({
+                                        iconUrl:
+                                            req.urgency === 'critical'
+                                                ? 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png'
+                                                : req.urgency === 'urgent'
+                                                ? 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-orange.png'
+                                                : 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-yellow.png',
+                                        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+                                        iconSize: [25, 41],
+                                        iconAnchor: [12, 41]
+                                    })}
+                                    eventHandlers={{
+                                        click: () => {
+                                            setSelectedRequest(req);
+                                            setMapCenter({ lat: req.pickupCoords[1], lng: req.pickupCoords[0] });
+                                        }
+                                    }}
+                                >
+                                    <Popup>
+                                        <div style={{ minWidth: 200 }}>
+                                            <strong>{req.patientName}</strong>
+                                            <div>📍 {req.pickupLocation}</div>
+                                            <div>🏥 {req.hospitalName}</div>
+                                            {(() => {
+                                                const hasServerDist = req.distance !== undefined && req.distance !== null;
+                                                const hasCoords = currentLocation && Array.isArray(req.pickupCoords) && req.pickupCoords.length === 2;
+                                                const computed = hasCoords ? distanceKm(currentLocation.lat, currentLocation.lng, req.pickupCoords[1], req.pickupCoords[0]) : null;
+                                                const shown = hasServerDist ? Number(req.distance) : computed;
+                                                return shown != null ? (
+                                                    <div>📏 {Number(shown).toFixed(1)} km away</div>
+                                                ) : null;
+                                            })()}
+                                            <div style={{ marginTop: 8, display: 'flex', gap: 8 }}>
+                                                <Button variant="success" onClick={() => handleAcceptPickupRequest(req.requestId)}>Accept</Button>
+                                                <Button variant="secondary" onClick={() => setSelectedRequest(req)}>Route</Button>
+                                            </div>
+                                        </div>
+                                    </Popup>
+                                </Marker>
+                            )
+                        )}
+                        {/* Lines from ambulance to each request showing distance */}
+                        {currentLocation && pickupRequests.map((req) => (
+                            Array.isArray(req.pickupCoords) && req.pickupCoords.length === 2 ? (
+                                <Polyline
+                                    key={`line-${req.requestId}`}
+                                    positions={[[currentLocation.lat, currentLocation.lng], [req.pickupCoords[1], req.pickupCoords[0]]]}
+                                    pathOptions={{ color: '#6c757d', weight: 2, opacity: 0.6, dashArray: '6 6' }}
+                                >
+                                    <Popup>
+                                        {(() => {
+                                            const dist = distanceKm(currentLocation.lat, currentLocation.lng, req.pickupCoords[1], req.pickupCoords[0]);
+                                            return <div>📏 {dist.toFixed(2)} km</div>;
+                                        })()}
+                                    </Popup>
+                                </Polyline>
+                            ) : null
+                        ))}
+                        {/* Simple route polyline from ambulance to selected pickup */}
+                        {currentLocation && selectedRequest?.pickupCoords?.length === 2 && (
+                            <Polyline
+                                positions={[[currentLocation.lat, currentLocation.lng], [selectedRequest.pickupCoords[1], selectedRequest.pickupCoords[0]]]}
+                                pathOptions={{ color: '#007bff', weight: 4, opacity: 0.8 }}
+                            />
+                        )}
+                    </MapContainer>
+                    </div>
                 </div>
             </section>
             <section className={styles.statusPanel}>

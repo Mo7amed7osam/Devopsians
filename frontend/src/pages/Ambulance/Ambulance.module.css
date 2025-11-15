@@ -219,3 +219,50 @@
     font-size: 1.1em;
     font-weight: 600;
 }
+
+/* Requests + Map layout */
+.requestsLayout {
+    display: grid;
+    grid-template-columns: 360px 1fr;
+    gap: 16px;
+}
+
+.requestsSidebar {
+    background: #ffffff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 12px;
+    max-height: 450px;
+    overflow-y: auto;
+}
+
+.requestsList {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.requestItem {
+    border: 1px solid #e6e6e6;
+    background: #fafafa;
+    border-radius: 8px;
+    padding: 10px;
+}
+
+.requestHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.requestMeta {
+    color: #555;
+    font-size: 0.9em;
+}
+
+@media (max-width: 900px) {
+    .requestsLayout {
+        grid-template-columns: 1fr;
+    }
+}

@@ -8,10 +8,59 @@ import {
   markPatientArrived,
   approvePickupRequest,
   rejectPickupRequest,
+  createAmbulanceRequest,
+  getActiveRequests,
+  acceptAmbulanceRequest,
+  cancelAmbulanceRequest,
+  getMyAmbulanceRequest,
 } from "../controllers/ambulanceController.js";
 import { isAuthenticated, authorizeRoles } from "../utils/authMiddleware.js";
 
 const router = express.Router();
+
+// ========== New Ambulance Request System Routes (MUST come before /:ambulanceId) ==========
+
+// Patient creates ambulance request
+router.post(
+  "/request",
+  isAuthenticated,
+  authorizeRoles("Patient"),
+  createAmbulanceRequest
+);
+
+// Ambulance users get all active requests (sorted by distance)
+router.get(
+  "/requests",
+  isAuthenticated,
+  authorizeRoles("Ambulance"),
+  getActiveRequests
+);
+
+// Ambulance user accepts a specific request
+router.post(
+  "/requests/:requestId/accept",
+  isAuthenticated,
+  authorizeRoles("Ambulance"),
+  acceptAmbulanceRequest
+);
+
+// Patient cancels their ambulance request
+router.delete(
+  "/requests/:requestId/cancel",
+  isAuthenticated,
+  authorizeRoles("Patient"),
+  cancelAmbulanceRequest
+);
+
+// Patient gets their active ambulance request
+router.get(
+  "/my-request",
+  isAuthenticated,
+  authorizeRoles("Patient"),
+  getMyAmbulanceRequest
+);
+
+// ========== Ambulance Management Routes ==========
 
 // Get all active ambulances - accessible by admin, manager, receptionist, and ambulance crew
 router.get(

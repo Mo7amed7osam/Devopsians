@@ -1,5 +1,7 @@
 import mongoose from "mongoose";
 
+export const SERVICE_CATEGORIES = ['ICU', 'Visitor Room', 'Kids Area', 'General'];
+
 const serviceSchema = new mongoose.Schema(
     {
         name: {
@@ -12,7 +14,7 @@ const serviceSchema = new mongoose.Schema(
         },
         category: {
             type: String,
-            enum: ['ICU', 'Visitor Room', 'Kids Area', 'General'],
+            enum: SERVICE_CATEGORIES,
             default: 'General',
         },
         description: {
@@ -22,15 +24,14 @@ const serviceSchema = new mongoose.Schema(
         reservedBy: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'User',
-            required: false, // Make it optional initially, required only when a service is reserved
+            required: false,
         },
-       
     },
     {
         timestamps: true,
     }
 );
 
-const Service = mongoose.model('Service', serviceSchema);
+const Service = mongoose.models.Service || mongoose.model('Service', serviceSchema);
 
 export default Service;

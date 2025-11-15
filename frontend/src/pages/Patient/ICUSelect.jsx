@@ -1,5 +1,5 @@
 // src/pages/ICUSelect.jsx
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 import { getAvailableICUsFromServer, fetchNearbyHospitalsPublic, reserveICUForPatient } from '../../utils/api';
@@ -19,6 +19,7 @@ const ICUSelect = () => {
     const [filters, setFilters] = useState({ specialization: '', searchTerm: '' });
     const [loading, setLoading] = useState(false);
     const [showPickupModal, setShowPickupModal] = useState(false);
+    const openingModalRef = useRef(false);
     const [selectedIcuId, setSelectedIcuId] = useState(null);
     const [needsPickup, setNeedsPickup] = useState(false);
     const [pickupLocation, setPickupLocation] = useState('');
@@ -97,7 +98,6 @@ const ICUSelect = () => {
         
         if (socket && userId) {
             socket.on('patientNotification', (data) => {
-                console.log('🔔 ICU Select - Patient notification received:', data);
                 if (data.patientId === userId) {
                     if (data.type === 'ambulance_assigned') {
                         toast.success(`🚑 ${data.message}`, {
@@ -128,26 +128,51 @@ const ICUSelect = () => {
 
     // --- Handle ICU Reservation ---
     const handleReserve = async (icuId) => {
-        console.log('🔵 Reserve button clicked for ICU:', icuId);
         const userId = getUserId();
-        console.log('🔵 User ID:', userId);
         
         if (!userId) {
             toast.error('Please log in to reserve an ICU.');
             return;
         }
 
-        // Show modal to ask about pickup
-        console.log('🔵 Opening pickup modal...');
-        setSelectedIcuId(icuId);
-        setShowPickupModal(true);
+        // Guard against rapid double-clicks opening multiple modals
+        if (openingModalRef.current || showPickupModal) return;
+        openingModalRef.current = true;
+
+        // Auto-fill pickup location from user's current GPS coordinates
+        if (userLocation) {
+            const address = `${userLocation.lat.toFixed(6)}, ${userLocation.lng.toFixed(6)}`;
+            setPickupLocation(address);
+            
+            // Try to get actual address using reverse geocoding
+            try {
+                const response = await fetch(
+                    `https://nominatim.openstreetmap.org/reverse?format=json&lat=${userLocation.lat}&lon=${userLocation.lng}&zoom=18&addressdetails=1`,
+                    {
+                        headers: {
+                            'Accept-Language': 'en'
+                        }
+                    }
+                );
+                const data = await response.json();
+                if (data.display_name) {
+                    setPickupLocation(data.display_name);
+                }
+            } catch (err) {
+                console.error('Reverse geocoding failed:', err);
+                // Keep the coordinates as fallback
+            }
+        }
+
+        // Show modal to ask about pickup (only if not already open)
+        if (!showPickupModal) {
+            setSelectedIcuId(icuId);
+            setShowPickupModal(true);
+        }
+        openingModalRef.current = false;
     };
 
     const handleConfirmReservation = async () => {
-        console.log('🟢 Confirm reservation clicked');
-        console.log('🟢 Selected ICU ID:', selectedIcuId);
-        console.log('🟢 Needs pickup:', needsPickup);
-        console.log('🟢 Pickup location:', pickupLocation);
         
         if (needsPickup && !pickupLocation.trim()) {
             toast.warn('Please enter your pickup location');
@@ -156,7 +181,6 @@ const ICUSelect = () => {
 
         try {
             const userId = getUserId();
-            console.log('🟢 User ID for reservation:', userId);
             setLoading(true);
             
             const payload = {
@@ -165,11 +189,9 @@ const ICUSelect = () => {
                 needsPickup,
                 pickupLocation: needsPickup ? pickupLocation : null
             };
-            console.log('🟢 Sending payload:', payload);
             
             // Call backend API to reserve ICU with pickup info
             const response = await reserveICUForPatient(payload);
-            console.log('🟢 Reservation response:', response.data);
             
             if (needsPickup && response.data?.ambulanceAssigned) {
                 toast.success('🚑 ICU reserved! Ambulance is on the way to your location. Waiting for crew approval...', {
@@ -187,9 +209,9 @@ const ICUSelect = () => {
             
             setShowPickupModal(false);
             
-            // Redirect to patient homepage
+            // Redirect to patient dashboard (valid route)
             setTimeout(() => {
-                navigate('/patient');
+                navigate('/patient-dashboard');
             }, 1500);
 
         } catch (err) {
@@ -271,7 +293,11 @@ const ICUSelect = () => {
             </div>
 
             {/* Pickup Request Modal */}
-            <Modal isOpen={showPickupModal} onClose={() => setShowPickupModal(false)}>
+            <Modal isOpen={showPickupModal} onClose={() => {
+                setShowPickupModal(false);
+                setNeedsPickup(false);
+                setPickupLocation('');
+            }}>
                 <div style={{ padding: '1.5rem' }}>
                     <h2 style={{ marginBottom: '1rem' }}>Complete Your Reservation</h2>
                         

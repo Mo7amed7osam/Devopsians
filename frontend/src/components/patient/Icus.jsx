@@ -33,15 +33,9 @@ function Icus({ icuList = [], onReserve, loading }) {
               Status: <span className={styles.available}>{icu.status}</span>
             </p>
             <button
-              onClick={() => {
-                console.log('🔴 Button clicked in Icus component, ICU ID:', icu._id || icu.id);
-                console.log('🔴 Button disabled?', icu.isReserved || icu.status !== 'Available');
-                console.log('🔴 ICU status:', icu.status);
-                console.log('🔴 ICU isReserved:', icu.isReserved);
-                onReserve(icu._id || icu.id);
-              }}
+              onClick={() => onReserve(icu._id || icu.id)}
               className={styles.reserveButton}
-              disabled={icu.isReserved || icu.status !== 'Available'}
+              disabled={icu.isReserved || (icu.status || '').toLowerCase() !== 'available'}
             >
               {icu.isReserved ? 'Reserved' : 'Reserve'}
             </button>

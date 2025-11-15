@@ -129,24 +129,28 @@ export const seedData = {
   icus: [
     {
       specialization: "Cardiac ICU",
+      room: "101",
       status: "Available",
       fees: 600,
       isReserved: false
     },
     {
       specialization: "Neurological ICU",
+      room: "102",
       status: "Occupied",
       fees: 800,
       isReserved: true
     },
     {
       specialization: "Medical ICU",
-      status: "To Be Cleaned",
+      room: "103",
+      status: "Maintenance",
       fees: 500,
       isReserved: false
     },
     {
       specialization: "Pediatric ICU",
+      room: "104",
       status: "Available",
       fees: 750,
       isReserved: false

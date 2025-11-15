@@ -22,6 +22,7 @@ import PageNotFound from './pages/auth/PageNotFound.jsx';
 // --- Import Patient Pages ---
 import ICUSelect from './pages/Patient/ICUSelect.jsx';
 import PatientHomePage from './pages/Patient/PatientHomePage.jsx';
+import RequestAmbulance from './pages/Patient/RequestAmbulance.jsx';
 
 // --- Import Manager Pages ---
 import ManagerDashboard from './pages/Manager/ManagerDashboard.jsx';
@@ -87,6 +88,14 @@ const App = () => {
                         element={
                             <PrivateRoute allowedRoles={['patient']}>
                                 <PatientHomePage />
+                            </PrivateRoute>
+                        }
+                    />
+                    <Route
+                        path="/patient/request-ambulance"
+                        element={
+                            <PrivateRoute allowedRoles={['patient']}>
+                                <RequestAmbulance />
                             </PrivateRoute>
                         }
                     />

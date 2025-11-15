@@ -15,6 +15,7 @@ import managerRoutes from "./routes/managerRoutes.js";
 import receptionistRoutes from "./routes/receptionistRoutes.js";
 import ambulanceRoutes from "./routes/ambulanceRoutes.js";
 import icuRoutes from "./routes/icuRoutes.js";
+import metaRoutes from "./routes/metaRoutes.js";
 import { errorHandler } from "./utils/errorHandler.js";
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
@@ -75,6 +76,7 @@ app.use("/ambulance", ambulanceRoutes);
 app.use("/user", userRoutes);
 app.use("/hospital", hospitalRoutes);
 app.use("/icu", icuRoutes);
+app.use("/meta", metaRoutes);
 
 // Error Handling Middleware
 app.use(errorHandler);

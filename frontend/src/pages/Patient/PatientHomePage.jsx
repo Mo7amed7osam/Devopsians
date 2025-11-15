@@ -8,10 +8,12 @@ import styles from './PatientHomePage.module.css';
 import Button from '../../components/common/Button';
 import Modal from '../../components/common/Modal';
 import ICUSelect from './ICUSelect';
+import { useNavigate } from 'react-router-dom';
 
 const PatientHomePage = () => {
     const [patientData, setPatientData] = useState(null);
     const [icuData, setIcuData] = useState(null);
+        const navigate = useNavigate();
     // Doctor role removed — no doctor-specific data fetched
     const [newMedicalHistory, setNewMedicalHistory] = useState('');
     const [loading, setLoading] = useState(true);
@@ -290,6 +292,14 @@ const PatientHomePage = () => {
                                 <strong>Pickup Location:</strong> {patientData.pickupLocation}
                             </p>
                         )}
+                        <div style={{ marginTop: '10px' }}>
+                            <Button
+                                variant="primary"
+                                onClick={() => navigate('/patient/request-ambulance')}
+                            >
+                                Track Ambulance / Manage Request
+                            </Button>
+                        </div>
                     </div>
                 )}
 

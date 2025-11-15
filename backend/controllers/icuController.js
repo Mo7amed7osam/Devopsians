@@ -1,4 +1,4 @@
-import ICU from '../models/icuModel.js';
+import { ICU } from '../models/roomModel.js';
 import User from '../models/userModel.js';
 
 // Get all ICUs with their hospital details

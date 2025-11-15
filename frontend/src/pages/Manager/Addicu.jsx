@@ -1,7 +1,7 @@
 // src/pages/managerPages/Addicu.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify'; // 1. Import toast
-import { registerICUOnServer } from '../../utils/api'; 
+import { registerICUOnServer, getICUSpecializations } from '../../utils/api'; 
 import styles from './Addicu.module.css';
 import Button from '../../components/common/Button';
 
@@ -16,8 +16,20 @@ const Addicu = ({ hospitalId, onIcuRegistered }) => {
     // 2. The 'message' state is no longer needed
     // const [message, setMessage] = useState(null);
     const [loading, setLoading] = useState(false);
+    const [specializations, setSpecializations] = useState([]);
 
-    const specializations = ['General', 'Cardiology', 'Neurology', 'Pediatrics', 'Neonatal', 'Surgical'];
+    useEffect(() => {
+        const loadSpecs = async () => {
+            try {
+                const specs = await getICUSpecializations();
+                setSpecializations(specs);
+                setFormData(prev => ({ ...prev, specialization: specs?.[0] || prev.specialization }));
+            } catch (e) {
+                console.error('Failed to load ICU specializations', e);
+            }
+        };
+        loadSpecs();
+    }, []);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -34,16 +46,6 @@ const Addicu = ({ hospitalId, onIcuRegistered }) => {
         setLoading(true);
 
         try {
-            // Map frontend-friendly values to backend expected fields/values
-            const specializationMap = {
-                'General': 'Medical ICU',
-                'Cardiology': 'Cardiac ICU',
-                'Neurology': 'Neurological ICU',
-                'Pediatrics': 'Pediatric ICU',
-                'Neonatal': 'Neonatal ICU',
-                'Surgical': 'Surgical ICU'
-            };
-
             const statusMap = {
                 'AVAILABLE': 'Available',
                 'OCCUPIED': 'Occupied',
@@ -55,7 +57,7 @@ const Addicu = ({ hospitalId, onIcuRegistered }) => {
                 hospitalId,
                 room: formData.roomNumber,
                 capacity: Number(formData.capacity) || 1,
-                specialization: specializationMap[formData.specialization] || 'Medical ICU',
+                specialization: formData.specialization,
                 status: statusMap[formData.initialStatus] || 'Available',
                 fees: parseFloat(formData.feeStructure) || 100,
                 isReserved: false,
@@ -94,7 +96,7 @@ const Addicu = ({ hospitalId, onIcuRegistered }) => {
                 
                 <div className={styles.formGroup}>
                     <label htmlFor="specialization">Specialization</label>
-                    <select id="specialization" name="specialization" value={formData.specialization} onChange={handleChange} required disabled={loading}>
+                    <select id="specialization" name="specialization" value={formData.specialization} onChange={handleChange} required disabled={loading || specializations.length===0}>
                         {specializations.map(spec => (
                             <option key={spec} value={spec}>{spec}</option>
                         ))}

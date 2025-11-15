@@ -1,0 +1,221 @@
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.header h1 {
+  color: #2c3e50;
+  margin-bottom: 10px;
+}
+
+.header p {
+  color: #7f8c8d;
+  font-size: 1.1rem;
+}
+
+.loading {
+  text-align: center;
+  padding: 50px;
+  font-size: 1.2rem;
+  color: #7f8c8d;
+}
+
+.activeRequest {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 30px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 30px;
+}
+
+.activeRequest h2 {
+  color: #2c3e50;
+  margin-bottom: 20px;
+  font-size: 1.8rem;
+}
+
+.requestDetails {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.statusBadge {
+  display: inline-block;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-weight: bold;
+  font-size: 0.9rem;
+  margin-bottom: 15px;
+  text-transform: uppercase;
+}
+
+.statusBadge[data-status="pending"] {
+  background-color: #ffc107;
+  color: #000;
+}
+
+.statusBadge[data-status="accepted"] {
+  background-color: #17a2b8;
+  color: #fff;
+}
+
+.statusBadge[data-status="in_transit"] {
+  background-color: #007bff;
+  color: #fff;
+}
+
+.statusBadge[data-status="arrived"] {
+  background-color: #28a745;
+  color: #fff;
+}
+
+.statusBadge[data-status="completed"] {
+  background-color: #6c757d;
+  color: #fff;
+}
+
+.statusBadge[data-status="cancelled"] {
+  background-color: #dc3545;
+  color: #fff;
+}
+
+.detailRow {
+  margin-bottom: 12px;
+  font-size: 1rem;
+  color: #495057;
+}
+
+.detailRow strong {
+  color: #2c3e50;
+  margin-right: 8px;
+}
+
+.ambulanceInfo {
+  background: #e7f3ff;
+  border-left: 4px solid #007bff;
+  padding: 15px;
+  margin-top: 20px;
+  border-radius: 4px;
+}
+
+.ambulanceInfo h3 {
+  color: #007bff;
+  margin-bottom: 10px;
+  font-size: 1.3rem;
+}
+
+.trackingMap {
+  margin-top: 30px;
+}
+
+.trackingMap h3 {
+  color: #2c3e50;
+  margin-bottom: 15px;
+}
+
+.requestForm {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 30px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.formGroup {
+  margin-bottom: 20px;
+}
+
+.formGroup label {
+  display: block;
+  margin-bottom: 8px;
+  color: #2c3e50;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.formGroup input,
+.formGroup select,
+.formGroup textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #ced4da;
+  border-radius: 6px;
+  font-size: 1rem;
+  transition: border-color 0.3s ease;
+}
+
+.formGroup input:focus,
+.formGroup select:focus,
+.formGroup textarea:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+.formGroup small {
+  display: block;
+  margin-top: 5px;
+  color: #6c757d;
+  font-size: 0.875rem;
+}
+
+.mapContainer {
+  margin-top: 30px;
+}
+
+.mapContainer h3 {
+  color: #2c3e50;
+  margin-bottom: 10px;
+}
+
+.mapContainer p {
+  color: #6c757d;
+  margin-bottom: 15px;
+}
+
+.coordsDisplay {
+  margin-top: 10px;
+  padding: 10px;
+  background: #e7f3ff;
+  border-radius: 4px;
+  text-align: center;
+  font-weight: 600;
+  color: #007bff;
+}
+
+.warning {
+  margin-top: 15px;
+  padding: 12px;
+  background: #fff3cd;
+  border-left: 4px solid #ffc107;
+  border-radius: 4px;
+  color: #856404;
+  font-weight: 500;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .container {
+    padding: 15px;
+  }
+
+  .header h1 {
+    font-size: 1.8rem;
+  }
+
+  .activeRequest,
+  .requestForm {
+    padding: 20px;
+  }
+
+  .mapContainer {
+    margin-top: 20px;
+  }
+}

@@ -7,6 +7,8 @@ import styles from './ManagerDashboard.module.css';
 import DashboardNav from '../../components/common/DashboardNav';
 import { toast } from 'react-toastify';
 
+import { getServiceCategories } from '../../utils/api';
+
 const iconICU = <i className="fas fa-bed"></i>;
 
 const ManagerDashboard = () => {
@@ -19,6 +21,19 @@ const ManagerDashboard = () => {
     const [icus, setIcus] = useState([]);
     const [refreshCounter, setRefreshCounter] = useState(0);
     const [loading, setLoading] = useState(false);
+    const [serviceCategories, setServiceCategories] = useState([]);
+    
+        useEffect(() => {
+            const loadCategories = async () => {
+                try {
+                    const cats = await getServiceCategories();
+                    setServiceCategories(cats);
+                } catch (e) {
+                    // non-blocking
+                }
+            };
+            loadCategories();
+        }, []);
 
     const handleIcuRegistered = (newIcu) => {
         const status = newIcu?.status || newIcu?.initialStatus || '';
@@ -44,6 +59,16 @@ const ManagerDashboard = () => {
             try {
                 const res = await getManagerHospital();
                 // backend may return { data: hospital } or { data: { data: hospital } }
+                {serviceCategories.length > 0 && (
+                    <div className={styles.controls} style={{ marginBottom: '1rem' }}>
+                        <label style={{ marginRight: 8 }}>Service Category (from model):</label>
+                        <select disabled>
+                            {serviceCategories.map((c) => (
+                                <option key={c} value={c}>{c}</option>
+                            ))}
+                        </select>
+                    </div>
+                )}
                 const h = res?.data?.data || res?.data || null;
                 if (h) {
                     const hid = h._id || h.id || h;
@@ -99,6 +124,18 @@ const ManagerDashboard = () => {
         };
         loadManagerData();
     }, [refreshCounter]);
+
+    useEffect(() => {
+        const loadCategories = async () => {
+            try {
+                const cats = await getServiceCategories();
+                setServiceCategories(cats);
+            } catch (e) {
+                // non-blocking
+            }
+        };
+        loadCategories();
+    }, []);
 
     const renderContent = () => {
         if (!hospitalInfo || !hospitalInfo.id) {

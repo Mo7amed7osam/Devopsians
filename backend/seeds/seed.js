@@ -5,7 +5,7 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import User from "../models/userModel.js";
 import Hospital from "../models/hospitalmodel.js";
-import ICU from "../models/icuModel.js";
+import { ICU } from "../models/roomModel.js";
 import Task from "../models/taskModel.js";
 import Feedback from "../models/feedbackModel.js";
 import Service from "../models/serviceModel.js";
