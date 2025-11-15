@@ -43,8 +43,10 @@ export const reserveICU = async (req, res, next) => {
         await patient.save();
 
         // Emit socket event
-        io.emit('icuUpdated', await ICU.find({ status: { $regex: '^available$', $options: 'i' } })
-            .populate('hospital', 'name address'));
+        if (io) {
+            io.emit('icuUpdated', await ICU.find({ status: { $regex: '^available$', $options: 'i' } })
+                .populate('hospital', 'name address'));
+        }
 
         res.status(201).json({
             success: true,
@@ -82,15 +84,16 @@ export const checkInPatient = async (req, res, next) => {
             return next(new ErrorHandler('Patient not found', 404));
         }
 
-        // Check if patient arrived via ambulance - must be ARRIVED status
-        if (patient.assignedAmbulance && patient.patientStatus !== 'ARRIVED') {
+        // Check if patient arrived via ambulance - must be ARRIVED or IN_TRANSIT status
+        // Allow check-in for patients without ambulance or those who are IN_TRANSIT/ARRIVED
+        if (patient.assignedAmbulance && !['IN_TRANSIT', 'ARRIVED'].includes(patient.patientStatus)) {
             return next(new ErrorHandler('Patient must arrive at hospital before check-in. Current status: ' + patient.patientStatus, 400));
         }
 
-        // Confirm check-in - ICU already marked as Occupied during reservation
-        // Just update timestamp or additional fields if needed
-        icu.checkedInAt = new Date();
-        await icu.save();
+        // Update ICU check-in timestamp using findByIdAndUpdate to avoid validation issues
+        await ICU.findByIdAndUpdate(icuId, { 
+            checkedInAt: new Date() 
+        });
 
         // Update patient status to CHECKED_IN
         patient.patientStatus = 'CHECKED_IN';
@@ -116,12 +119,14 @@ export const checkInPatient = async (req, res, next) => {
         await patient.save();
 
         // Emit socket event
-        io.emit('patientCheckedIn', {
-            icuId: icu._id,
-            patientId,
-            hospitalName: icu.hospital?.name,
-            room: icu.room
-        });
+        if (io) {
+            io.emit('patientCheckedIn', {
+                icuId: icu._id,
+                patientId,
+                hospitalName: icu.hospital?.name,
+                room: icu.room
+            });
+        }
 
         res.status(200).json({
             success: true,
@@ -129,6 +134,7 @@ export const checkInPatient = async (req, res, next) => {
             icu
         });
     } catch (error) {
+        console.error('Check-in error:', error);
         next(new ErrorHandler(error.message, 500));
     }
 };
@@ -179,14 +185,16 @@ export const checkOutPatient = async (req, res, next) => {
         await patient.save();
 
         // Emit socket event for available ICUs
-        io.emit('icuUpdated', await ICU.find({ status: { $regex: '^available$', $options: 'i' } })
-            .populate('hospital', 'name address'));
+        if (io) {
+            io.emit('icuUpdated', await ICU.find({ status: { $regex: '^available$', $options: 'i' } })
+                .populate('hospital', 'name address'));
 
-        io.emit('patientCheckedOut', {
-            icuId: icu._id,
-            patientId: patient._id,
-            room: icu.room
-        });
+            io.emit('patientCheckedOut', {
+                icuId: icu._id,
+                patientId: patient._id,
+                icuRoom: icu.room
+            });
+        }
 
         res.status(200).json({
             success: true,
