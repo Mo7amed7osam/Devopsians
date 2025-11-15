@@ -30,12 +30,26 @@ const ReceptionistPanel = () => {
                 toast.info(`🚑 Ambulance assigned to ${data.destination}`);
                 loadData(); // Reload to get new assignments
             });
+
+            // Listen for ambulance approvals
+            socket.on('ambulanceApprovedPickup', (data) => {
+                toast.success(`✅ Ambulance crew approved pickup for ${data.patientName}!`);
+                loadData(); // Reload to show updated status
+            });
+
+            // Listen for pickup rejections
+            socket.on('pickupRejectedNotification', (data) => {
+                toast.warn(`⚠️ Ambulance rejected pickup for ${data.patientName}. Reason: ${data.reason}`);
+                loadData();
+            });
         }
 
         return () => {
             if (socket) {
                 socket.off('ambulanceStatusUpdate');
                 socket.off('ambulanceAssigned');
+                socket.off('ambulanceApprovedPickup');
+                socket.off('pickupRejectedNotification');
             }
         };
     }, []);
@@ -67,11 +81,13 @@ const ReceptionistPanel = () => {
     const handleCheckIn = async (icuId, patientId, icuRoom) => {
         try {
             setActionLoading(icuId);
+            console.log('🔵 Check-in attempt:', { icuId, patientId, icuRoom });
             await checkInPatient({ icuId, patientId });
             toast.success(`Patient checked in to ICU Room ${icuRoom}`);
             setReservations(prev => prev.filter(res => res._id !== icuId));
         } catch (err) {
             console.error('Check-in error:', err);
+            console.error('Error response:', err.response?.data);
             toast.error(err.response?.data?.message || 'Failed to check in patient');
         } finally {
             setActionLoading(null);
@@ -146,7 +162,11 @@ const ReceptionistPanel = () => {
                                         <div className={styles.ambulanceInfo}>
                                             <strong>{amb.firstName} {amb.lastName}</strong> ({amb.userName})
                                             {amb.assignedPatient && (
-                                                <div><small>Patient: {amb.assignedPatient}</small></div>
+                                                <div><small>Patient: {
+                                                    typeof amb.assignedPatient === 'object'
+                                                        ? `${amb.assignedPatient.firstName} ${amb.assignedPatient.lastName}`
+                                                        : amb.assignedPatient
+                                                }</small></div>
                                             )}
                                         </div>
                                         <div className={styles.ambulanceEta}>
@@ -188,12 +208,61 @@ const ReceptionistPanel = () => {
                                     ? `${patientInfo.firstName} ${patientInfo.lastName}`
                                     : `Patient ID: ${patientInfo?._id || patientInfo || 'Unknown'}`;
                                 const patientId = patientInfo?._id || patientInfo;
+                                const patientStatus = patientInfo?.patientStatus || 'RESERVED';
                                 
                                 return (
                                     <div key={res._id} className={styles.reservationItem}>
                                         <div className={styles.patientInfo}>
                                             <span className={styles.patientName}>
                                                 {patientName}
+                                                {patientStatus === 'ARRIVED' && (
+                                                    <span style={{ 
+                                                        marginLeft: '10px', 
+                                                        padding: '3px 8px', 
+                                                        backgroundColor: '#4caf50', 
+                                                        color: 'white', 
+                                                        borderRadius: '4px',
+                                                        fontSize: '0.85em'
+                                                    }}>
+                                                        🏥 ARRIVED
+                                                    </span>
+                                                )}
+                                                {patientStatus === 'AWAITING_PICKUP' && (
+                                                    <span style={{ 
+                                                        marginLeft: '10px', 
+                                                        padding: '3px 8px', 
+                                                        backgroundColor: '#ff9800', 
+                                                        color: 'white', 
+                                                        borderRadius: '4px',
+                                                        fontSize: '0.85em'
+                                                    }}>
+                                                        🚑 AWAITING PICKUP
+                                                    </span>
+                                                )}
+                                                {patientStatus === 'IN_TRANSIT' && (
+                                                    <span style={{ 
+                                                        marginLeft: '10px', 
+                                                        padding: '3px 8px', 
+                                                        backgroundColor: '#2196f3', 
+                                                        color: 'white', 
+                                                        borderRadius: '4px',
+                                                        fontSize: '0.85em'
+                                                    }}>
+                                                        🚐 IN TRANSIT
+                                                    </span>
+                                                )}
+                                                {patientStatus === 'RESERVED' && !patientInfo?.needsPickup && (
+                                                    <span style={{ 
+                                                        marginLeft: '10px', 
+                                                        padding: '3px 8px', 
+                                                        backgroundColor: '#9c27b0', 
+                                                        color: 'white', 
+                                                        borderRadius: '4px',
+                                                        fontSize: '0.85em'
+                                                    }}>
+                                                        🚶 COMING DIRECTLY
+                                                    </span>
+                                                )}
                                             </span>
                                             <span className={styles.roomInfo}>
                                                 Room: {res.room} ({res.specialization})
@@ -211,15 +280,44 @@ const ReceptionistPanel = () => {
                                                     Phone: {patientInfo.phone}
                                                 </span>
                                             )}
+                                            {patientInfo?.needsPickup && (
+                                                <span className={styles.pickupInfo} style={{ color: '#ff9800', fontWeight: 'bold' }}>
+                                                    🚑 Pickup Location: {patientInfo.pickupLocation || 'Not specified'}
+                                                </span>
+                                            )}
+                                            {patientInfo?.assignedAmbulance && (
+                                                <span className={styles.ambulanceInfo} style={{ color: '#2196f3' }}>
+                                                    Ambulance: {patientInfo.assignedAmbulance.firstName} {patientInfo.assignedAmbulance.lastName} ({patientInfo.assignedAmbulance.status})
+                                                </span>
+                                            )}
                                         </div>
-                                        <Button 
-                                            variant="success" 
-                                            className={styles.actionBtn}
-                                            onClick={() => handleCheckIn(res._id, patientId, res.room)}
-                                            disabled={actionLoading === res._id}
-                                        >
-                                            {actionLoading === res._id ? 'Checking in...' : 'Check-In'}
-                                        </Button>
+                                        <div style={{ display: 'flex', gap: '0.5rem', flexDirection: 'column' }}>
+                                            {/* Allow check-in for:
+                                                1. RESERVED status (patient coming on their own or ambulance not yet requested)
+                                                2. ARRIVED status (ambulance delivered patient)
+                                            */}
+                                            {(patientStatus === 'RESERVED' || patientStatus === 'ARRIVED') && (
+                                                <Button 
+                                                    variant="success" 
+                                                    className={styles.actionBtn}
+                                                    onClick={() => handleCheckIn(res._id, patientId, res.room)}
+                                                    disabled={actionLoading === res._id}
+                                                >
+                                                    {actionLoading === res._id ? 'Checking in...' : '✅ Check-In Patient'}
+                                                </Button>
+                                            )}
+                                            {(patientStatus === 'AWAITING_PICKUP' || patientStatus === 'IN_TRANSIT') && patientInfo?.needsPickup && (
+                                                <div style={{ 
+                                                    padding: '8px', 
+                                                    backgroundColor: '#fff3cd', 
+                                                    borderRadius: '4px',
+                                                    fontSize: '0.9em',
+                                                    textAlign: 'center'
+                                                }}>
+                                                    ⏳ Waiting for ambulance...
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
                                 );
                             })}

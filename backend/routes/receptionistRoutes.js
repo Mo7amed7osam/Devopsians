@@ -4,7 +4,8 @@ import {
     calculateFee, 
     checkInPatient, 
     checkOutPatient, 
-    getICURequests 
+    getICURequests,
+    approveICURequest 
 } from '../controllers/receptionistController.js';
 import { isAuthenticated, authorizeRoles } from '../utils/authMiddleware.js';
 
@@ -12,6 +13,9 @@ const router = express.Router();
 
 // Get all ICU requests (reserved ICUs)
 router.get('/icu-requests', isAuthenticated, authorizeRoles('Admin', 'Manager', 'Receptionist'), getICURequests);
+
+// Approve ICU request and assign ambulance if needed
+router.post('/approve-request', isAuthenticated, authorizeRoles('Admin', 'Manager', 'Receptionist'), approveICURequest);
 
 // Reserve ICU for patient
 router.post('/reserve-icu', isAuthenticated, authorizeRoles('Admin', 'Manager', 'Receptionist'), reserveICU);

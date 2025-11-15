@@ -1,5 +1,6 @@
 import ICU from '../models/icuModel.js';
 import User from '../models/userModel.js';
+import Hospital from '../models/hospitalmodel.js';
 import ErrorHandler from '../utils/errorHandler.js';
 import { io } from '../index.js';
 
@@ -69,13 +70,21 @@ export const checkInPatient = async (req, res, next) => {
             return next(new ErrorHandler('ICU not found', 404));
         }
 
-        if (!icu.isReserved || icu.reservedBy?.toString() !== patientId) {
-            return next(new ErrorHandler('This ICU is not reserved by this patient', 400));
+        // Handle reservedBy as either ObjectId or populated object
+        const reservedById = icu.reservedBy?._id?.toString() || icu.reservedBy?.toString();
+        
+        if (!icu.isReserved || reservedById !== patientId) {
+            return next(new ErrorHandler(`This ICU is not reserved by this patient. ICU reserved by: ${reservedById}, Requesting for: ${patientId}`, 400));
         }
 
         const patient = await User.findById(patientId);
         if (!patient || patient.role !== 'Patient') {
             return next(new ErrorHandler('Patient not found', 404));
+        }
+
+        // Check if patient arrived via ambulance - must be ARRIVED status
+        if (patient.assignedAmbulance && patient.patientStatus !== 'ARRIVED') {
+            return next(new ErrorHandler('Patient must arrive at hospital before check-in. Current status: ' + patient.patientStatus, 400));
         }
 
         // Confirm check-in - ICU already marked as Occupied during reservation
@@ -85,6 +94,25 @@ export const checkInPatient = async (req, res, next) => {
 
         // Update patient status to CHECKED_IN
         patient.patientStatus = 'CHECKED_IN';
+        
+        // If patient came via ambulance, free up the ambulance
+        if (patient.assignedAmbulance) {
+            const ambulance = await User.findById(patient.assignedAmbulance);
+            if (ambulance) {
+                ambulance.status = 'AVAILABLE';
+                ambulance.assignedPatient = null;
+                ambulance.assignedHospital = null;
+                ambulance.destination = null;
+                ambulance.eta = null;
+                await ambulance.save();
+            }
+            
+            // Clear ambulance assignment from patient
+            patient.assignedAmbulance = null;
+            patient.pickupLocation = null;
+            patient.needsPickup = false;
+        }
+        
         await patient.save();
 
         // Emit socket event
@@ -173,23 +201,30 @@ export const checkOutPatient = async (req, res, next) => {
 // Get all ICU requests (reserved ICUs waiting for check-in)
 export const getICURequests = async (req, res, next) => {
     try {
-        // First, get all patients with RESERVED status
-        const reservedPatients = await User.find({ 
+        // Get all patients with any pending status (waiting for check-in or in transport)
+        const readyPatients = await User.find({ 
             role: 'Patient',
-            patientStatus: 'RESERVED',
+            patientStatus: { $in: ['RESERVED', 'AWAITING_PICKUP', 'IN_TRANSIT', 'ARRIVED'] },
             reservedICU: { $ne: null }
         }).select('_id');
 
-        const reservedPatientIds = reservedPatients.map(p => p._id);
+        const readyPatientIds = readyPatients.map(p => p._id);
 
         // Get ICUs reserved by these patients
         const icuRequests = await ICU.find({ 
             isReserved: true,
             status: 'Occupied',
-            reservedBy: { $in: reservedPatientIds }
+            reservedBy: { $in: readyPatientIds }
         })
         .populate('hospital', 'name address contactNumber')
-        .populate('reservedBy', 'firstName lastName email phone patientStatus');
+        .populate({
+            path: 'reservedBy',
+            select: 'firstName lastName email phone patientStatus assignedAmbulance needsPickup pickupLocation',
+            populate: {
+                path: 'assignedAmbulance',
+                select: 'firstName lastName userName status'
+            }
+        });
 
         res.status(200).json({
             success: true,
@@ -233,6 +268,83 @@ export const calculateFee = async (req, res, next) => {
             patientId,
             totalFee,
             message: `Total fee calculated: ${totalFee} EGP`
+        });
+    } catch (error) {
+        next(new ErrorHandler(error.message, 500));
+    }
+};
+
+// Approve ICU request and assign ambulance for pickup
+export const approveICURequest = async (req, res, next) => {
+    try {
+        const { patientId, icuId, needsPickup, pickupLocation } = req.body;
+
+        if (!patientId || !icuId) {
+            return next(new ErrorHandler('Patient ID and ICU ID are required', 400));
+        }
+
+        const patient = await User.findById(patientId);
+        if (!patient || patient.role !== 'Patient') {
+            return next(new ErrorHandler('Patient not found', 404));
+        }
+
+        const icu = await ICU.findById(icuId).populate('hospital', 'name address location');
+        if (!icu) {
+            return next(new ErrorHandler('ICU not found', 404));
+        }
+
+        // Update patient with pickup information
+        patient.needsPickup = needsPickup || false;
+        patient.pickupLocation = pickupLocation || null;
+        
+        if (needsPickup) {
+            // Set status to awaiting pickup
+            patient.patientStatus = 'AWAITING_PICKUP';
+            
+            // Find available ambulance
+            const availableAmbulance = await User.findOne({
+                role: 'Ambulance',
+                status: 'AVAILABLE',
+                assignedPatient: null // Make sure ambulance is not already assigned
+            });
+
+            if (availableAmbulance) {
+                // Assign ambulance but keep status as AVAILABLE until ambulance accepts
+                // ambulance.status will be updated to EN_ROUTE when they accept
+                availableAmbulance.assignedPatient = patientId;
+                availableAmbulance.assignedHospital = icu.hospital._id;
+                availableAmbulance.destination = icu.hospital.name;
+                await availableAmbulance.save();
+
+                patient.assignedAmbulance = availableAmbulance._id;
+
+                // Emit socket event for ambulance
+                io.emit('ambulanceAssigned', {
+                    ambulanceId: availableAmbulance._id,
+                    patientId,
+                    patientName: `${patient.firstName} ${patient.lastName}`,
+                    hospitalId: icu.hospital._id,
+                    hospitalName: icu.hospital.name,
+                    pickupLocation: pickupLocation || 'Patient Location',
+                    destination: icu.hospital.name,
+                });
+            } else {
+                return next(new ErrorHandler('No available ambulance at the moment', 400));
+            }
+        } else {
+            // Patient is coming by themselves - direct to check-in
+            patient.patientStatus = 'RESERVED';
+        }
+
+        await patient.save();
+
+        res.status(200).json({
+            success: true,
+            message: needsPickup 
+                ? `Ambulance assigned for pickup. Patient will be transported to ${icu.hospital.name}`
+                : 'ICU request approved. Patient can proceed to hospital for check-in.',
+            patient,
+            needsPickup
         });
     } catch (error) {
         next(new ErrorHandler(error.message, 500));

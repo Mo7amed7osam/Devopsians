@@ -3,13 +3,14 @@ import { toast } from 'react-toastify';
 import styles from './Ambulance.module.css';
 import Button from '../../components/common/Button';
 import { getAllAmbulances, updateAmbulanceStatus } from '../../utils/api';
-import { getUserId } from '../../utils/cookieUtils';
+import { getUserId, getToken } from '../../utils/cookieUtils';
 import socket from '../../utils/socket';
 
 const AmbulancePanel = () => {
     const [ambulances, setAmbulances] = useState([]);
     const [loading, setLoading] = useState(true);
     const [myAmbulance, setMyAmbulance] = useState(null);
+    const [pickupRequests, setPickupRequests] = useState([]); // All available pickup requests
     const [gpsTracking, setGpsTracking] = useState(false);
     const [currentLocation, setCurrentLocation] = useState(null);
     const [distance, setDistance] = useState(null);
@@ -50,12 +51,57 @@ const AmbulancePanel = () => {
                     loadData(); // Reload to get updated assignment
                 }
             });
+
+            // Listen for pickup requests from patients
+            socket.on('ambulancePickupRequest', (data) => {
+                console.log('🔔 Received pickup request:', data);
+                
+                // Add to pickup requests list
+                setPickupRequests(prev => {
+                    // Check if request already exists
+                    const exists = prev.find(req => req.patientId === data.patientId);
+                    if (!exists) {
+                        console.log('✅ Adding new pickup request to list');
+                        toast.info(`🚑 New pickup request from ${data.patientName} to ${data.hospitalName}!`, {
+                            autoClose: 8000,
+                            position: "top-right"
+                        });
+                        return [...prev, data];
+                    }
+                    console.log('⚠️ Request already exists in list');
+                    return prev;
+                });
+            });
+
+            // Listen for when a pickup request is taken by another ambulance
+            socket.on('pickupRequestTaken', (data) => {
+                setPickupRequests(prev => prev.filter(req => req.patientId !== data.patientId));
+                if (data.ambulanceId !== myAmbulanceId) {
+                    toast.info(`Pickup request for patient was accepted by another ambulance`, {
+                        autoClose: 5000
+                    });
+                }
+            });
+
+            // Listen for successful acceptance
+            socket.on('ambulanceAccepted', (data) => {
+                if (data.ambulanceId === myAmbulanceId) {
+                    toast.success(`✅ Pickup accepted! You're now en route to pick up the patient.`, {
+                        autoClose: 8000,
+                        position: "top-center"
+                    });
+                    loadData();
+                }
+            });
         }
 
         return () => {
             if (socket) {
                 socket.off('ambulanceStatusUpdate');
                 socket.off('ambulanceAssigned');
+                socket.off('ambulancePickupRequest');
+                socket.off('pickupRequestTaken');
+                socket.off('ambulanceAccepted');
             }
             // Clear GPS tracking on unmount
             if (gpsIntervalRef.current) {
@@ -127,7 +173,223 @@ const AmbulancePanel = () => {
         }
     };
 
-    // GPS Tracking Functions
+    const handleAcceptPickupRequest = async (patientId) => {
+        // Check if ambulance is available
+        if (myAmbulance?.status !== 'AVAILABLE') {
+            toast.error('You must be AVAILABLE to accept pickup requests');
+            return;
+        }
+
+        // Check if already have an assignment
+        if (myAmbulance?.assignedPatient) {
+            toast.error('You already have an active assignment');
+            return;
+        }
+
+        try {
+            const token = getToken();
+            const response = await fetch(`http://localhost:3030/ambulance/${myAmbulanceId}/accept-pickup`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                credentials: 'include',
+                body: JSON.stringify({
+                    patientId: patientId
+                })
+            });
+
+            const data = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(data.message || 'Failed to accept pickup');
+            }
+
+            toast.success('✅ Pickup request accepted! You are now en route.');
+            
+            // Remove this request from the list
+            setPickupRequests(prev => prev.filter(req => req.patientId !== patientId));
+            
+            // Reload ambulance data
+            await loadData();
+            
+            // Start GPS tracking
+            if (!gpsTracking) {
+                startGPSTracking();
+            }
+        } catch (err) {
+            console.error('Accept pickup request error:', err);
+            toast.error(err.message || 'Failed to accept pickup request');
+        }
+    };
+
+    const handleAcceptPickup = async () => {
+        if (!myAmbulance?.assignedPatient) {
+            toast.error('No patient assigned');
+            return;
+        }
+
+        // Extract patient ID (handle both object and string formats)
+        const patientId = typeof myAmbulance.assignedPatient === 'object' 
+            ? myAmbulance.assignedPatient._id 
+            : myAmbulance.assignedPatient;
+
+        try {
+            // First update status to EN_ROUTE
+            await handleStatusUpdate('EN_ROUTE');
+            
+            // Then accept the pickup
+            const token = getToken();
+            const response = await fetch(`http://localhost:3030/ambulance/${myAmbulanceId}/accept-pickup`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                credentials: 'include',
+                body: JSON.stringify({
+                    patientId: patientId
+                })
+            });
+
+            const data = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(data.message || 'Failed to accept pickup');
+            }
+
+            toast.success('✅ Pickup accepted! Patient is now in transit.');
+            await loadData();
+        } catch (err) {
+            console.error('Accept pickup error:', err);
+            toast.error(err.message || 'Failed to accept pickup');
+        }
+    };
+
+    const handleApprovePickup = async () => {
+        if (!myAmbulance?.assignedPatient) {
+            toast.error('No patient assigned');
+            return;
+        }
+
+        // Extract patient ID (handle both object and string formats)
+        const patientId = typeof myAmbulance.assignedPatient === 'object' 
+            ? myAmbulance.assignedPatient._id 
+            : myAmbulance.assignedPatient;
+
+        try {
+            const token = getToken();
+            const response = await fetch(`http://localhost:3030/ambulance/${myAmbulanceId}/approve-pickup`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                credentials: 'include',
+                body: JSON.stringify({
+                    patientId: patientId
+                })
+            });
+
+            const data = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(data.message || 'Failed to approve pickup');
+            }
+
+            toast.success('✅ Pickup approved! Waiting for receptionist confirmation.');
+            await loadData();
+        } catch (err) {
+            console.error('Approve pickup error:', err);
+            toast.error(err.message || 'Failed to approve pickup');
+        }
+    };
+
+    const handleRejectPickup = async () => {
+        if (!myAmbulance?.assignedPatient) {
+            toast.error('No patient assigned');
+            return;
+        }
+
+        const reason = prompt('Please provide a reason for rejection (optional):');
+        
+        // Extract patient ID (handle both object and string formats)
+        const patientId = typeof myAmbulance.assignedPatient === 'object' 
+            ? myAmbulance.assignedPatient._id 
+            : myAmbulance.assignedPatient;
+        
+        try {
+            const token = getToken();
+            const response = await fetch(`http://localhost:3030/ambulance/${myAmbulanceId}/reject-pickup`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                credentials: 'include',
+                body: JSON.stringify({
+                    patientId: patientId,
+                    reason: reason || 'Crew unavailable'
+                })
+            });
+
+            const data = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(data.message || 'Failed to reject pickup');
+            }
+
+            toast.info('Pickup request rejected. Patient will be reassigned.');
+            await loadData();
+        } catch (err) {
+            console.error('Reject pickup error:', err);
+            toast.error(err.message || 'Failed to reject pickup');
+        }
+    };
+
+    const handleMarkArrived = async () => {
+        if (!myAmbulance?.assignedPatient) {
+            toast.error('No patient assigned');
+            return;
+        }
+
+        // Extract patient ID (handle both object and string formats)
+        const patientId = typeof myAmbulance.assignedPatient === 'object' 
+            ? myAmbulance.assignedPatient._id 
+            : myAmbulance.assignedPatient;
+
+        try {
+            const token = getToken();
+            const response = await fetch(`http://localhost:3030/ambulance/${myAmbulanceId}/mark-arrived`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                credentials: 'include',
+                body: JSON.stringify({
+                    patientId: patientId
+                })
+            });
+
+            const data = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(data.message || 'Failed to mark arrival');
+            }
+
+            toast.success('🏥 Patient arrived! Receptionist can now check them in.');
+            
+            // Update status to arrived
+            await handleStatusUpdate('ARRIVED_HOSPITAL');
+            await loadData();
+        } catch (err) {
+            console.error('Mark arrived error:', err);
+            toast.error(err.message || 'Failed to mark arrival');
+        }
+    };
+
     const startGPSTracking = () => {
         setGpsTracking(true);
         toast.info('🎭 Starting location tracking (Demo Mode)');
@@ -261,6 +523,57 @@ const AmbulancePanel = () => {
                 <p>Real-time location tracking and live coordination</p>
             </header>
 
+            {/* Available Pickup Requests - Broadcast to all ambulances */}
+            {pickupRequests.length > 0 && myAmbulance?.status === 'AVAILABLE' && !myAmbulance?.assignedPatient && (
+                <section className={styles.formCard} style={{ marginBottom: '30px', backgroundColor: '#fff3e0', borderLeft: '4px solid #ff9800' }}>
+                    <h3>🚨 Available Pickup Requests ({pickupRequests.length})</h3>
+                    <p style={{ marginBottom: '15px', color: '#555' }}>Choose a patient to pick up. First come, first served!</p>
+                    
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                        {pickupRequests.map((request) => (
+                            <div key={request.patientId} style={{
+                                padding: '15px',
+                                backgroundColor: 'white',
+                                border: '2px solid #ff9800',
+                                borderRadius: '8px',
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center'
+                            }}>
+                                <div>
+                                    <h4 style={{ margin: '0 0 8px 0', color: '#0d47a1' }}>
+                                        👤 {request.patientName}
+                                    </h4>
+                                    <p style={{ margin: '4px 0', fontSize: '0.95em' }}>
+                                        <strong>📍 Pickup Location:</strong> {request.pickupLocation}
+                                    </p>
+                                    <p style={{ margin: '4px 0', fontSize: '0.95em' }}>
+                                        <strong>🏥 Destination:</strong> {request.hospitalName}
+                                    </p>
+                                    <p style={{ margin: '4px 0', fontSize: '0.95em' }}>
+                                        <strong>🛏️ ICU:</strong> {request.specialization} - Room {request.room}
+                                    </p>
+                                    {request.patientPhone && (
+                                        <p style={{ margin: '4px 0', fontSize: '0.95em' }}>
+                                            <strong>📞 Contact:</strong> {request.patientPhone}
+                                        </p>
+                                    )}
+                                    <p style={{ margin: '8px 0 0 0', fontSize: '0.85em', color: '#666' }}>
+                                        ⏰ Requested: {new Date(request.timestamp).toLocaleTimeString()}
+                                    </p>
+                                </div>
+                                <Button 
+                                    variant="success"
+                                    onClick={() => handleAcceptPickupRequest(request.patientId)}
+                                    style={{ minWidth: '120px' }}
+                                >
+                                    ✅ Accept Pickup
+                                </Button>
+                            </div>
+                        ))}
+                    </div>
+                </section>
+            )}
 
             {/* Status Control Section */}
             <section className={styles.formCard} style={{ marginBottom: '30px' }}>
@@ -271,7 +584,11 @@ const AmbulancePanel = () => {
                         <p><strong>Username:</strong> {myAmbulance.userName}</p>
                         <p><strong>Current Status:</strong> <span className={styles.statusBadge}>{myAmbulance.status?.replace('_', ' ')}</span></p>
                         {myAmbulance.assignedPatient && (
-                            <p><strong>Assigned Patient ID:</strong> {myAmbulance.assignedPatient}</p>
+                            <p><strong>Assigned Patient:</strong> {
+                                typeof myAmbulance.assignedPatient === 'object' 
+                                    ? `${myAmbulance.assignedPatient.firstName} ${myAmbulance.assignedPatient.lastName}`
+                                    : myAmbulance.assignedPatient
+                            }</p>
                         )}
                         {myAmbulance.destination && (
                             <p><strong>Destination:</strong> {myAmbulance.destination}</p>
@@ -281,6 +598,37 @@ const AmbulancePanel = () => {
                         )}
                     </div>
                 ) : <p>Loading your details...</p>}
+                
+                {/* Active Transport - Already accepted and EN_ROUTE */}
+                {myAmbulance?.assignedPatient && myAmbulance?.status === 'EN_ROUTE' && (
+                    <div style={{ 
+                        marginTop: '20px', 
+                        padding: '15px', 
+                        backgroundColor: '#fff3cd', 
+                        border: '2px solid #ffc107',
+                        borderRadius: '8px'
+                    }}>
+                        <h4 style={{ color: '#856404', marginBottom: '10px' }}>🚨 Active Transport</h4>
+                        <p><strong>Patient:</strong> {
+                            typeof myAmbulance.assignedPatient === 'object' 
+                                ? `${myAmbulance.assignedPatient.firstName} ${myAmbulance.assignedPatient.lastName}`
+                                : myAmbulance.assignedPatient
+                        }</p>
+                        <p><strong>Destination:</strong> {myAmbulance.destination || 'Hospital'}</p>
+                        {myAmbulance.eta && (
+                            <p><strong>ETA:</strong> {myAmbulance.eta} minutes</p>
+                        )}
+                        <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
+                            <Button 
+                                variant="primary"
+                                onClick={handleMarkArrived}
+                            >
+                                🏥 Mark Patient Arrived
+                            </Button>
+                        </div>
+                    </div>
+                )}
+                
                 <div className={styles.grid} style={{ marginTop: '20px' }}>
                     <Button 
                         variant="success" 

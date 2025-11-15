@@ -1,19 +1,27 @@
 // src/pages/ICUSelect.jsx
 import React, { useState, useEffect, useCallback } from 'react';
 import { toast } from 'react-toastify';
-import { getAvailableICUsFromServer, fetchNearbyHospitalsPublic, reserveICUOnServer } from '../../utils/api';
+import { useNavigate } from 'react-router-dom';
+import { getAvailableICUsFromServer, fetchNearbyHospitalsPublic, reserveICUForPatient } from '../../utils/api';
 import MapComponent from '../../components/patient/Map.jsx';
 import Icus from '../../components/patient/Icus.jsx';
 import { getUserId } from '../../utils/cookieUtils';
+import socket from '../../utils/socket';
 import styles from './ICUSelect.module.css'; 
 import Button from '../../components/common/Button';
+import Modal from '../../components/common/Modal';
 
 const ICUSelect = () => {
+    const navigate = useNavigate();
     const [userLocation, setUserLocation] = useState(null);
     const [icus, setIcus] = useState([]);
     const [hospitals, setHospitals] = useState([]);
     const [filters, setFilters] = useState({ specialization: '', searchTerm: '' });
     const [loading, setLoading] = useState(false);
+    const [showPickupModal, setShowPickupModal] = useState(false);
+    const [selectedIcuId, setSelectedIcuId] = useState(null);
+    const [needsPickup, setNeedsPickup] = useState(false);
+    const [pickupLocation, setPickupLocation] = useState('');
 
     // --- Get User Location ---
     useEffect(() => {
@@ -76,32 +84,112 @@ const ICUSelect = () => {
     }, [userLocation]);
 
     useEffect(() => {
-        loadICUs();
-        loadNearbyHospitals();
-    }, [loadICUs, loadNearbyHospitals]);
+        if (userLocation) {
+            loadICUs();
+            loadNearbyHospitals();
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [userLocation]);
+
+    // Listen for socket events for ambulance assignment notifications
+    useEffect(() => {
+        const userId = getUserId();
+        
+        if (socket && userId) {
+            socket.on('patientNotification', (data) => {
+                console.log('🔔 ICU Select - Patient notification received:', data);
+                if (data.patientId === userId) {
+                    if (data.type === 'ambulance_assigned') {
+                        toast.success(`🚑 ${data.message}`, {
+                            autoClose: 8000,
+                            position: "top-center"
+                        });
+                    } else if (data.type === 'pickup_request_sent') {
+                        toast.info(`🚑 ${data.message}`, {
+                            autoClose: 8000,
+                            position: "top-center"
+                        });
+                    } else if (data.type === 'ambulance_accepted') {
+                        toast.success(`🚑 ${data.message}`, {
+                            autoClose: 8000,
+                            position: "top-center"
+                        });
+                    }
+                }
+            });
+        }
+
+        return () => {
+            if (socket) {
+                socket.off('patientNotification');
+            }
+        };
+    }, []);
 
     // --- Handle ICU Reservation ---
     const handleReserve = async (icuId) => {
+        console.log('🔵 Reserve button clicked for ICU:', icuId);
+        const userId = getUserId();
+        console.log('🔵 User ID:', userId);
+        
+        if (!userId) {
+            toast.error('Please log in to reserve an ICU.');
+            return;
+        }
+
+        // Show modal to ask about pickup
+        console.log('🔵 Opening pickup modal...');
+        setSelectedIcuId(icuId);
+        setShowPickupModal(true);
+    };
+
+    const handleConfirmReservation = async () => {
+        console.log('🟢 Confirm reservation clicked');
+        console.log('🟢 Selected ICU ID:', selectedIcuId);
+        console.log('🟢 Needs pickup:', needsPickup);
+        console.log('🟢 Pickup location:', pickupLocation);
+        
+        if (needsPickup && !pickupLocation.trim()) {
+            toast.warn('Please enter your pickup location');
+            return;
+        }
+
         try {
             const userId = getUserId();
-            if (!userId) {
-                toast.error('Please log in to reserve an ICU.');
-                return;
-            }
-
+            console.log('🟢 User ID for reservation:', userId);
             setLoading(true);
             
-            // Call backend API to reserve ICU using authenticated API instance
-            await reserveICUOnServer({
-                icuId,
-                patientId: userId
-            });
+            const payload = {
+                icuId: selectedIcuId,
+                userId,
+                needsPickup,
+                pickupLocation: needsPickup ? pickupLocation : null
+            };
+            console.log('🟢 Sending payload:', payload);
             
-            toast.success('ICU reservation submitted! Waiting for receptionist approval...');
+            // Call backend API to reserve ICU with pickup info
+            const response = await reserveICUForPatient(payload);
+            console.log('🟢 Reservation response:', response.data);
             
-            // Refresh the page to show waiting status
+            if (needsPickup && response.data?.ambulanceAssigned) {
+                toast.success('🚑 ICU reserved! Ambulance is on the way to your location. Waiting for crew approval...', {
+                    autoClose: 5000
+                });
+            } else if (needsPickup) {
+                toast.warn('⚠️ ICU reserved but no ambulance is currently available. Please try to arrange transportation.', {
+                    autoClose: 5000
+                });
+            } else {
+                toast.success('✅ ICU reserved! Please proceed to the hospital. The receptionist will check you in upon arrival.', {
+                    autoClose: 5000
+                });
+            }
+            
+            setShowPickupModal(false);
+            
+            // Redirect to patient homepage
             setTimeout(() => {
-                window.location.reload();
+                navigate('/patient');
             }, 1500);
 
         } catch (err) {
@@ -181,6 +269,80 @@ const ICUSelect = () => {
                     <Icus icuList={filteredIcus} onReserve={handleReserve} loading={loading} />
                 </div>
             </div>
+
+            {/* Pickup Request Modal */}
+            <Modal isOpen={showPickupModal} onClose={() => setShowPickupModal(false)}>
+                <div style={{ padding: '1.5rem' }}>
+                    <h2 style={{ marginBottom: '1rem' }}>Complete Your Reservation</h2>
+                        
+                        <div style={{ marginBottom: '1.5rem' }}>
+                            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
+                                Do you need ambulance pickup?
+                            </label>
+                            <div style={{ display: 'flex', gap: '1rem', marginTop: '10px' }}>
+                                <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                                    <input 
+                                        type="radio" 
+                                        name="pickup" 
+                                        value="yes"
+                                        checked={needsPickup === true}
+                                        onChange={() => setNeedsPickup(true)}
+                                        style={{ marginRight: '0.5rem' }}
+                                    />
+                                    Yes, I need ambulance pickup
+                                </label>
+                                <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                                    <input 
+                                        type="radio" 
+                                        name="pickup" 
+                                        value="no"
+                                        checked={needsPickup === false}
+                                        onChange={() => setNeedsPickup(false)}
+                                        style={{ marginRight: '0.5rem' }}
+                                    />
+                                    No, I will come directly
+                                </label>
+                            </div>
+                        </div>
+
+                        {needsPickup && (
+                            <div style={{ marginBottom: '1.5rem' }}>
+                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
+                                    Your Current Location/Address
+                                </label>
+                                <input 
+                                    type="text"
+                                    value={pickupLocation}
+                                    onChange={(e) => setPickupLocation(e.target.value)}
+                                    placeholder="Enter your current address for pickup"
+                                    style={{ 
+                                        width: '100%', 
+                                        padding: '10px', 
+                                        border: '1px solid #ccc', 
+                                        borderRadius: '4px',
+                                        fontSize: '1rem'
+                                    }}
+                                />
+                            </div>
+                        )}
+
+                        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+                            <Button 
+                                variant="secondary"
+                                onClick={() => setShowPickupModal(false)}
+                            >
+                                Cancel
+                            </Button>
+                            <Button 
+                                variant="primary"
+                                onClick={handleConfirmReservation}
+                                disabled={loading}
+                            >
+                                {loading ? 'Reserving...' : 'Confirm Reservation'}
+                            </Button>
+                        </div>
+                    </div>
+                </Modal>
         </div>
     );
 };

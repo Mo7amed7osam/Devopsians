@@ -69,12 +69,70 @@ const PatientHomePage = () => {
                     }, 2000);
                 }
             });
+
+            // Listen for ambulance on the way notification
+            socket.on('ambulanceOnTheWay', (data) => {
+                if (data.patientId === userId) {
+                    toast.success(`🚑 ${data.message} Your ambulance is heading to ${data.hospitalName}!`, {
+                        autoClose: 8000,
+                        position: "top-center"
+                    });
+                    // Reload patient data to update status
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 2000);
+                }
+            });
+
+            // Listen for ambulance approval notification
+            socket.on('patientNotification', (data) => {
+                console.log('🔔 Patient notification received:', data);
+                if (data.patientId === userId) {
+                    if (data.type === 'ambulance_approved') {
+                        toast.info(`✅ ${data.message}`, {
+                            autoClose: 5000,
+                            position: "top-center"
+                        });
+                    } else if (data.type === 'ambulance_assigned') {
+                        toast.success(`🚑 ${data.message}`, {
+                            autoClose: 8000,
+                            position: "top-center"
+                        });
+                    } else if (data.type === 'pickup_request_sent') {
+                        toast.info(`🚑 ${data.message}`, {
+                            autoClose: 8000,
+                            position: "top-center"
+                        });
+                    } else if (data.type === 'ambulance_accepted') {
+                        toast.success(`🚑 ${data.message}`, {
+                            autoClose: 8000,
+                            position: "top-center"
+                        });
+                        // Reload patient data to update status
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 2000);
+                    }
+                }
+            });
+
+            // Listen for pickup request from patient reservation
+            socket.on('ambulancePickupRequest', (data) => {
+                if (data.patientId === userId) {
+                    toast.info(`🚑 Your pickup request has been sent to ambulance crew!`, {
+                        autoClose: 5000
+                    });
+                }
+            });
         }
 
-        // Cleanup socket listener
+        // Cleanup socket listeners
         return () => {
             if (socket) {
                 socket.off('patientCheckedIn');
+                socket.off('ambulanceOnTheWay');
+                socket.off('patientNotification');
+                socket.off('ambulancePickupRequest');
             }
         };
     }, []);
@@ -187,6 +245,11 @@ const PatientHomePage = () => {
         );
     }
 
+    // Show ambulance status for patients awaiting pickup or in transit
+    const showAmbulanceStatus = patientData.patientStatus === 'AWAITING_PICKUP' || 
+                                 patientData.patientStatus === 'IN_TRANSIT' ||
+                                 patientData.patientStatus === 'ARRIVED';
+
     return (
         <div className={styles.dashboard}>
             <header className={styles.header}>
@@ -194,6 +257,42 @@ const PatientHomePage = () => {
                 <div className={styles.icuStatus}>
                     <i className="fas fa-heartbeat"></i> Reserved ICU: <strong>{icuData?.specialization || 'None'}</strong>
                 </div>
+
+                {/* Ambulance Status Banner */}
+                {showAmbulanceStatus && (
+                    <div style={{
+                        marginTop: '15px',
+                        padding: '15px',
+                        backgroundColor: patientData.patientStatus === 'AWAITING_PICKUP' ? '#fff3cd' :
+                                       patientData.patientStatus === 'IN_TRANSIT' ? '#d1ecf1' :
+                                       '#d4edda',
+                        border: `2px solid ${patientData.patientStatus === 'AWAITING_PICKUP' ? '#ffc107' :
+                                             patientData.patientStatus === 'IN_TRANSIT' ? '#17a2b8' :
+                                             '#28a745'}`,
+                        borderRadius: '8px',
+                        textAlign: 'center'
+                    }}>
+                        <h3 style={{ margin: '0 0 10px 0' }}>
+                            {patientData.patientStatus === 'AWAITING_PICKUP' && '🚑 Ambulance Requested'}
+                            {patientData.patientStatus === 'IN_TRANSIT' && '🚐 Ambulance En Route!'}
+                            {patientData.patientStatus === 'ARRIVED' && '🏥 You Have Arrived!'}
+                        </h3>
+                        <p style={{ margin: '5px 0', fontSize: '1.1em' }}>
+                            {patientData.patientStatus === 'AWAITING_PICKUP' && 
+                                'An ambulance has been assigned to pick you up. The crew will accept shortly.'}
+                            {patientData.patientStatus === 'IN_TRANSIT' && 
+                                'Your ambulance is on the way to pick you up! Please be ready.'}
+                            {patientData.patientStatus === 'ARRIVED' && 
+                                'You have arrived at the hospital. The receptionist will check you in shortly.'}
+                        </p>
+                        {patientData.pickupLocation && (
+                            <p style={{ fontSize: '0.9em', marginTop: '5px' }}>
+                                <strong>Pickup Location:</strong> {patientData.pickupLocation}
+                            </p>
+                        )}
+                    </div>
+                )}
+
                 {patientData.reservedICU && (
                     <Button 
                         onClick={handleCancelReservation} 

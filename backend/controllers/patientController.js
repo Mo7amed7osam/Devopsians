@@ -81,10 +81,10 @@ export const getAvailableICUs = async (req, res) => {
 };
 
 export const reserveICU = async (req, res) => {
-  const { userId, icuId } = req.body;
+  const { userId, icuId, needsPickup, pickupLocation } = req.body;
 
   try {
-    const icu = await ICU.findById(icuId).populate("hospital", "name address");
+    const icu = await ICU.findById(icuId).populate("hospital", "name address location");
     if (!icu.hospital || !icu) {
       return res.status(404).json({ message: "ICU not found." });
     }
@@ -95,11 +95,64 @@ export const reserveICU = async (req, res) => {
         .json({ message: "ICU is not available for reservation." });
     }
 
+    // Get patient details
+    const patient = await User.findById(userId);
+    if (!patient || patient.role !== 'Patient') {
+      return res.status(404).json({ message: "Patient not found." });
+    }
+
     // Update ICU status
     icu.status = "Occupied";
     icu.isReserved = true;
     icu.reservedBy = userId;
     await icu.save();
+
+    // Update patient status and reservation
+    patient.reservedICU = icuId;
+    patient.patientStatus = 'RESERVED';
+    patient.needsPickup = needsPickup || false;
+    patient.pickupLocation = pickupLocation || null;
+
+    // Clear any previous ambulance assignment if patient doesn't need pickup
+    if (!needsPickup) {
+      patient.assignedAmbulance = null;
+      patient.pickupLocation = null;
+    }
+
+    // If patient needs pickup, broadcast request to ALL ambulances
+    if (needsPickup) {
+      // Set patient status to AWAITING_PICKUP (no ambulance assigned yet)
+      patient.patientStatus = 'AWAITING_PICKUP';
+
+      console.log('🚑 Broadcasting pickup request to all ambulances:', {
+        patientId: userId,
+        patientName: `${patient.firstName} ${patient.lastName}`,
+        hospitalName: icu.hospital.name
+      });
+
+      // Broadcast pickup request to ALL ambulances
+      io.emit('ambulancePickupRequest', {
+        patientId: userId,
+        patientName: `${patient.firstName} ${patient.lastName}`,
+        patientPhone: patient.phone,
+        hospitalId: icu.hospital._id,
+        hospitalName: icu.hospital.name,
+        pickupLocation: pickupLocation || 'Patient Location',
+        icuId: icu._id,
+        specialization: icu.specialization,
+        room: icu.room,
+        timestamp: new Date()
+      });
+
+      // Notify patient that request is sent
+      io.emit('patientNotification', {
+        patientId: userId,
+        message: `🚑 Pickup request sent to all available ambulances. Waiting for a crew to accept...`,
+        type: 'pickup_request_sent'
+      });
+    }
+
+    await patient.save();
 
     // Create a service entry for the ICU reservation
     const serviceDetails = {
@@ -121,6 +174,8 @@ export const reserveICU = async (req, res) => {
 
     res.json({
       message: "ICU reserved successfully.",
+      needsPickup: needsPickup || false,
+      ambulanceAssigned: patient.assignedAmbulance ? true : false,
       icu: {
         id: icu._id,
         hospital: icu.hospital,

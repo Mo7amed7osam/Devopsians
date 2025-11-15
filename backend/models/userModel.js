@@ -141,9 +141,14 @@ const userSchema = new mongoose.Schema(
     // Patient check-in status
     patientStatus: {
         type: String,
-        enum: ['RESERVED', 'CHECKED_IN', 'CHECKED_OUT'],
+        enum: ['RESERVED', 'AWAITING_PICKUP', 'IN_TRANSIT', 'ARRIVED', 'CHECKED_IN', 'CHECKED_OUT'],
         default: null
     },
+
+    // Ambulance assignment for patient pickup
+    assignedAmbulance: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    pickupLocation: { type: String },
+    needsPickup: { type: Boolean, default: false },
 
         // Common timestamps for all roles
     },
