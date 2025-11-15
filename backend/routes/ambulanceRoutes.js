@@ -13,6 +13,7 @@ import {
   acceptAmbulanceRequest,
   cancelAmbulanceRequest,
   getMyAmbulanceRequest,
+  getMyAcceptedRequest,
 } from "../controllers/ambulanceController.js";
 import { isAuthenticated, authorizeRoles } from "../utils/authMiddleware.js";
 
@@ -58,6 +59,14 @@ router.get(
   isAuthenticated,
   authorizeRoles("Patient"),
   getMyAmbulanceRequest
+);
+
+// Ambulance gets their accepted request
+router.get(
+  "/my-accepted-request",
+  isAuthenticated,
+  authorizeRoles("Ambulance"),
+  getMyAcceptedRequest
 );
 
 // ========== Ambulance Management Routes ==========

@@ -405,6 +405,11 @@ export const cancelAmbulanceRequest = async (requestId) => await API.delete(`/am
  */
 export const getMyAmbulanceRequest = async () => await API.get('/ambulance/my-request');
 
+/**
+ * Ambulance fetches their accepted request
+ */
+export const getMyAcceptedRequest = async () => await API.get('/ambulance/my-accepted-request');
+
 
 // ============================================================
 //    EXPORTS

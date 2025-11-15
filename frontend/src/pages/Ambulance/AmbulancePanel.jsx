@@ -9,7 +9,8 @@ import {
     getAllAmbulances, 
     updateAmbulanceStatus, 
     getActiveAmbulanceRequests, 
-    acceptAmbulanceRequest 
+    acceptAmbulanceRequest,
+    getMyAcceptedRequest 
 } from '../../utils/api';
 import { getUserId, getToken } from '../../utils/cookieUtils';
 import socket from '../../utils/socket';
@@ -25,6 +26,7 @@ const AmbulancePanel = () => {
     const [directions, setDirections] = useState(null);
     const [mapCenter, setMapCenter] = useState({ lat: 30.0444, lng: 31.2357 });
     const [selectedRequest, setSelectedRequest] = useState(null);
+    const [activePickup, setActivePickup] = useState(null); // Stores accepted patient's pickup location
     const myAmbulanceId = getUserId();
     const gpsIntervalRef = useRef(null);
     const mockIntervalRef = useRef(null);
@@ -138,6 +140,13 @@ const AmbulancePanel = () => {
                         longitude: myAmb.currentLocation.coordinates[0]
                     });
                 }
+
+                // If ambulance has an active assignment, fetch the pickup location
+                if (myAmb.assignedPatient && myAmb.status === 'EN_ROUTE') {
+                    loadActivePickupLocation();
+                } else {
+                    setActivePickup(null);
+                }
             }
         } catch (err) {
             toast.error(err.response?.data?.message || "Failed to fetch ambulance data.");
@@ -180,6 +189,34 @@ const AmbulancePanel = () => {
             setPickupRequests(transformedRequests);
         } catch (err) {
             console.error('Failed to load ambulance requests:', err);
+        }
+    };
+
+    const loadActivePickupLocation = async () => {
+        try {
+            // Fetch my accepted ambulance request
+            const response = await getMyAcceptedRequest();
+            const request = response.data?.data;
+            
+            if (request && request.pickupCoordinates?.coordinates) {
+                setActivePickup({
+                    patientName: request.patient ? `${request.patient.firstName} ${request.patient.lastName}` : 'Patient',
+                    pickupLocation: request.pickupLocation,
+                    coordinates: request.pickupCoordinates.coordinates, // [lng, lat]
+                    hospitalName: request.hospital?.name || 'Hospital'
+                });
+                
+                // Center map on patient location
+                setMapCenter({ 
+                    lat: request.pickupCoordinates.coordinates[1], 
+                    lng: request.pickupCoordinates.coordinates[0] 
+                });
+            } else {
+                setActivePickup(null);
+            }
+        } catch (err) {
+            console.error('Failed to load active pickup location:', err);
+            setActivePickup(null);
         }
     };
 
@@ -241,6 +278,19 @@ const AmbulancePanel = () => {
             
             if (response.data?.success) {
                 toast.success('✅ Pickup request accepted! You are now en route.');
+                
+                // Find the accepted request to get pickup coordinates
+                const acceptedReq = pickupRequests.find(req => req.requestId === requestId);
+                if (acceptedReq && acceptedReq.pickupCoords) {
+                    setActivePickup({
+                        patientName: acceptedReq.patientName,
+                        pickupLocation: acceptedReq.pickupLocation,
+                        coordinates: acceptedReq.pickupCoords, // [lng, lat]
+                        hospitalName: acceptedReq.hospitalName
+                    });
+                    // Center map on patient location
+                    setMapCenter({ lat: acceptedReq.pickupCoords[1], lng: acceptedReq.pickupCoords[0] });
+                }
                 
                 // Remove this request from the list
                 setPickupRequests(prev => prev.filter(req => req.requestId !== requestId));
@@ -574,6 +624,67 @@ const AmbulancePanel = () => {
         return null;
     };
 
+    // Custom control for "My Location" button
+    const MyLocationControl = () => {
+        const map = useMap();
+
+        useEffect(() => {
+            const myLocationButton = L.control({ position: 'topright' });
+
+            myLocationButton.onAdd = function () {
+                const div = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
+                div.innerHTML = `
+                    <button 
+                        style="
+                            background: white;
+                            border: 2px solid rgba(0,0,0,0.2);
+                            border-radius: 4px;
+                            width: 34px;
+                            height: 34px;
+                            cursor: pointer;
+                            font-size: 18px;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                        "
+                        title="My Location"
+                    >
+                        📍
+                    </button>
+                `;
+                
+                div.onclick = function (e) {
+                    e.stopPropagation();
+                    if (currentLocation) {
+                        map.flyTo([currentLocation.lat, currentLocation.lng], 15);
+                    } else {
+                        // Start GPS tracking if not already running
+                        toast.info('Starting GPS tracking...');
+                        if (!gpsTracking) {
+                            startGPSTracking();
+                        }
+                        // Wait a moment for location to be acquired
+                        setTimeout(() => {
+                            if (currentLocation) {
+                                map.flyTo([currentLocation.lat, currentLocation.lng], 15);
+                            }
+                        }, 1000);
+                    }
+                };
+
+                return div;
+            };
+
+            myLocationButton.addTo(map);
+
+            return () => {
+                myLocationButton.remove();
+            };
+        }, [map]);
+
+        return null;
+    };
+
     // Haversine distance (km) for client-side labels
     const distanceKm = (lat1, lon1, lat2, lon2) => {
         const R = 6371;
@@ -830,6 +941,7 @@ const AmbulancePanel = () => {
                     <MapContainer center={[mapCenter.lat, mapCenter.lng]} zoom={12} style={{ height: '100%', width: '100%' }}>
                         <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution='&copy; OpenStreetMap contributors' />
                         <FlyTo center={mapCenter} />
+                        <MyLocationControl />
                         {/* Ambulance current location marker */}
                         {currentLocation && (
                             <Marker position={[currentLocation.lat, currentLocation.lng]} icon={L.icon({
@@ -912,6 +1024,66 @@ const AmbulancePanel = () => {
                                 positions={[[currentLocation.lat, currentLocation.lng], [selectedRequest.pickupCoords[1], selectedRequest.pickupCoords[0]]]}
                                 pathOptions={{ color: '#007bff', weight: 4, opacity: 0.8 }}
                             />
+                        )}
+                        {/* Active Pickup - Patient location marker and route line */}
+                        {activePickup && activePickup.coordinates?.length === 2 && (
+                            <>
+                                {/* Patient marker at pickup location */}
+                                <Marker
+                                    position={[activePickup.coordinates[1], activePickup.coordinates[0]]}
+                                    icon={L.icon({
+                                        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
+                                        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+                                        iconSize: [25, 41],
+                                        iconAnchor: [12, 41]
+                                    })}
+                                >
+                                    <Popup>
+                                        <div style={{ minWidth: 200 }}>
+                                            <strong>📍 Patient Pickup Location</strong>
+                                            <div><strong>Patient:</strong> {activePickup.patientName}</div>
+                                            <div><strong>Location:</strong> {activePickup.pickupLocation}</div>
+                                            <div><strong>Destination:</strong> {activePickup.hospitalName}</div>
+                                            {currentLocation && (() => {
+                                                const dist = distanceKm(
+                                                    currentLocation.lat,
+                                                    currentLocation.lng,
+                                                    activePickup.coordinates[1],
+                                                    activePickup.coordinates[0]
+                                                );
+                                                return <div><strong>Distance:</strong> {dist.toFixed(2)} km</div>;
+                                            })()}
+                                        </div>
+                                    </Popup>
+                                </Marker>
+                                {/* Distance line from ambulance to patient */}
+                                {currentLocation && (
+                                    <Polyline
+                                        positions={[
+                                            [currentLocation.lat, currentLocation.lng],
+                                            [activePickup.coordinates[1], activePickup.coordinates[0]]
+                                        ]}
+                                        pathOptions={{ color: '#28a745', weight: 4, opacity: 0.8 }}
+                                    >
+                                        <Popup>
+                                            {(() => {
+                                                const dist = distanceKm(
+                                                    currentLocation.lat,
+                                                    currentLocation.lng,
+                                                    activePickup.coordinates[1],
+                                                    activePickup.coordinates[0]
+                                                );
+                                                return (
+                                                    <div>
+                                                        <strong>🚑 En Route to Patient</strong>
+                                                        <div>📏 Distance: {dist.toFixed(2)} km</div>
+                                                    </div>
+                                                );
+                                            })()}
+                                        </Popup>
+                                    </Polyline>
+                                )}
+                            </>
                         )}
                     </MapContainer>
                     </div>

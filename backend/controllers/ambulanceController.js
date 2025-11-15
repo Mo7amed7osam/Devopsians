@@ -765,6 +765,37 @@ export const getMyAmbulanceRequest = async (req, res, next) => {
   }
 };
 
+// Get ambulance's accepted request
+export const getMyAcceptedRequest = async (req, res, next) => {
+  try {
+    const ambulanceId = req.user.id;
+
+    const request = await AmbulanceRequest.findOne({
+      acceptedBy: ambulanceId,
+      status: { $in: ['accepted', 'in_transit'] }
+    })
+      .populate('patient', 'firstName lastName phone')
+      .populate('hospital', 'name address location')
+      .populate('icu', 'specialization room');
+
+    if (!request) {
+      return res.status(200).json({
+        success: true,
+        data: null,
+        message: 'No active accepted request'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: request
+    });
+  } catch (error) {
+    console.error('Error fetching ambulance accepted request:', error);
+    next(new ErrorHandler('Failed to fetch accepted request', 500));
+  }
+};
+
 // Helper function to calculate distance between two coordinates (Haversine formula)
 function calculateDistance(lat1, lon1, lat2, lon2) {
   const R = 6371; // Earth's radius in kilometers
