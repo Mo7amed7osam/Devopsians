@@ -7,7 +7,7 @@ import Modal from '../../components/common/Modal';
 import styles from './AdminDashboard.module.css';
 import Button from '../../components/common/Button';
 // Employee management moved to Manager dashboard
-import { fetchSystemStats, viewAllHospitals, createManagerAccount, viewAllManagers, viewAllAdmins, deleteUserById, blockUserById, unblockUserById, updateUserById } from '../../utils/api';
+import { fetchSystemStats, viewAllHospitals, createManagerAccount, createUserAccount, viewAllManagers, viewAllAdmins, deleteUserById, blockUserById, unblockUserById, updateUserById } from '../../utils/api';
 
 const iconHospital = <i className="fas fa-hospital-alt"></i>;
 const iconEmployee = <i className="fas fa-users"></i>;
@@ -25,6 +25,8 @@ const AdminDashboard = () => {
     const [selectedUser, setSelectedUser] = useState(null);
         const [isEditingUser, setIsEditingUser] = useState(false);
             const [editForm, setEditForm] = useState({ firstName: '', lastName: '', email: '', phone: '', role: '', password: '' });
+    const [isCreatingUser, setIsCreatingUser] = useState(false);
+    const [createUserForm, setCreateUserForm] = useState({ firstName: '', lastName: '', userName: '', email: '', password: '', role: 'Manager', phone: '', gender: 'Male', assignedHospital: '' });
     const [dashboardStats, setDashboardStats] = useState({
         totalHospitals: 0,
         totalManagers: 8,
@@ -177,6 +179,40 @@ const AdminDashboard = () => {
 
     const handleEditChange = (e) => setEditForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
 
+    const handleCreateUserChange = (e) => setCreateUserForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
+
+    const handleCreateUserSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            await createUserAccount(createUserForm);
+            toast.success(`${createUserForm.role} created successfully!`);
+            setCreateUserForm({ firstName: '', lastName: '', userName: '', email: '', password: '', role: 'Manager', phone: '', gender: 'Male', assignedHospital: '' });
+            setIsCreatingUser(false);
+            // Reload users list
+            if (activeTab === 'manageUsers') {
+                const [managersRes, adminsRes] = await Promise.all([
+                    viewAllManagers().catch(() => ({ data: [] })),
+                    viewAllAdmins().catch(() => ({ data: [] })),
+                ]);
+                const managersArray = Array.isArray(managersRes?.data)
+                    ? managersRes.data
+                    : (managersRes?.data?.data || managersRes?.data?.managers || managersRes?.data || []);
+                const adminsArray = Array.isArray(adminsRes?.data)
+                    ? adminsRes.data
+                    : (adminsRes?.data?.data || adminsRes?.data?.admins || adminsRes?.data || []);
+                const combined = [
+                    ...managersArray.map(m => ({ ...m, role: m.role || 'Manager', id: m._id || m.id })),
+                    ...adminsArray.map(a => ({ ...a, role: a.role || 'Admin', id: a._id || a.id })),
+                ];
+                setUsersList(combined);
+            }
+        } catch (err) {
+            console.error('Create user failed', err);
+            const serverMsg = err?.response?.data?.message || err?.message;
+            toast.error(serverMsg || 'Failed to create user.');
+        }
+    };
+
     const handleSaveUser = async () => {
         if (!selectedUser || !selectedUser.id) return;
         try {
@@ -288,7 +324,57 @@ const AdminDashboard = () => {
             case 'manageUsers':
                 return (
                     <div className={styles.usersPanel}>
-                        <h3 className={styles.formTitle}>Manage Users</h3>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                            <h3 className={styles.formTitle}>Manage Users</h3>
+                            <Button variant="primary" onClick={() => setIsCreatingUser(true)}>+ Create User</Button>
+                        </div>
+                        {isCreatingUser && (
+                            <Modal isOpen={isCreatingUser} onClose={() => setIsCreatingUser(false)} contentLabel="create-user">
+                                <form onSubmit={handleCreateUserSubmit} className={styles.formCard}>
+                                    <h3>Create New User</h3>
+                                    <label>First Name *</label>
+                                    <input name="firstName" value={createUserForm.firstName} onChange={handleCreateUserChange} placeholder="First name" required />
+                                    <label>Last Name *</label>
+                                    <input name="lastName" value={createUserForm.lastName} onChange={handleCreateUserChange} placeholder="Last name" required />
+                                    <label>Username</label>
+                                    <input name="userName" value={createUserForm.userName} onChange={handleCreateUserChange} placeholder="Username (optional)" />
+                                    <label>Email</label>
+                                    <input name="email" type="email" value={createUserForm.email} onChange={handleCreateUserChange} placeholder="Email (optional)" />
+                                    <label>Password *</label>
+                                    <input name="password" type="password" value={createUserForm.password} onChange={handleCreateUserChange} placeholder="Password" required minLength={6} />
+                                    <label>Phone</label>
+                                    <input name="phone" value={createUserForm.phone} onChange={handleCreateUserChange} placeholder="Phone" />
+                                    <label>Gender</label>
+                                    <select name="gender" value={createUserForm.gender} onChange={handleCreateUserChange}>
+                                        <option value="Male">Male</option>
+                                        <option value="Female">Female</option>
+                                    </select>
+                                    <label>Role *</label>
+                                    <select name="role" value={createUserForm.role} onChange={handleCreateUserChange} required>
+                                        <option value="Admin">Admin</option>
+                                        <option value="Manager">Manager</option>
+                                        <option value="Receptionist">Receptionist</option>
+                                        <option value="Ambulance">Ambulance</option>
+                                        <option value="Patient">Patient</option>
+                                    </select>
+                                    {(createUserForm.role === 'Receptionist' || createUserForm.role === 'Ambulance' || createUserForm.role === 'Manager') && (
+                                        <>
+                                            <label>Assign to Hospital</label>
+                                            <select name="assignedHospital" value={createUserForm.assignedHospital} onChange={handleCreateUserChange}>
+                                                <option value="">-- Select Hospital (Optional) --</option>
+                                                {hospitalsList.map(h => (
+                                                    <option key={h._id || h.id} value={h._id || h.id}>{h.name || h.address}</option>
+                                                ))}
+                                            </select>
+                                        </>
+                                    )}
+                                    <div style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem' }}>
+                                        <Button type="submit" variant="primary">Create User</Button>
+                                        <Button type="button" variant="secondary" onClick={() => setIsCreatingUser(false)}>Cancel</Button>
+                                    </div>
+                                </form>
+                            </Modal>
+                        )}
                         <div className={styles.usersTableWrap}>
                             <table className={styles.usersTable}>
                                 <thead>

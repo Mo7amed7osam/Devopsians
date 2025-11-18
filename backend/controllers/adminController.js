@@ -496,6 +496,68 @@ export const createManagerAccount = async (req, res, next) => {
 export const createAdminAccount = async (req, res, next) =>
   createUserWithRole(req, res, next, 'Admin');
 
+/**
+ * Admin: Create user with any role
+ * Supports: Admin, Manager, Receptionist, Ambulance, Patient
+ */
+export const createUser = async (req, res, next) => {
+  try {
+    const { firstName, lastName, userName, email, password, role, phone, gender, assignedHospital } = req.body;
+
+    // Validate required fields
+    if (!firstName || !lastName || !password || !role) {
+      return next(new ErrorHandler('firstName, lastName, password, and role are required', 400));
+    }
+
+    // Validate role
+    const validRoles = ['Admin', 'Manager', 'Receptionist', 'Ambulance', 'Patient'];
+    if (!validRoles.includes(role)) {
+      return next(new ErrorHandler('Invalid role. Must be: Admin, Manager, Receptionist, Ambulance, or Patient', 400));
+    }
+
+    // Check if user already exists
+    let existingUser = null;
+    if (userName) existingUser = await User.findOne({ userName });
+    if (!existingUser && email) existingUser = await User.findOne({ email });
+    if (existingUser) return next(new ErrorHandler('User already exists', 400));
+
+    // Build user payload
+    const userPayload = {
+      firstName,
+      lastName,
+      userPass: password,
+      role,
+      gender: gender || 'Male',
+      phone: phone || '0000000000',
+    };
+
+    // Add optional fields
+    if (userName) userPayload.userName = userName;
+    if (email) userPayload.email = email;
+    if (assignedHospital) userPayload.assignedHospital = assignedHospital;
+
+    // Create user
+    const newUser = new User(userPayload);
+    await newUser.save();
+
+    res.status(201).json({
+      success: true,
+      message: `${role} account created successfully`,
+      data: {
+        id: newUser._id,
+        firstName: newUser.firstName,
+        lastName: newUser.lastName,
+        email: newUser.email,
+        userName: newUser.userName,
+        role: newUser.role,
+      },
+    });
+  } catch (error) {
+    console.error('createUser error:', error);
+    next(new ErrorHandler(error.message, 500));
+  }
+};
+
 export const viewAllAdmins = async (req, res, next) => {
   try {
     const admins = await User.find({ role: "Admin" }).select("-userPass");

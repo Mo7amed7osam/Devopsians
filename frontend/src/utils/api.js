@@ -201,6 +201,10 @@ export const createAdminAccount = async (adminData) => {
   return await API.post('/admin/create-admin-account', adminData);
 };
 
+export const createUserAccount = async (userData) => {
+  return await API.post('/admin/create-user', userData);
+};
+
 export const viewAllAdmins = async () => await API.get('/admin/view-all-admins');
 export const viewAllManagers = async () => await API.get('/admin/view-all-managers');
 export const searchManagerWithHospitals = async (queryParams) => await API.get('/admin/search-manager-with-hospitals', { params: queryParams });
