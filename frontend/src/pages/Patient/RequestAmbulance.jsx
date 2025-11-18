@@ -55,16 +55,14 @@ const RequestAmbulance = () => {
           setPickupCoords(coords);
         },
         (error) => {
-          console.error('Geolocation error:', error);
-          toast.warn('Could not get your location. Please select pickup location manually on the map.');
-          // Default to Cairo, Egypt
+          // Silently handle geolocation errors - use default location
           const defaultCoords = { lat: 30.0444, lng: 31.2357 };
           setUserLocation(defaultCoords);
           setPickupCoords(defaultCoords);
         }
       );
     } else {
-      toast.error('Geolocation is not supported by your browser.');
+      // Silently use default location if geolocation not supported
       const defaultCoords = { lat: 30.0444, lng: 31.2357 };
       setUserLocation(defaultCoords);
       setPickupCoords(defaultCoords);

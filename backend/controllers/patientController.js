@@ -3,6 +3,7 @@ import Hospital from "../models/hospitalmodel.js";
 import Service from "../models/serviceModel.js";
 import User from "../models/userModel.js";
 import Feedback from "../models/feedbackModel.js";
+import AmbulanceRequest from "../models/ambulanceRequestModel.js";
 import { app, io } from "../index.js";
 
 export const fetchAvailableICUs = async (longitude, latitude) => {
@@ -80,7 +81,7 @@ export const getAvailableICUs = async (req, res) => {
 };
 
 export const reserveICU = async (req, res) => {
-  const { userId, icuId, needsPickup, pickupLocation } = req.body;
+  const { userId, icuId, needsPickup, pickupLocation, pickupCoordinates } = req.body;
 
   try {
     const icu = await ICU.findById(icuId).populate("hospital", "name address location");
@@ -113,38 +114,83 @@ export const reserveICU = async (req, res) => {
     patient.patientStatus = 'RESERVED';
     patient.needsPickup = needsPickup || false;
     patient.pickupLocation = pickupLocation || null;
+    
+    // IMPORTANT: Clear any previous ambulance assignment when making new reservation
+    patient.assignedAmbulance = null;
 
     // Clear any previous ambulance assignment if patient doesn't need pickup
     if (!needsPickup) {
-      patient.assignedAmbulance = null;
       patient.pickupLocation = null;
     }
 
-    // If patient needs pickup, broadcast request to ALL ambulances
+    // If patient needs pickup, create an ambulance request
+    let ambulanceRequest = null;
     if (needsPickup) {
       // Set patient status to AWAITING_PICKUP (no ambulance assigned yet)
       patient.patientStatus = 'AWAITING_PICKUP';
+      
+      // Delete any existing pending or accepted requests for this patient
+      await AmbulanceRequest.deleteMany({
+        patient: userId,
+        status: { $in: ['pending', 'accepted'] }
+      });
+
+      // Validate or set default coordinates
+      let coordinates = [31.2357, 30.0444]; // Default to Cairo
+      if (pickupCoordinates && Array.isArray(pickupCoordinates.coordinates) && pickupCoordinates.coordinates.length === 2) {
+        coordinates = pickupCoordinates.coordinates;
+      } else if (pickupCoordinates && Array.isArray(pickupCoordinates) && pickupCoordinates.length === 2) {
+        coordinates = pickupCoordinates;
+      }
+
+      // Create ambulance request
+      ambulanceRequest = new AmbulanceRequest({
+        patient: userId,
+        hospital: icu.hospital._id,
+        icu: icuId,
+        pickupLocation: pickupLocation || 'Patient location',
+        pickupCoordinates: {
+          type: 'Point',
+          coordinates: coordinates // [longitude, latitude]
+        },
+        patientPhone: patient.phone,
+        urgency: 'normal',
+        notes: '',
+        status: 'pending'
+      });
+
+      await ambulanceRequest.save();
+
+      // Populate request with details for broadcasting
+      const populatedRequest = await AmbulanceRequest.findById(ambulanceRequest._id)
+        .populate('patient', 'firstName lastName phone')
+        .populate('hospital', 'name address location')
+        .populate('icu', 'specialization room');
 
       try {
         if (io && typeof io.emit === 'function') {
           // Broadcast pickup request to ALL ambulances
           io.emit('ambulancePickupRequest', {
+            requestId: populatedRequest._id,
             patientId: userId,
             patientName: `${patient.firstName} ${patient.lastName}`,
             patientPhone: patient.phone,
             hospitalId: icu.hospital._id,
             hospitalName: icu.hospital.name,
             pickupLocation: pickupLocation || 'Patient Location',
+            pickupCoordinates: coordinates,
+            hospitalLocation: icu.hospital.location?.coordinates,
             icuId: icu._id,
             specialization: icu.specialization,
             room: icu.room,
+            urgency: 'normal',
             timestamp: new Date()
           });
 
-          // Notify patient that request is sent
+          // Notify patient that request is PENDING
           io.emit('patientNotification', {
             patientId: userId,
-            message: `🚑 Pickup request sent to all available ambulances. Waiting for a crew to accept...`,
+            message: `🚑 Pickup request sent to all available ambulances. Status: PENDING - Waiting for a crew to accept...`,
             type: 'pickup_request_sent'
           });
         } else {
@@ -176,9 +222,10 @@ export const reserveICU = async (req, res) => {
     io.emit("icuUpdated", updatedICUs);
 
     res.json({
-      message: "ICU reserved successfully.",
+      message: "ICU reserved successfully. " + (needsPickup ? "Ambulance request is PENDING." : ""),
       needsPickup: needsPickup || false,
-      ambulanceAssigned: patient.assignedAmbulance ? true : false,
+      requestStatus: ambulanceRequest ? 'pending' : null,
+      ambulanceAssigned: false, // Never auto-assign
       icu: {
         id: icu._id,
         hospital: icu.hospital,

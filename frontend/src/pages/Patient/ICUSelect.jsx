@@ -35,13 +35,12 @@ const ICUSelect = () => {
                     });
                 },
                 (err) => {
-                    console.error("Geolocation failed:", err.message);
-                    toast.warn("Could not get your location. Showing results for Cairo.");
+                    // Silently use default location if geolocation fails
                     setUserLocation({ lat: 30.0444, lng: 31.2357 }); 
                 }
             );
         } else {
-            toast.error("Geolocation is not supported. Showing results for Cairo.");
+            // Silently use default location if geolocation not supported
             setUserLocation({ lat: 30.0444, lng: 31.2357 });
         }
     }, []);
@@ -183,36 +182,44 @@ const ICUSelect = () => {
             const userId = getUserId();
             setLoading(true);
             
+            // Prepare pickup coordinates
+            let pickupCoords = null;
+            if (needsPickup && userLocation) {
+                pickupCoords = {
+                    type: 'Point',
+                    coordinates: [userLocation.lng, userLocation.lat] // [longitude, latitude]
+                };
+            }
+            
             const payload = {
                 icuId: selectedIcuId,
                 userId,
                 needsPickup,
-                pickupLocation: needsPickup ? pickupLocation : null
+                pickupLocation: needsPickup ? pickupLocation : null,
+                pickupCoordinates: needsPickup ? pickupCoords : null
             };
             
             // Call backend API to reserve ICU with pickup info
             const response = await reserveICUForPatient(payload);
             
-            if (needsPickup && response.data?.ambulanceAssigned) {
-                toast.success('🚑 ICU reserved! Ambulance is on the way to your location. Waiting for crew approval...', {
-                    autoClose: 5000
-                });
-            } else if (needsPickup) {
-                toast.warn('⚠️ ICU reserved but no ambulance is currently available. Please try to arrange transportation.', {
-                    autoClose: 5000
+            if (needsPickup) {
+                // Changed message to show PENDING status
+                toast.info('🚑 ICU reserved! Redirecting to your dashboard...', {
+                    autoClose: 2000
                 });
             } else {
-                toast.success('✅ ICU reserved! Please proceed to the hospital. The receptionist will check you in upon arrival.', {
-                    autoClose: 5000
+                toast.success('✅ ICU reserved! Redirecting to your dashboard...', {
+                    autoClose: 2000
                 });
             }
             
             setShowPickupModal(false);
             
-            // Redirect to patient dashboard (valid route)
+            // Redirect to patient dashboard and refresh
+            navigate('/patient-dashboard');
             setTimeout(() => {
-                navigate('/patient-dashboard');
-            }, 1500);
+                window.location.reload();
+            }, 100);
 
         } catch (err) {
             console.error('Reservation error:', err);
