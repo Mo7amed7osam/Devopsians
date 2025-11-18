@@ -106,39 +106,91 @@ export const cancelReservation = async (req, res, next) => {
     try {
         const { icuId, patientId } = req.body;
         
+        console.log('🔴 Cancel reservation request:', { icuId, patientId });
+        
         if (!icuId || !patientId) {
+            console.log('🔴 Missing required fields');
             return res.status(400).json({ message: 'ICU ID and Patient ID are required' });
         }
         
         // Find the ICU
         const icu = await ICU.findById(icuId);
         if (!icu) {
+            console.log('🔴 ICU not found:', icuId);
             return res.status(404).json({ message: 'ICU not found' });
         }
+        
+        console.log('✅ ICU found:', { id: icu._id, status: icu.status, isReserved: icu.isReserved, reservedBy: icu.reservedBy });
         
         // Find the patient
         const patient = await User.findById(patientId);
         if (!patient) {
+            console.log('🔴 Patient not found:', patientId);
             return res.status(404).json({ message: 'Patient not found' });
         }
         
-        // Verify the reservation
-        if (patient.reservedICU?.toString() !== icuId) {
-            return res.status(400).json({ message: 'This ICU is not reserved by this patient' });
+        console.log('✅ Patient found:', { 
+            id: patient._id, 
+            reservedICU: patient.reservedICU, 
+            patientStatus: patient.patientStatus 
+        });
+        
+        // Verify the reservation - handle both ObjectId and string comparison
+        const patientReservedICU = patient.reservedICU?.toString() || patient.reservedICU;
+        const icuIdString = icuId.toString();
+        
+        console.log('🔍 Comparing IDs:', { 
+            patientReservedICU, 
+            icuIdString,
+            match: patientReservedICU === icuIdString 
+        });
+        
+        if (!patientReservedICU || patientReservedICU !== icuIdString) {
+            console.log('🔴 ICU mismatch');
+            return res.status(400).json({ 
+                message: 'This ICU is not reserved by this patient',
+                debug: {
+                    patientReservedICU: patientReservedICU,
+                    icuId: icuIdString,
+                    patientHasReservation: !!patientReservedICU
+                }
+            });
+        }
+        
+        // Don't allow cancellation if patient is already checked in
+        if (patient.patientStatus === 'CHECKED_IN') {
+            return res.status(400).json({ message: 'Cannot cancel reservation after check-in. Please contact reception.' });
+        }
+        
+        // If patient has an assigned ambulance, clear it
+        if (patient.assignedAmbulance) {
+            const ambulance = await User.findById(patient.assignedAmbulance);
+            if (ambulance) {
+                ambulance.status = 'AVAILABLE';
+                ambulance.assignedPatient = null;
+                ambulance.assignedHospital = null;
+                ambulance.destination = null;
+                await ambulance.save();
+            }
+            patient.assignedAmbulance = null;
         }
         
         // Update ICU
-    icu.isReserved = false;
-    icu.status = 'Available';
-    icu.reservedBy = null;
-    await icu.save();
+        icu.isReserved = false;
+        icu.status = 'Available';
+        icu.reservedBy = null;
+        icu.checkedInAt = null;
+        await icu.save();
 
-    // Update patient
-    patient.reservedICU = null;
-    patient.patientStatus = null; // Clear patient status
-    await patient.save();
+        // Update patient
+        patient.reservedICU = null;
+        patient.patientStatus = null;
+        patient.needsPickup = false;
+        patient.pickupLocation = null;
+        await patient.save();
         
         res.status(200).json({
+            success: true,
             message: 'ICU reservation cancelled successfully'
         });
     } catch (error) {

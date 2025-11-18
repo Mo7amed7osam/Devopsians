@@ -462,3 +462,222 @@ export const viewICUById = async (req, res, next) => {
     );
   }
 };
+
+// Create Receptionist for Manager's Hospital
+export const createReceptionist = async (req, res, next) => {
+  try {
+    const managerId = req.user.id; // From auth middleware
+    const { userName, firstName, lastName, email, phone, gender, userPass } = req.body;
+
+    // Validate required fields
+    if (!userName || !firstName || !lastName || !email || !phone || !gender || !userPass) {
+      return next(new ErrorHandler("All fields are required (userName, firstName, lastName, email, phone, gender, userPass)", 400));
+    }
+
+    // Find the hospital assigned to this manager
+    const hospital = await Hospital.findOne({ assignedManager: managerId });
+    if (!hospital) {
+      return next(new ErrorHandler("No hospital assigned to this manager", 404));
+    }
+
+    // Check if user with same userName or email already exists
+    const existingUser = await User.findOne({
+      $or: [{ userName }, { email }]
+    });
+    if (existingUser) {
+      return next(new ErrorHandler("Username or email already exists", 400));
+    }
+
+    // Create new receptionist
+    const newReceptionist = new User({
+      userName,
+      firstName,
+      lastName,
+      email,
+      phone,
+      gender,
+      userPass, // Will be hashed by pre-save hook in User model
+      role: "Receptionist",
+      assignedHospital: hospital._id,
+      assignedManager: managerId
+    });
+
+    await newReceptionist.save();
+
+    // Return success response without password
+    res.status(201).json({
+      success: true,
+      message: "Receptionist created successfully",
+      data: {
+        id: newReceptionist._id,
+        userName: newReceptionist.userName,
+        firstName: newReceptionist.firstName,
+        lastName: newReceptionist.lastName,
+        email: newReceptionist.email,
+        phone: newReceptionist.phone,
+        gender: newReceptionist.gender,
+        role: newReceptionist.role,
+        assignedHospital: {
+          id: hospital._id,
+          name: hospital.name
+        }
+      }
+    });
+  } catch (error) {
+    next(new ErrorHandler(`Error while creating receptionist: ${error.message}`, 500));
+  }
+};
+
+// Get all receptionists for manager's hospital
+export const getReceptionists = async (req, res, next) => {
+  try {
+    const managerId = req.user.id;
+
+    // Find the hospital assigned to this manager
+    const hospital = await Hospital.findOne({ assignedManager: managerId });
+    if (!hospital) {
+      return next(new ErrorHandler("No hospital assigned to this manager", 404));
+    }
+
+    // Find all receptionists assigned to this hospital
+    const receptionists = await User.find({
+      role: "Receptionist",
+      assignedHospital: hospital._id
+    }).select('-userPass -__v');
+
+    res.status(200).json({
+      success: true,
+      message: "Receptionists retrieved successfully",
+      count: receptionists.length,
+      data: receptionists
+    });
+  } catch (error) {
+    next(new ErrorHandler(`Error while fetching receptionists: ${error.message}`, 500));
+  }
+};
+
+// Get single receptionist by ID
+export const getReceptionistById = async (req, res, next) => {
+  try {
+    const managerId = req.user.id;
+    const { receptionistId } = req.params;
+
+    // Find the hospital assigned to this manager
+    const hospital = await Hospital.findOne({ assignedManager: managerId });
+    if (!hospital) {
+      return next(new ErrorHandler("No hospital assigned to this manager", 404));
+    }
+
+    // Find receptionist and verify they belong to manager's hospital
+    const receptionist = await User.findOne({
+      _id: receptionistId,
+      role: "Receptionist",
+      assignedHospital: hospital._id
+    }).select('-userPass -__v');
+
+    if (!receptionist) {
+      return next(new ErrorHandler("Receptionist not found or not assigned to your hospital", 404));
+    }
+
+    res.status(200).json({
+      success: true,
+      data: receptionist
+    });
+  } catch (error) {
+    next(new ErrorHandler(`Error while fetching receptionist: ${error.message}`, 500));
+  }
+};
+
+// Update receptionist
+export const updateReceptionist = async (req, res, next) => {
+  try {
+    const managerId = req.user.id;
+    const { receptionistId } = req.params;
+    const { firstName, lastName, email, phone, gender } = req.body;
+
+    // Find the hospital assigned to this manager
+    const hospital = await Hospital.findOne({ assignedManager: managerId });
+    if (!hospital) {
+      return next(new ErrorHandler("No hospital assigned to this manager", 404));
+    }
+
+    // Find receptionist and verify they belong to manager's hospital
+    const receptionist = await User.findOne({
+      _id: receptionistId,
+      role: "Receptionist",
+      assignedHospital: hospital._id
+    });
+
+    if (!receptionist) {
+      return next(new ErrorHandler("Receptionist not found or not assigned to your hospital", 404));
+    }
+
+    // Check if email is being changed and if it's already taken
+    if (email && email !== receptionist.email) {
+      const existingUser = await User.findOne({ email });
+      if (existingUser) {
+        return next(new ErrorHandler("Email already exists", 400));
+      }
+    }
+
+    // Update fields
+    if (firstName) receptionist.firstName = firstName;
+    if (lastName) receptionist.lastName = lastName;
+    if (email) receptionist.email = email;
+    if (phone) receptionist.phone = phone;
+    if (gender) receptionist.gender = gender;
+
+    await receptionist.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Receptionist updated successfully",
+      data: {
+        id: receptionist._id,
+        userName: receptionist.userName,
+        firstName: receptionist.firstName,
+        lastName: receptionist.lastName,
+        email: receptionist.email,
+        phone: receptionist.phone,
+        gender: receptionist.gender,
+        role: receptionist.role
+      }
+    });
+  } catch (error) {
+    next(new ErrorHandler(`Error while updating receptionist: ${error.message}`, 500));
+  }
+};
+
+// Delete receptionist
+export const deleteReceptionist = async (req, res, next) => {
+  try {
+    const managerId = req.user.id;
+    const { receptionistId } = req.params;
+
+    // Find the hospital assigned to this manager
+    const hospital = await Hospital.findOne({ assignedManager: managerId });
+    if (!hospital) {
+      return next(new ErrorHandler("No hospital assigned to this manager", 404));
+    }
+
+    // Find receptionist and verify they belong to manager's hospital
+    const receptionist = await User.findOne({
+      _id: receptionistId,
+      role: "Receptionist",
+      assignedHospital: hospital._id
+    });
+
+    if (!receptionist) {
+      return next(new ErrorHandler("Receptionist not found or not assigned to your hospital", 404));
+    }
+
+    await User.findByIdAndDelete(receptionistId);
+
+    res.status(200).json({
+      success: true,
+      message: "Receptionist deleted successfully"
+    });
+  } catch (error) {
+    next(new ErrorHandler(`Error while deleting receptionist: ${error.message}`, 500));
+  }
+};

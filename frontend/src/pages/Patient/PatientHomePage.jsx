@@ -146,22 +146,11 @@ const PatientHomePage = () => {
         setRatingComment('');
     };
 
-    const handleUpdateMedicalHistory = async (e) => {
-        e.preventDefault();
-        try {
-            const userId = getUserId();
-            await updateUserMedicalDetails(userId, {
-                medicalHistory: newMedicalHistory
-            });
-            toast.success('Medical history updated successfully!');
-            setPatientData(prev => ({ ...prev, medicalHistory: newMedicalHistory }));
-        } catch (error) {
-            console.error('Error updating medical history:', error);
-            toast.error('Failed to update medical history.');
-        }
-    };
-
     const handleRate = (type) => {
+        // Prevent opening modal if one is already open
+        if (modalType) {
+            return;
+        }
         setRatingTarget(type);
         setCurrentRating(ratings[type] || 0); 
         setModalType('rating');
@@ -177,23 +166,12 @@ const PatientHomePage = () => {
         toast.success(`Thank you for your feedback on the ${ratingTarget}!`);
         closeModal();
     };
-    
-    const handleVisitorSubmit = async (e) => {
-        e.preventDefault();
-        const visitorName = e.target.visitorName.value;
-        const visitTime = e.target.visitTime.value;
-        toast.success(`Reservation request for ${visitorName} at ${visitTime} submitted.`);
-        closeModal();
-    };
-
-    const handleKidsAreaSubmit = async (e) => {
-        e.preventDefault();
-        const visitTime = e.target.visitTime.value;
-        toast.success(`Kids area time slot at ${visitTime} has been requested.`);
-        closeModal();
-    };
-
     const handleCancelReservation = async () => {
+        if (!patientData?.reservedICU) {
+            toast.error('No ICU reservation found to cancel.');
+            return;
+        }
+
         if (!window.confirm('Are you sure you want to cancel your ICU reservation?')) {
             return;
         }
@@ -202,6 +180,11 @@ const PatientHomePage = () => {
             setCancelLoading(true);
             const userId = getUserId();
             
+            console.log('Cancelling reservation:', {
+                icuId: patientData.reservedICU,
+                patientId: userId
+            });
+            
             await cancelICUReservation({
                 icuId: patientData.reservedICU,
                 patientId: userId
@@ -209,13 +192,23 @@ const PatientHomePage = () => {
             
             toast.success('ICU reservation cancelled successfully!');
             
-            // Refresh the page to show ICU selection again
+            // Update local state immediately
+            setPatientData(prev => ({
+                ...prev,
+                reservedICU: null,
+                patientStatus: null
+            }));
+            setIcuData(null);
+            
+            // Refresh the page after a short delay
             setTimeout(() => {
                 window.location.reload();
             }, 1500);
 
         } catch (error) {
             console.error('Error cancelling reservation:', error);
+            console.error('Error response:', error.response?.data);
+            console.error('Full error:', JSON.stringify(error.response?.data, null, 2));
             const errorMessage = error.response?.data?.message || 'Failed to cancel reservation. Please try again.';
             toast.error(errorMessage);
         } finally {
@@ -320,48 +313,17 @@ const PatientHomePage = () => {
                         <h3>Your Reserved ICU</h3>
                         <p><strong>Hospital:</strong> {icuData.hospital?.name || 'N/A'}</p>
                         <p><strong>Specialization:</strong> {icuData.specialization}</p>
-                        <p><strong>Room:</strong> {icuData.room}</p>
                         <p><strong>Status:</strong> <span style={{ color: '#4caf50', fontWeight: 'bold' }}>{icuData.status}</span></p>
                         <p><strong>Daily Fee:</strong> {icuData.fees} EGP</p>
                     </div>
                 )}
                 <div className={styles.card}>
-                    <h3>Medicine Schedule</h3>
-                    <p>Assigned Provider: Not available</p>
-                    {patientData.medicineSchedule ? (
-                        <div>{patientData.medicineSchedule}</div>
-                    ) : (
-                        <p>No medicine schedule available</p>
-                    )}
-                </div>
-                <div className={styles.card}>
                     <h3>Total Fees</h3>
                     <p className={styles.feeAmount}>EGP {(patientData.totalFees || 0).toFixed(2)}</p>
                     <Button variant="secondary">Show Total Fees</Button>
                 </div>
-                <div className={`${styles.card} ${styles.ratingCard}`}>
-                    <h3 className={styles.subtitle}>Update Medical History</h3>
-                    <form onSubmit={handleUpdateMedicalHistory}>
-                        <textarea 
-                            value={newMedicalHistory} 
-                            onChange={(e) => setNewMedicalHistory(e.target.value)}
-                            rows="4"
-                            placeholder="Enter your medical history, allergies, chronic conditions..."
-                            required
-                        />
-                        <Button type="submit" variant="primary">Save History</Button>
-                    </form>
-                </div>
             </section>
             <section className={styles.reservationActions}>
-                <div className={styles.actionGroup}>
-                    <h3>Reserve Visitor's Room</h3>
-                    <Button onClick={() => setModalType('visitor')} className={styles.btnAction}>Request Visitor Slot</Button>
-                </div>
-                <div className={styles.actionGroup}>
-                    <h3>Kids Area Access</h3>
-                    <Button onClick={() => setModalType('kids')} className={styles.btnAction}>Reserve Time-Slot</Button>
-                </div>
                 <div className={styles.actionGroup}>
                     <h3>Service Feedback</h3>
                     <Button onClick={() => handleRate('Hospital')} className={styles.btnRate}>Rate Hospital</Button>
@@ -393,22 +355,6 @@ const PatientHomePage = () => {
                         onChange={(e) => setRatingComment(e.target.value)}
                     />
                     <Button type="submit" variant="primary" style={{ width: '100%', marginTop: '20px' }}>Submit Rating</Button>
-                </form>
-            </Modal>
-            <Modal isOpen={modalType === 'visitor'} onClose={closeModal} contentLabel="visitor-modal">
-                <h2>Reserve a Visitor Slot</h2>
-                <form onSubmit={handleVisitorSubmit}>
-                    <input className={styles.modalInput} type="text" name="visitorName" placeholder="Visitor's Full Name" required />
-                    <input className={styles.modalInput} type="time" name="visitTime" required />
-                    <Button type="submit" variant="primary" style={{ width: '100%', marginTop: '20px' }}>Submit Request</Button>
-                </form>
-            </Modal>
-            <Modal isOpen={modalType === 'kids'} onClose={closeModal} contentLabel="kids-modal">
-                <h2>Reserve Kids Area Time-Slot</h2>
-                <form onSubmit={handleKidsAreaSubmit}>
-                    <p>Please select a 1-hour time slot.</p>
-                    <input className={styles.modalInput} type="time" name="visitTime" required />
-                    <Button type="submit" variant="primary" style={{ width: '100%', marginTop: '20px' }}>Reserve Slot</Button>
                 </form>
             </Modal>
         </div>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import DashBoardCard from '../../components/common/DashBoardCard.jsx';
 import Addicu from './Addicu.jsx';
 import ICUMgmt from './ICUMgmt.jsx';
@@ -6,12 +7,14 @@ import { viewICUsForManager, getManagerHospital } from '../../utils/api';
 import styles from './ManagerDashboard.module.css';
 import DashboardNav from '../../components/common/DashboardNav';
 import { toast } from 'react-toastify';
+import Button from '../../components/common/Button';
 
 import { getServiceCategories } from '../../utils/api';
 
 const iconICU = <i className="fas fa-bed"></i>;
 
 const ManagerDashboard = () => {
+    const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState('icuMgmt');
     const [hospitalInfo, setHospitalInfo] = useState({ id: '', name: '' });
     const [dashboardStats, setDashboardStats] = useState({
@@ -184,6 +187,12 @@ const ManagerDashboard = () => {
         <div className={styles.managerDashboard}>
             <header className={styles.header}>
                 <h1>{hospitalInfo.name} Manager Dashboard</h1>
+                <Button 
+                    variant="primary" 
+                    onClick={() => navigate('/manager/receptionists')}
+                >
+                    👥 Manage Receptionists
+                </Button>
             </header>
             <section className={styles.statsGrid}>
                 <DashBoardCard

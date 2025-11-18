@@ -26,6 +26,7 @@ import RequestAmbulance from './pages/Patient/RequestAmbulance.jsx';
 
 // --- Import Manager Pages ---
 import ManagerDashboard from './pages/Manager/ManagerDashboard.jsx';
+import ManageReceptionists from './pages/Manager/ManageReceptionists.jsx';
 
 // --- Import Admin Pages ---
 import AdminDashboard from './pages/Admin/AdminDashboard.jsx';
@@ -116,6 +117,14 @@ const App = () => {
                         element={
                             <PrivateRoute allowedRoles={['manager']}>
                                 <ManagerDashboard />
+                            </PrivateRoute>
+                        }
+                    />
+                    <Route
+                        path="/manager/receptionists"
+                        element={
+                            <PrivateRoute allowedRoles={['manager']}>
+                                <ManageReceptionists />
                             </PrivateRoute>
                         }
                     />
