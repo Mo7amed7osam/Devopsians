@@ -134,7 +134,6 @@ export const checkInPatient = async (req, res, next) => {
             icu
         });
     } catch (error) {
-        console.error('Check-in error:', error);
         next(new ErrorHandler(error.message, 500));
     }
 };
@@ -144,45 +143,67 @@ export const checkOutPatient = async (req, res, next) => {
     try {
         const { icuId, patientId } = req.body;
 
-        if (!icuId && !patientId) {
-            return next(new ErrorHandler('ICU ID or Patient ID is required', 400));
+        if (!icuId || !patientId) {
+            return res.status(400).json({ 
+                success: false,
+                message: 'ICU ID and Patient ID are required' 
+            });
         }
 
-        let icu;
-        let patient;
-
-        // Find ICU by ID or by patient ID
-        if (icuId) {
-            icu = await ICU.findById(icuId);
-        } else if (patientId) {
-            icu = await ICU.findOne({ reservedBy: patientId, isReserved: true });
-        }
-
+        // Find the ICU
+        const icu = await ICU.findById(icuId);
         if (!icu) {
-            return next(new ErrorHandler('ICU not found or not reserved', 404));
-        }
-
-        if (!icu.isReserved) {
-            return next(new ErrorHandler('ICU is not occupied', 400));
+            return res.status(404).json({ 
+                success: false,
+                message: 'ICU not found' 
+            });
         }
 
         // Find the patient
-        patient = await User.findById(icu.reservedBy);
+        const patient = await User.findById(patientId);
         if (!patient) {
-            return next(new ErrorHandler('Patient not found', 404));
+            return res.status(404).json({ 
+                success: false,
+                message: 'Patient not found' 
+            });
         }
 
-        // Check-out: Clear reservation and mark as Available
-        icu.isReserved = false;
-        icu.status = 'Available';
-        icu.reservedBy = null;
-        icu.checkedInAt = null;
-        await icu.save();
+        // Verify the patient is in this ICU
+        const patientReservedICU = patient.reservedICU?.toString();
+        const icuIdString = icuId.toString();
 
-        // Clear patient's reservation and update status
-        patient.reservedICU = null;
-        patient.patientStatus = 'CHECKED_OUT';
-        await patient.save();
+        if (!patientReservedICU || patientReservedICU !== icuIdString) {
+            return res.status(400).json({ 
+                success: false,
+                message: 'This patient is not in this ICU' 
+            });
+        }
+
+        // Check if fees are paid
+        if (!patient.feesPaid) {
+            return res.status(400).json({
+                success: false,
+                message: 'Cannot check out: Patient fees have not been paid. Please process payment first.',
+                feesPaid: false
+            });
+        }
+
+        // Clear ICU reservation using findByIdAndUpdate to avoid validation issues
+        await ICU.findByIdAndUpdate(icuId, {
+            isReserved: false,
+            status: 'Available',
+            reservedBy: null,
+            checkedInAt: null
+        });
+
+        // Clear patient's reservation using findByIdAndUpdate
+        await User.findByIdAndUpdate(patientId, {
+            reservedICU: null,
+            patientStatus: null,
+            assignedAmbulance: null,
+            needsPickup: false,
+            pickupLocation: null
+        });
 
         // Emit socket event for available ICUs
         if (io) {
@@ -199,10 +220,14 @@ export const checkOutPatient = async (req, res, next) => {
         res.status(200).json({
             success: true,
             message: `Patient discharged. ICU Room ${icu.room} is now Available`,
-            icu
+            data: { icu, patient }
         });
     } catch (error) {
-        next(new ErrorHandler(error.message, 500));
+        console.error('Check-out error:', error);
+        return res.status(500).json({
+            success: false,
+            message: error.message || 'Failed to check out patient'
+        });
     }
 };
 
@@ -244,6 +269,79 @@ export const getICURequests = async (req, res, next) => {
     }
 };
 
+// Get checked-in patients
+export const getCheckedInPatients = async (req, res, next) => {
+    try {
+        // Get all checked-in patients
+        const checkedInPatients = await User.find({ 
+            role: 'Patient',
+            patientStatus: 'CHECKED_IN',
+            reservedICU: { $ne: null }
+        }).select('_id');
+
+        const checkedInPatientIds = checkedInPatients.map(p => p._id);
+
+        // Get ICUs with checked-in patients
+        const checkedInICUs = await ICU.find({ 
+            isReserved: true,
+            status: 'Occupied',
+            reservedBy: { $in: checkedInPatientIds },
+            checkedInAt: { $ne: null }
+        })
+        .populate('hospital', 'name address contactNumber')
+        .populate({
+            path: 'reservedBy',
+            select: 'firstName lastName email phone patientStatus'
+        });
+
+        res.status(200).json({
+            success: true,
+            count: checkedInICUs.length,
+            patients: checkedInICUs
+        });
+    } catch (error) {
+        next(new ErrorHandler(error.message, 500));
+    }
+};
+
+// Mark fees as paid
+export const markFeesPaid = async (req, res, next) => {
+    try {
+        const { patientId } = req.body;
+
+        if (!patientId) {
+            return res.status(400).json({
+                success: false,
+                message: 'Patient ID is required'
+            });
+        }
+
+        const patient = await User.findByIdAndUpdate(
+            patientId,
+            { feesPaid: true },
+            { new: true }
+        );
+
+        if (!patient) {
+            return res.status(404).json({
+                success: false,
+                message: 'Patient not found'
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: 'Payment confirmed',
+            data: { patientId, feesPaid: true }
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+};
+
 // Calculate fee
 export const calculateFee = async (req, res, next) => {
     try {
@@ -253,29 +351,50 @@ export const calculateFee = async (req, res, next) => {
             return next(new ErrorHandler('Patient ID is required', 400));
         }
 
-        const patient = await User.findById(patientId);
+        const patient = await User.findById(patientId).populate('reservedICU');
         if (!patient) {
             return next(new ErrorHandler('Patient not found', 404));
         }
 
-        // Get patient's ICU if they have one
         let totalFee = 0;
+        let daysStayed = 0;
+        let dailyRate = 0;
+        let checkInDate = null;
+
         if (patient.reservedICU) {
-            const icu = await ICU.findById(patient.reservedICU);
-            if (icu && icu.checkedInAt) {
-                // Calculate days stayed
-                const daysStayed = Math.ceil((Date.now() - icu.checkedInAt.getTime()) / (1000 * 60 * 60 * 24));
-                totalFee = icu.fees * daysStayed;
-            } else if (icu) {
-                totalFee = icu.fees; // Just one day if not checked in yet
+            const icu = patient.reservedICU;
+            dailyRate = icu.fees || 0;
+            
+            if (icu.checkedInAt) {
+                checkInDate = icu.checkedInAt;
+                // Calculate days stayed (minimum 1 day)
+                const msStayed = Date.now() - new Date(icu.checkedInAt).getTime();
+                daysStayed = Math.max(1, Math.ceil(msStayed / (1000 * 60 * 60 * 24)));
+                totalFee = dailyRate * daysStayed;
+            } else {
+                // Not checked in yet - show estimated fee for 1 day
+                daysStayed = 1;
+                totalFee = dailyRate;
             }
         }
 
+        // Update patient's total fees
+        await User.findByIdAndUpdate(patientId, { totalFees: totalFee });
+
         res.status(200).json({
             success: true,
-            patientId,
-            totalFee,
-            message: `Total fee calculated: ${totalFee} EGP`
+            data: {
+                patientId,
+                patientName: `${patient.firstName} ${patient.lastName}`,
+                totalFee,
+                dailyRate,
+                daysStayed,
+                checkInDate,
+                feesPaid: patient.feesPaid || false,
+                icuRoom: patient.reservedICU?.room || 'N/A',
+                status: patient.patientStatus
+            },
+            message: `Total fee: ${totalFee} EGP (${daysStayed} day${daysStayed > 1 ? 's' : ''} × ${dailyRate} EGP/day)`
         });
     } catch (error) {
         next(new ErrorHandler(error.message, 500));

@@ -79,7 +79,7 @@ export const loginUser = async (req, res, next) => {
     const query = email ? { email } : { userName };
     console.log('Query:', query);
     
-    const user = await User.findOne(query).select("+userPass");
+    const user = await User.findOne(query).select("+userPass").populate('assignedHospital', 'name');
     console.log('User found:', user ? `Yes (${user.email})` : 'No');
     
     if (!user) {

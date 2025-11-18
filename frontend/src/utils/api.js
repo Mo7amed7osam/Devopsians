@@ -341,10 +341,12 @@ export const getUserReservedServices = async (userId) => await API.get(`/patient
 // Receptionist APIs
 // ============================================================
 export const getICURequests = async () => await API.get('/receptionist/icu-requests');
+export const getCheckedInPatients = async () => await API.get('/receptionist/checked-in-patients');
 export const reserveICUReceptionist = async (payload) => await API.post('/receptionist/reserve-icu', payload);
 export const checkInPatient = async (payload) => await API.post('/receptionist/check-in', payload);
 export const checkOutPatient = async (payload) => await API.post('/receptionist/check-out', payload);
 export const calculateFeeReceptionist = async (params) => await API.get('/receptionist/calculate-fee', { params });
+export const markFeesPaid = async (payload) => await API.post('/receptionist/mark-fees-paid', payload);
 
 // ============================================================
 // User / Auth helpers

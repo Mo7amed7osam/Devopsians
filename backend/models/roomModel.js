@@ -81,7 +81,6 @@ const ICURoomSchema = new mongoose.Schema(
         fees: {
             type: Number,
             required: true,
-            default: 100,
         },
         isReserved: {
             type: Boolean,

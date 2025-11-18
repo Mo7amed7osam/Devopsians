@@ -2,14 +2,17 @@ import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import styles from './ReceptionistDashboard.module.css';
 import Button from '../../components/common/Button';
-import { getICURequests, fetchActiveAmbulances, checkInPatient, checkOutPatient } from '../../utils/api';
+import { getICURequests, getCheckedInPatients, fetchActiveAmbulances, checkInPatient, checkOutPatient, calculateFeeReceptionist, markFeesPaid } from '../../utils/api';
 import socket from '../../utils/socket';
+import { getUserData } from '../../utils/cookieUtils';
 
 const ReceptionistPanel = () => {
     const [reservations, setReservations] = useState([]);
+    const [checkedInPatients, setCheckedInPatients] = useState([]);
     const [ambulances, setAmbulances] = useState([]);
     const [loading, setLoading] = useState(true);
     const [actionLoading, setActionLoading] = useState(null);
+    const [patientFees, setPatientFees] = useState({});
 
     useEffect(() => {
         loadData();
@@ -57,14 +60,19 @@ const ReceptionistPanel = () => {
     const loadData = async () => {
         setLoading(true);
         try {
-            const [resResponse, ambResponse] = await Promise.all([
+            const [resResponse, checkedInResponse, ambResponse] = await Promise.all([
                 getICURequests(),
+                getCheckedInPatients(),
                 fetchActiveAmbulances()
             ]);
             
             // Handle ICU requests data
             const icuRequests = resResponse.data?.requests || resResponse.data?.data || [];
             setReservations(icuRequests);
+            
+            // Handle checked-in patients data
+            const checkedIn = checkedInResponse.data?.patients || checkedInResponse.data?.data || [];
+            setCheckedInPatients(checkedIn);
             
             // Handle ambulance data - filter for en route ambulances
             const ambulanceData = ambResponse.data?.ambulances || ambResponse.data?.data || [];
@@ -94,44 +102,80 @@ const ReceptionistPanel = () => {
         }
     };
 
-    const handleCheckOut = async (e) => {
-        e.preventDefault();
-        const patientIdOrRoom = e.target.patientId.value.trim();
+    const loadPatientFee = async (patientId) => {
+        try {
+            const response = await calculateFeeReceptionist({ patientId });
+            const feeData = response.data?.data;
+            setPatientFees(prev => ({
+                ...prev,
+                [patientId]: feeData
+            }));
+        } catch (err) {
+            console.error('Error loading fee:', err);
+        }
+    };
+
+    const handleMarkPaid = async (patientId) => {
+        try {
+            setActionLoading(`pay-${patientId}`);
+            await markFeesPaid({ patientId });
+            toast.success('✅ Payment confirmed');
+            
+            // Update local state
+            setPatientFees(prev => ({
+                ...prev,
+                [patientId]: { ...prev[patientId], feesPaid: true }
+            }));
+            
+            // Reload data
+            await loadData();
+        } catch (err) {
+            toast.error(err.response?.data?.message || 'Failed to mark payment');
+        } finally {
+            setActionLoading(null);
+        }
+    };
+
+    const handleCheckOut = async (icuId, patientId) => {
+        if (!icuId || !patientId) {
+            toast.error('Invalid checkout request: Missing ICU ID or Patient ID');
+            return;
+        }
+
+        // Check if fees are loaded
+        if (!patientFees[patientId]) {
+            await loadPatientFee(patientId);
+        }
+
+        const feeInfo = patientFees[patientId];
         
-        if (!patientIdOrRoom) {
-            toast.warn("Please enter a Patient ID or Room #.");
+        // Check payment status
+        if (feeInfo && !feeInfo.feesPaid) {
+            toast.error('❌ Cannot check out: Fees have not been paid. Please process payment first.');
+            return;
+        }
+
+        if (!window.confirm(`Are you sure you want to check out this patient?`)) {
             return;
         }
 
         try {
-            setActionLoading('checkout');
+            setActionLoading(icuId);
             
-            // Try to find ICU by patient ID first, or by room number
-            const icuToCheckout = reservations.find(res => 
-                res.reservedBy?._id === patientIdOrRoom || 
-                res.reservedBy === patientIdOrRoom ||
-                res.room === patientIdOrRoom
-            );
-
-            if (!icuToCheckout) {
-                toast.error(`No active ICU found for: ${patientIdOrRoom}`);
-                setActionLoading(null);
-                return;
-            }
-
-            await checkOutPatient({ 
-                icuId: icuToCheckout._id, 
-                patientId: icuToCheckout.reservedBy?._id || icuToCheckout.reservedBy 
-            });
+            const response = await checkOutPatient({ icuId, patientId });
             
-            toast.success(`Patient discharged. ICU Room ${icuToCheckout.room} is now Available`);
-            e.target.reset();
+            toast.success(`✅ Patient discharged successfully`);
             
-            // Refresh data
-            await loadData();
+            // Remove from local state immediately
+            setCheckedInPatients(prev => prev.filter(icu => icu._id !== icuId));
+            
+            // Refresh data after a short delay
+            setTimeout(() => {
+                loadData();
+            }, 500);
         } catch (err) {
-            console.error('Check-out error:', err);
-            toast.error(err.response?.data?.message || 'Failed to check out patient');
+            const errorMessage = err.response?.data?.message || 'Failed to check out patient';
+            toast.error(`❌ ${errorMessage}`);
         } finally {
             setActionLoading(null);
         }
@@ -140,8 +184,23 @@ const ReceptionistPanel = () => {
     return (
         <div className={styles.dashboard}>
             <header className={styles.header}>
-                <h1>🏥 Receptionist Dashboard</h1>
-                <p>Manage patient arrivals, departures, and real-time ambulance coordination.</p>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '20px' }}>
+                    <div>
+                        <h1>🏥 Receptionist Dashboard</h1>
+                        <p>Manage patient arrivals, departures, and real-time ambulance coordination.</p>
+                    </div>
+                    <div style={{ 
+                        padding: '15px 25px', 
+                        backgroundColor: '#f0f8ff', 
+                        borderRadius: '10px',
+                        border: '2px solid #667eea',
+                        boxShadow: '0 4px 12px rgba(102, 126, 234, 0.15)'
+                    }}>
+                        <div style={{ fontSize: '0.9em', color: '#555', fontWeight: '500' }}>
+                            📍 {getUserData()?.hospitalName || 'Loading...'}
+                        </div>
+                    </div>
+                </div>
             </header>
             <section className={styles.statusPanel}>
                 <h3>🚑 Live Ambulance Tracking ({ambulances.length} En Route)</h3>
@@ -325,24 +384,131 @@ const ReceptionistPanel = () => {
                     )}
                 </section>
                 <section className={styles.formCard}>
-                    <h3>Patient Check-Out</h3>
-                    <p>Discharge a patient and mark their ICU as "Available".</p>
-                    <form onSubmit={handleCheckOut} className={styles.checkoutForm}>
-                        <input 
-                            type="text" 
-                            name="patientId"
-                            placeholder="Enter Patient ID or Room #" 
-                            className={styles.inputField}
-                            disabled={actionLoading === 'checkout'}
-                        />
-                        <Button 
-                            type="submit" 
-                            variant="secondary"
-                            disabled={actionLoading === 'checkout'}
-                        >
-                            {actionLoading === 'checkout' ? 'Processing...' : 'Check-Out Patient'}
-                        </Button>
-                    </form>
+                    <h3>Patient Check-Out ({checkedInPatients.length} Checked In)</h3>
+                    {loading ? (
+                        <div className={styles.placeholder}>Loading checked-in patients...</div>
+                    ) : checkedInPatients.length === 0 ? (
+                        <div className={styles.placeholder}>No patients currently checked in.</div>
+                    ) : (
+                        <div className={styles.reservationList}>
+                            {checkedInPatients.map(icu => {
+                                const patientInfo = icu.reservedBy;
+                                const patientName = patientInfo?.firstName && patientInfo?.lastName 
+                                    ? `${patientInfo.firstName} ${patientInfo.lastName}`
+                                    : `Patient ID: ${patientInfo?._id || patientInfo || 'Unknown'}`;
+                                const patientId = patientInfo?._id || patientInfo;
+                                const checkedInDate = icu.checkedInAt ? new Date(icu.checkedInAt).toLocaleString() : 'N/A';
+                                const feeInfo = patientFees[patientId];
+                                
+                                // Load fee if not already loaded
+                                if (!feeInfo && patientId) {
+                                    loadPatientFee(patientId);
+                                }
+                                
+                                return (
+                                    <div key={icu._id} className={styles.reservationItem}>
+                                        <div className={styles.patientInfo}>
+                                            <span className={styles.patientName}>
+                                                {patientName}
+                                                <span style={{ 
+                                                    marginLeft: '10px', 
+                                                    padding: '3px 8px', 
+                                                    backgroundColor: '#4caf50', 
+                                                    color: 'white', 
+                                                    borderRadius: '4px',
+                                                    fontSize: '0.85em'
+                                                }}>
+                                                    ✅ CHECKED IN
+                                                </span>
+                                            </span>
+                                            <span className={styles.roomInfo}>
+                                                Room: {icu.room} ({icu.specialization})
+                                            </span>
+                                            <span className={styles.hospitalInfo}>
+                                                Hospital: {icu.hospital?.name || 'N/A'}
+                                            </span>
+                                            {patientInfo?.email && (
+                                                <span className={styles.patientEmail}>
+                                                    Email: {patientInfo.email}
+                                                </span>
+                                            )}
+                                            {patientInfo?.phone && (
+                                                <span className={styles.patientPhone}>
+                                                    Phone: {patientInfo.phone}
+                                                </span>
+                                            )}
+                                            <span className={styles.checkedInTime} style={{ color: '#666', fontSize: '0.9em' }}>
+                                                Checked in: {checkedInDate}
+                                            </span>
+                                            {feeInfo && (
+                                                <div style={{ 
+                                                    marginTop: '10px', 
+                                                    padding: '10px', 
+                                                    backgroundColor: '#f0f8ff',
+                                                    borderRadius: '6px',
+                                                    border: '1px solid #667eea'
+                                                }}>
+                                                    <div style={{ fontWeight: '600', color: '#667eea', marginBottom: '5px' }}>
+                                                        💰 Total Fees: {feeInfo.totalFee} EGP
+                                                    </div>
+                                                    <div style={{ fontSize: '0.85em', color: '#666' }}>
+                                                        {feeInfo.daysStayed} day{feeInfo.daysStayed > 1 ? 's' : ''} × {feeInfo.dailyRate} EGP/day
+                                                    </div>
+                                                    {feeInfo.feesPaid ? (
+                                                        <div style={{ 
+                                                            marginTop: '5px',
+                                                            padding: '5px 10px',
+                                                            backgroundColor: '#4caf50',
+                                                            color: 'white',
+                                                            borderRadius: '4px',
+                                                            display: 'inline-block',
+                                                            fontSize: '0.85em',
+                                                            fontWeight: '600'
+                                                        }}>
+                                                            ✅ PAID
+                                                        </div>
+                                                    ) : (
+                                                        <div style={{ 
+                                                            marginTop: '5px',
+                                                            padding: '5px 10px',
+                                                            backgroundColor: '#ff9800',
+                                                            color: 'white',
+                                                            borderRadius: '4px',
+                                                            display: 'inline-block',
+                                                            fontSize: '0.85em',
+                                                            fontWeight: '600'
+                                                        }}>
+                                                            ⏳ UNPAID
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                            {feeInfo && !feeInfo.feesPaid && (
+                                                <Button 
+                                                    variant="success" 
+                                                    className={styles.actionBtn}
+                                                    onClick={() => handleMarkPaid(patientId)}
+                                                    disabled={actionLoading === `pay-${patientId}`}
+                                                >
+                                                    {actionLoading === `pay-${patientId}` ? 'Processing...' : '💳 Mark as Paid'}
+                                                </Button>
+                                            )}
+                                            <Button 
+                                                variant="danger" 
+                                                className={styles.actionBtn}
+                                                onClick={() => handleCheckOut(icu._id, patientId)}
+                                                disabled={actionLoading === icu._id || (feeInfo && !feeInfo.feesPaid)}
+                                            >
+                                                {actionLoading === icu._id ? 'Checking out...' : '🚪 Check-Out Patient'}
+                                            </Button>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
                 </section>
             </div>
         </div>

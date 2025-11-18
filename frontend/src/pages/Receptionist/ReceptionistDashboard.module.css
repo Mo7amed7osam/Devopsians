@@ -1,54 +1,82 @@
 /* src/pages/ReceptionistDashboard.module.css */
 .dashboard {
     padding: 30px;
-    max-width: 1400px;
+    max-width: 1600px;
     margin: 0 auto;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
 }
 
 .header {
     text-align: center;
     margin-bottom: 30px;
-    border-bottom: 2px solid #e0e0e0;
-    padding-bottom: 15px;
+    background: white;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
 }
 
 .header h1 {
-    color: var(--color-primary-dark, #0056b3);
+    color: #667eea;
     margin-top: 0;
+    font-size: 2.2em;
+    font-weight: 700;
 }
 
 .header p {
     font-size: 1.1em;
     color: #6c757d;
+    margin: 10px 0 0 0;
 }
 
 .grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 30px;
+    grid-template-columns: repeat(auto-fit, minmax(550px, 1fr));
+    gap: 25px;
     align-items: start;
 }
 
+@media (max-width: 1200px) {
+    .grid {
+        grid-template-columns: 1fr;
+    }
+}
+
 .formCard {
-    background-color: white;
-    padding: 25px;
-    border-radius: 8px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.formCard:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
 }
 
 .formCard h3 {
     margin-top: 0;
-    border-bottom: 1px dashed #eee;
-    padding-bottom: 10px;
+    margin-bottom: 20px;
+    color: #667eea;
+    font-size: 1.4em;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-bottom: 15px;
+    border-bottom: 3px solid #f0f0f0;
 }
 
 .placeholder {
-    padding: 40px 20px;
+    padding: 60px 20px;
     text-align: center;
-    background-color: #f8f9fa;
-    border: 1px dashed #ccc;
-    border-radius: 5px;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    border: 2px dashed #667eea;
+    border-radius: 12px;
     color: #6c757d;
+    font-size: 1.1em;
+    font-weight: 500;
 }
 
 .inputField {
@@ -61,17 +89,34 @@
 }
 
 .statusPanel {
-    background-color: #fff;
-    padding: 20px 25px;
-    border-radius: 8px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-    margin-bottom: 30px;
-    border-top: 4px solid var(--color-primary, #007bff);
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    margin-bottom: 25px;
+    border-left: 6px solid #667eea;
+    position: relative;
+    overflow: hidden;
+}
+
+.statusPanel::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
 }
 
 .statusPanel h3 {
     margin-top: 0;
-    color: var(--color-primary-dark);
+    color: #667eea;
+    font-size: 1.5em;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
 .ambulanceList {
@@ -85,19 +130,34 @@
     display: grid;
     grid-template-columns: auto 1fr auto;
     align-items: center;
-    gap: 15px;
-    padding: 10px;
-    border-radius: 5px;
-    background-color: #f8f9fa;
-    border: 1px solid #e0e0e0;
+    gap: 20px;
+    padding: 18px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #fff5e6 0%, #ffe4cc 100%);
+    border: 2px solid #ff9800;
+    box-shadow: 0 4px 12px rgba(255, 152, 0, 0.15);
+    transition: all 0.2s ease;
+}
+
+.ambulanceItem:hover {
+    transform: translateX(5px);
+    box-shadow: 0 6px 16px rgba(255, 152, 0, 0.25);
 }
 
 .ambulanceInfo {
-    font-size: 1.1em;
+    font-size: 1.05em;
+    color: #333;
+}
+
+.ambulanceInfo strong {
+    color: #ff6f00;
+    font-weight: 600;
 }
 
 .ambulanceEta {
-    font-size: 1.1em;
+    font-size: 1.05em;
+    font-weight: 600;
+    text-align: right;
 }
 
 .noAmbulance {
@@ -106,16 +166,24 @@
 }
 
 .statusBadge {
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 0.9em;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.85em;
     font-weight: 700;
-    color: white;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 .statusEnRoute {
-    background-color: var(--color-warning, #ffc107);
-    color: #333;
+    background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
+    color: #fff;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.85; }
 }
 
 .reservationList {
@@ -129,17 +197,20 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 15px;
-    padding: 15px;
-    border-radius: 8px;
-    background-color: #f8f9fa;
-    border: 1px solid #e0e0e0;
-    transition: all 0.2s ease;
+    gap: 20px;
+    padding: 20px;
+    border-radius: 10px;
+    background: white;
+    border: 2px solid #e8eaf6;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
 }
 
 .reservationItem:hover {
-    background-color: #e9ecef;
-    border-color: #007bff;
+    background: linear-gradient(135deg, #f5f7ff 0%, #e8eaf6 100%);
+    border-color: #667eea;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.2);
 }
 
 .patientInfo {
@@ -150,34 +221,77 @@
 }
 
 .patientName {
-    font-size: 1.1em;
-    font-weight: 600;
-    color: #333;
+    font-size: 1.15em;
+    font-weight: 700;
+    color: #2d3748;
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
 .roomInfo {
     font-size: 0.95em;
-    color: #555;
+    color: #4a5568;
+    font-weight: 500;
 }
 
 .hospitalInfo {
     font-size: 0.9em;
-    color: #666;
+    color: #718096;
 }
 
 .patientEmail {
     font-size: 0.85em;
-    color: #007bff;
+    color: #667eea;
+    font-weight: 500;
 }
 
 .patientPhone {
     font-size: 0.85em;
-    color: #28a745;
+    color: #48bb78;
+    font-weight: 500;
+}
+
+.checkedInTime {
+    font-size: 0.85em;
+    color: #718096;
+    font-style: italic;
+}
+
+.pickupInfo {
+    font-size: 0.9em;
+    padding: 5px 10px;
+    background: #fff3cd;
+    border-radius: 5px;
+    display: inline-block;
+}
+
+.ambulanceInfo {
+    font-size: 0.9em;
+    padding: 5px 10px;
+    background: #d1ecf1;
+    border-radius: 5px;
+    display: inline-block;
 }
 
 .actionBtn {
     white-space: nowrap;
-    min-width: 120px;
+    min-width: 160px;
+    font-weight: 600;
+    font-size: 0.95em;
+    padding: 12px 24px;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.actionBtn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+}
+
+.actionBtn:active {
+    transform: translateY(0);
 }
 
 .checkoutForm {

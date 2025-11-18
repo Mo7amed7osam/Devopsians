@@ -1,10 +1,12 @@
 import express from 'express';
 import { 
     reserveICU, 
-    calculateFee, 
+    calculateFee,
+    markFeesPaid, 
     checkInPatient, 
     checkOutPatient, 
     getICURequests,
+    getCheckedInPatients,
     approveICURequest 
 } from '../controllers/receptionistController.js';
 import { isAuthenticated, authorizeRoles } from '../utils/authMiddleware.js';
@@ -13,6 +15,9 @@ const router = express.Router();
 
 // Get all ICU requests (reserved ICUs)
 router.get('/icu-requests', isAuthenticated, authorizeRoles('Admin', 'Manager', 'Receptionist'), getICURequests);
+
+// Get checked-in patients
+router.get('/checked-in-patients', isAuthenticated, authorizeRoles('Admin', 'Manager', 'Receptionist'), getCheckedInPatients);
 
 // Approve ICU request and assign ambulance if needed
 router.post('/approve-request', isAuthenticated, authorizeRoles('Admin', 'Manager', 'Receptionist'), approveICURequest);
@@ -28,5 +33,8 @@ router.post('/check-out', isAuthenticated, authorizeRoles('Admin', 'Manager', 'R
 
 // Calculate patient fees
 router.get('/calculate-fee', isAuthenticated, authorizeRoles('Admin', 'Manager', 'Receptionist'), calculateFee);
+
+// Mark fees as paid
+router.post('/mark-fees-paid', isAuthenticated, authorizeRoles('Admin', 'Manager', 'Receptionist'), markFeesPaid);
 
 export default router;

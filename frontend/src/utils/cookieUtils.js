@@ -5,6 +5,7 @@ const TOKEN_KEY = 'auth_token';
 const ROLE_KEY = 'user_role';
 const USER_NAME_KEY = 'user_name';
 const USER_ID_KEY = 'user_id';
+const HOSPITAL_NAME_KEY = 'hospital_name';
 
 // ============================================================
 //   TOKEN MANAGEMENT — stored in secure cookies
@@ -83,6 +84,32 @@ export const removeUserName = () => {
 };
 
 // ============================================================
+//    HOSPITAL NAME MANAGEMENT — stored in localStorage
+// ============================================================
+
+/**
+ * Stores the hospital name.
+ * @param {string} hospitalName
+ */
+export const setHospitalName = (hospitalName) => {
+  if (hospitalName) {
+    localStorage.setItem(HOSPITAL_NAME_KEY, hospitalName);
+  }
+};
+
+/**
+ * Retrieves the stored hospital name.
+ */
+export const getHospitalName = () => localStorage.getItem(HOSPITAL_NAME_KEY);
+
+/**
+ * Removes the stored hospital name.
+ */
+export const removeHospitalName = () => {
+  localStorage.removeItem(HOSPITAL_NAME_KEY);
+};
+
+// ============================================================
 //    USER ID MANAGEMENT — stored in localStorage
 // ============================================================
 
@@ -136,6 +163,13 @@ export const saveSession = (token, role, user = null) => {
     }
     const uid = user.id || user._id; // support both shapes
     if (uid) setUserId(uid);
+    
+    // Store hospital name if available (for receptionists, managers, etc.)
+    if (user.assignedHospital?.name) {
+      setHospitalName(user.assignedHospital.name);
+    } else if (user.hospitalName) {
+      setHospitalName(user.hospitalName);
+    }
   }
 };
 
@@ -147,6 +181,7 @@ export const clearSession = () => {
   removeRole();
   removeUserName();
   removeUserId();
+  removeHospitalName();
 };
 
 /**
@@ -157,5 +192,6 @@ export const getUserData = () => {
   const role = getRole();
   const name = getUserName();
   const id = getUserId();
-  return token ? { token, role, name, id } : null;
+  const hospitalName = getHospitalName();
+  return token ? { token, role, name, id, hospitalName } : null;
 };

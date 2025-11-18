@@ -94,6 +94,10 @@ const userSchema = new mongoose.Schema(
             type: Number,
             default: 0,
         },
+        feesPaid: {
+            type: Boolean,
+            default: false,
+        },
 
         // Specific fields for Managers
         assignedDepartments: [{ type: mongoose.Schema.Types.ObjectId, ref: "Department" }],

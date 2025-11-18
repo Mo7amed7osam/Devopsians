@@ -29,8 +29,6 @@ const app = express();
 const httpServer = createServer(app);
 const port = process.env.PORT || 3030;
 const mongoUrl = process.env.MONGO_URL;
-console.log('MongoDB URL:', mongoUrl);
-console.log('Environment variables:', process.env);
 
 // MongoDB Connection
 (async () => {
