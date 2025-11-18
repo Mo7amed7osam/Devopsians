@@ -47,6 +47,18 @@ export const updateAmbulanceStatus = async (req, res, next) => {
     if (location) ambulance.currentLocation = location;
     if (eta) ambulance.eta = eta;
 
+    // If status is set to ARRIVED_HOSPITAL, automatically transition to AVAILABLE
+    // and clear assignment details after a brief moment
+    if (status === "ARRIVED_HOSPITAL") {
+      // Set to AVAILABLE immediately
+      ambulance.status = "AVAILABLE";
+      // Clear assignment details
+      ambulance.assignedPatient = null;
+      ambulance.assignedHospital = null;
+      ambulance.destination = null;
+      ambulance.eta = null;
+    }
+
     await ambulance.save();
 
     // Emit socket event for real-time update
@@ -61,7 +73,9 @@ export const updateAmbulanceStatus = async (req, res, next) => {
 
     res.status(200).json({
       success: true,
-      message: "Ambulance status updated successfully",
+      message: ambulance.status === "AVAILABLE" 
+        ? "Ambulance status updated to AVAILABLE and is now ready for new assignments"
+        : "Ambulance status updated successfully",
       ambulance,
     });
   } catch (error) {
@@ -367,8 +381,12 @@ export const markPatientArrived = async (req, res, next) => {
     patient.patientStatus = 'ARRIVED';
     await patient.save();
 
-    // Update ambulance status
-    ambulance.status = 'ARRIVED_HOSPITAL';
+    // Update ambulance status to AVAILABLE and clear assignment
+    ambulance.status = 'AVAILABLE';
+    ambulance.assignedPatient = null;
+    ambulance.assignedHospital = null;
+    ambulance.destination = null;
+    ambulance.eta = null;
     await ambulance.save();
 
     // Emit socket event
@@ -379,11 +397,19 @@ export const markPatientArrived = async (req, res, next) => {
         patientName: `${patient.firstName} ${patient.lastName}`,
         hospitalId: ambulance.assignedHospital,
       });
+      
+      // Emit ambulance available event
+      io.emit("ambulanceStatusUpdate", {
+        ambulanceId: ambulance._id,
+        status: ambulance.status,
+        location: ambulance.currentLocation,
+        message: "Ambulance is now available for new assignments"
+      });
     }
 
     res.status(200).json({
       success: true,
-      message: "Patient has arrived at hospital. Receptionist can now check them in.",
+      message: "Patient has arrived at hospital. Ambulance is now available for new assignments.",
       patient,
       ambulance,
     });

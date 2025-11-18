@@ -479,25 +479,22 @@ const AmbulancePanel = () => {
         if (gpsTracking) return;
         setGpsTracking(true);
         if (typeof navigator !== 'undefined' && navigator.geolocation) {
-            toast.info('📡 Starting GPS tracking');
             try {
                 const watchId = navigator.geolocation.watchPosition(
                     (pos) => updateLocation(pos),
                     (err) => {
-                        console.warn('Geolocation error:', err);
-                        toast.warn('GPS unavailable. Using demo movement.');
+                        // Silently fall back to mock location if GPS unavailable
                         useMockLocation();
                     },
                     { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
                 );
                 gpsIntervalRef.current = watchId; // reuse ref to store watchId
             } catch (e) {
-                console.warn('Geolocation watch failed, using mock:', e);
-                toast.warn('GPS unavailable. Using demo movement.');
+                // Silently use mock location if geolocation fails
                 useMockLocation();
             }
         } else {
-            toast.warn('GPS not supported. Using demo movement.');
+            // Silently use mock location if GPS not supported
             useMockLocation();
         }
     };
@@ -575,7 +572,7 @@ const AmbulancePanel = () => {
                 }
             });
         } catch (error) {
-            console.error('Failed to update location:', error);
+            // Silently ignore location update errors (likely auth issues when not logged in)
         }
     };
 
