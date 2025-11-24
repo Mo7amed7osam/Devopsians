@@ -65,6 +65,18 @@ app.use(
   })
 );
 
+// Health Check Endpoint
+app.get("/health", (req, res) => {
+  const healthcheck = {
+    uptime: process.uptime(),
+    message: "OK",
+    timestamp: Date.now(),
+    environment: process.env.NODE_ENV || "development",
+    database: mongoose.connection.readyState === 1 ? "connected" : "disconnected"
+  };
+  res.status(200).json(healthcheck);
+});
+
 // Routes
 app.use("/admin", adminRoutes);
 app.use("/patient", patientRoutes);

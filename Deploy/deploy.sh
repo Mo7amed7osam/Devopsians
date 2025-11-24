@@ -94,38 +94,63 @@ check_prerequisites() {
     print_success "Prerequisites check passed"
 }
 
-# Pull latest images
-pull_images() {
-    print_info "Pulling latest Docker images..."
-    docker-compose pull || docker compose pull
-    print_success "Images pulled successfully"
+# Build or pull images
+build_or_pull_images() {
+    # Check if we should build locally or pull from registry
+    if [ -f "docker-compose.local.yml" ] && [ "${DEPLOY_ENV:-development}" = "development" ]; then
+        print_info "Building Docker images locally..."
+        docker-compose -f docker-compose.local.yml build || docker compose -f docker-compose.local.yml build
+        COMPOSE_FILE="docker-compose.local.yml"
+        print_success "Images built successfully"
+    else
+        print_info "Pulling latest Docker images from registry..."
+        docker-compose pull || docker compose pull
+        COMPOSE_FILE="docker-compose.yml"
+        print_success "Images pulled successfully"
+    fi
 }
 
 # Stop existing containers
 stop_containers() {
     print_info "Stopping existing containers..."
-    docker-compose down || docker compose down || true
+    if [ -n "${COMPOSE_FILE}" ]; then
+        docker-compose -f "${COMPOSE_FILE}" down || docker compose -f "${COMPOSE_FILE}" down || true
+    else
+        docker-compose down || docker compose down || true
+    fi
     print_success "Containers stopped"
 }
 
 # Start containers
 start_containers() {
     print_info "Starting containers..."
-    docker-compose up -d || docker compose up -d
+    if [ -n "${COMPOSE_FILE}" ]; then
+        docker-compose -f "${COMPOSE_FILE}" up -d || docker compose -f "${COMPOSE_FILE}" up -d
+    else
+        docker-compose up -d || docker compose up -d
+    fi
     print_success "Containers started successfully"
 }
 
 # Show status
 show_status() {
     print_info "Container Status:"
-    docker-compose ps || docker compose ps
+    if [ -n "${COMPOSE_FILE}" ]; then
+        docker-compose -f "${COMPOSE_FILE}" ps || docker compose -f "${COMPOSE_FILE}" ps
+    else
+        docker-compose ps || docker compose ps
+    fi
     
     echo ""
     print_info "Waiting for services to be healthy..."
     sleep 5
     
     # Check health
-    docker-compose ps || docker compose ps
+    if [ -n "${COMPOSE_FILE}" ]; then
+        docker-compose -f "${COMPOSE_FILE}" ps || docker compose -f "${COMPOSE_FILE}" ps
+    else
+        docker-compose ps || docker compose ps
+    fi
     
     echo ""
     print_success "Deployment completed!"
@@ -140,11 +165,18 @@ show_status() {
 # Show logs
 show_logs() {
     print_info "Showing logs (Ctrl+C to exit)..."
-    docker-compose logs -f || docker compose logs -f
+    if [ -n "${COMPOSE_FILE}" ]; then
+        docker-compose -f "${COMPOSE_FILE}" logs -f || docker compose -f "${COMPOSE_FILE}" logs -f
+    else
+        docker-compose logs -f || docker compose logs -f
+    fi
 }
 
 # Main deployment flow
 main() {
+    # Compose file to use (set by build_or_pull_images)
+    COMPOSE_FILE=""
+    
     echo ""
     echo "=========================================="
     echo "  Devopsians Deployment Script"
@@ -174,7 +206,7 @@ main() {
     detect_environment
     check_prerequisites
     stop_containers
-    pull_images
+    build_or_pull_images
     start_containers
     show_status
     

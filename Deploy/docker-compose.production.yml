@@ -1,0 +1,214 @@
+version: "3.8"
+
+services:
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    container_name: devopsians-nginx-${DEPLOY_ENV:-production}
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - nginx_logs:/var/log/nginx
+    networks:
+      - devopsians-net
+    depends_on:
+      - frontend
+      - backend
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # MongoDB Database Service
+  mongodb:
+    image: mongo:7-jammy
+    container_name: devopsians-mongodb-${DEPLOY_ENV:-production}
+    restart: unless-stopped
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_ROOT_USERNAME:-admin}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_ROOT_PASSWORD:-adminpassword}
+      - MONGO_INITDB_DATABASE=${MONGO_DATABASE:-devopsians}
+    # DON'T expose MongoDB port in production - only internal access
+    ports:
+      - "127.0.0.1:${MONGO_PORT:-27017}:27017"  # Bind to localhost only
+    volumes:
+      - mongodb_data:/data/db
+      - mongodb_config:/data/configdb
+      - ./backups:/backups  # For backup scripts
+    networks:
+      - devopsians-net
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+  # Backend API Service
+  backend:
+    image: ${DOCKERHUB_USERNAME:-mahmoud8824}/devopsians-backend:${IMAGE_TAG:-latest}
+    container_name: devopsians-backend-${DEPLOY_ENV:-production}
+    restart: unless-stopped
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    # Don't expose backend port in production - use nginx instead
+    expose:
+      - "3030"
+    environment:
+      # Environment Detection
+      - NODE_ENV=${NODE_ENV:-production}
+      - DEPLOY_ENV=${DEPLOY_ENV:-production}
+      
+      # Server Configuration
+      - PORT=3030
+      - HOST=0.0.0.0
+      
+      # Database Configuration
+      - MONGO_URL=${MONGO_URL:-mongodb://admin:adminpassword@mongodb:27017/devopsians?authSource=admin}
+      
+      # JWT Configuration
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-change-this-secret-in-production}
+      - JWT_EXPIRES=${JWT_EXPIRES:-1d}
+      
+      # Frontend URL
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost}
+      
+      # Email Configuration (Optional)
+      - EMAIL_USER=${EMAIL_USER:-}
+      - EMAIL_PASS=${EMAIL_PASS:-}
+      
+      # Logging
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      
+      # Rate Limiting
+      - RATE_LIMIT_WINDOW_MS=${RATE_LIMIT_WINDOW_MS:-900000}
+      - RATE_LIMIT_MAX_REQUESTS=${RATE_LIMIT_MAX_REQUESTS:-100}
+    networks:
+      - devopsians-net
+    volumes:
+      - backend_logs:/app/logs
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3030/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    labels:
+      - "com.devopsians.environment=${DEPLOY_ENV:-production}"
+      - "com.devopsians.service=backend"
+      - "com.devopsians.version=${IMAGE_TAG:-latest}"
+
+  # Frontend Web Service
+  frontend:
+    image: ${DOCKERHUB_USERNAME:-mahmoud8824}/devopsians-frontend:${IMAGE_TAG:-latest}
+    container_name: devopsians-frontend-${DEPLOY_ENV:-production}
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+    expose:
+      - "80"
+    environment:
+      - VITE_API_URL=${VITE_API_URL:-http://localhost:3030}
+      - DEPLOY_ENV=${DEPLOY_ENV:-production}
+    networks:
+      - devopsians-net
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+    labels:
+      - "com.devopsians.environment=${DEPLOY_ENV:-production}"
+      - "com.devopsians.service=frontend"
+      - "com.devopsians.version=${IMAGE_TAG:-latest}"
+
+  # Monitoring - Prometheus
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: devopsians-prometheus
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    networks:
+      - devopsians-net
+    profiles:
+      - monitoring
+
+  # Monitoring - Grafana
+  grafana:
+    image: grafana/grafana:latest
+    container_name: devopsians-grafana
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3100:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources:ro
+    networks:
+      - devopsians-net
+    depends_on:
+      - prometheus
+    profiles:
+      - monitoring
+
+volumes:
+  mongodb_data:
+    name: devopsians-mongodb-data-${DEPLOY_ENV:-production}
+  mongodb_config:
+    name: devopsians-mongodb-config-${DEPLOY_ENV:-production}
+  backend_logs:
+    name: devopsians-backend-logs-${DEPLOY_ENV:-production}
+  nginx_logs:
+    name: devopsians-nginx-logs-${DEPLOY_ENV:-production}
+  prometheus_data:
+    name: devopsians-prometheus-data
+  grafana_data:
+    name: devopsians-grafana-data
+
+networks:
+  devopsians-net:
+    name: devopsians-net-${DEPLOY_ENV:-production}
+    driver: bridge
