@@ -1,0 +1,22 @@
+# Environment files
+.env
+.env.local
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Backup files
+*.backup
+backup/
+backups/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Windows command output files
+nul
+*.tmp

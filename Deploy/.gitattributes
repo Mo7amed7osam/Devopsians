@@ -1,0 +1,16 @@
+# Handle line endings automatically for cross-platform development
+* text=auto
+
+# Shell scripts should always use LF (Unix-style line endings)
+*.sh text eol=lf
+
+# Windows batch files should always use CRLF
+*.bat text eol=crlf
+
+# Binary files
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
