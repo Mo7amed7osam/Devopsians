@@ -1,5 +1,5 @@
 # Devopsians
-lol
+
 Full‑stack hospital management app with a Node.js/Express + MongoDB backend and a React (Vite) frontend. Dockerfiles and a production docker‑compose stack are included, along with a Jenkins pipeline for CI/CD.
 
 Frontend runs on port 80 (Nginx). Backend API runs on port 3030.
