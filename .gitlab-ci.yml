@@ -1,22 +1,5 @@
 # -----------------------------------------------
-# Devopsians – GitLab CI/CD Pipeline
-# -----------------------------------------------
-# Stages:
-# 1. prepare   -> Install dependencies
-# 2. test      -> Run test placeholder
-# 3. build     -> Build frontend
-# 4. docker    -> Build & push Docker images
-# 5. deploy    -> Deploy to EC2 via SSH + docker compose
-#
-# Required Variables (GitLab > Settings > CI/CD > Variables):
-#   DOCKERHUB_USERNAME
-#   DOCKERHUB_PASSWORD
-#   EC2_HOST
-#   EC2_USER
-#   EC2_SSH_KEY
-#   MONGO_URL
-#   FRONTEND_URL
-#   VITE_API_URL (optional)
+# Devopsians – GitLab CI/CD Pipeline (Fixed)
 # -----------------------------------------------
 
 stages:
@@ -26,7 +9,6 @@ stages:
   - docker
   - deploy
 
-# Use workflow rules to define when pipeline triggers
 workflow:
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
@@ -96,28 +78,30 @@ docker:
   services:
     - name: docker:24.0.7-dind
       command: ["--tls=false"]
-  variables:
-    DOCKER_HOST: tcp://docker:2375
-    DOCKER_DRIVER: overlay2
-    DOCKER_TLS_CERTDIR: ""
-    IMAGE_TAG: ${IMAGE_TAG:-$CI_PIPELINE_IID}
   needs: ["build"]
   before_script:
-    - apk add --no-cache bash openssh-client
+    - apk add --no-cache bash git openssh-client
     - docker version
     - echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
   script:
+    # Ensure IMAGE_TAG is never empty
+    - export IMAGE_TAG=${IMAGE_TAG:-$CI_COMMIT_SHORT_SHA}
+    - echo "Using IMAGE_TAG=$IMAGE_TAG"
+
+    # Build backend
     - echo "Building backend..."
-    - docker build -t $DOCKERHUB_USERNAME/devopsians-backend:$IMAGE_TAG -t $DOCKERHUB_USERNAME/devopsians-backend:latest -f backend/Dockerfile .
+    - docker build -t "${DOCKERHUB_USERNAME}/devopsians-backend:${IMAGE_TAG}" -t "${DOCKERHUB_USERNAME}/devopsians-backend:latest" -f backend/Dockerfile .
 
+    # Build frontend
     - echo "Building frontend..."
-    - docker build --build-arg VITE_API_URL=${VITE_API_URL:-http://localhost:3030} -t $DOCKERHUB_USERNAME/devopsians-frontend:$IMAGE_TAG -t $DOCKERHUB_USERNAME/devopsians-frontend:latest -f frontend/Dockerfile .
+    - docker build --build-arg VITE_API_URL=${VITE_API_URL:-http://localhost:3030} -t "${DOCKERHUB_USERNAME}/devopsians-frontend:${IMAGE_TAG}" -t "${DOCKERHUB_USERNAME}/devopsians-frontend:latest" -f frontend/Dockerfile .
 
+    # Push images
     - echo "Pushing images..."
-    - docker push $DOCKERHUB_USERNAME/devopsians-backend:$IMAGE_TAG
-    - docker push $DOCKERHUB_USERNAME/devopsians-backend:latest
-    - docker push $DOCKERHUB_USERNAME/devopsians-frontend:$IMAGE_TAG
-    - docker push $DOCKERHUB_USERNAME/devopsians-frontend:latest
+    - docker push "${DOCKERHUB_USERNAME}/devopsians-backend:${IMAGE_TAG}"
+    - docker push "${DOCKERHUB_USERNAME}/devopsians-backend:latest"
+    - docker push "${DOCKERHUB_USERNAME}/devopsians-frontend:${IMAGE_TAG}"
+    - docker push "${DOCKERHUB_USERNAME}/devopsians-frontend:latest"
   only:
     - main
 
@@ -127,24 +111,35 @@ docker:
 deploy:
   stage: deploy
   image: alpine:3.20
-  variables:
-    COMPOSE_FILE: ${DOCKER_COMPOSE_FILE:-Deploy/docker-compose.yml}
   needs: ["docker"]
   before_script:
     - apk add --no-cache openssh-client bash curl
     - mkdir -p ~/.ssh
-    - echo "$EC2_SSH_KEY" > ~/.ssh/id_rsa
+    - echo "$EC2_SSH_KEY" | tr -d '\r' > ~/.ssh/id_rsa
     - chmod 600 ~/.ssh/id_rsa
-    - echo -e "Host *\n  StrictHostKeyChecking no" > ~/.ssh/config
+    - echo "Host *" > ~/.ssh/config
+    - echo "  StrictHostKeyChecking no" >> ~/.ssh/config
   script:
-    - echo "Uploading docker-compose.yml ..."
-    - scp $COMPOSE_FILE ${EC2_USER}@${EC2_HOST}:~/docker-compose.yml
-    - echo "Creating environment file ..."
-    - ssh ${EC2_USER}@${EC2_HOST} "echo NODE_ENV=production > ~/devopsians.env && echo PORT=3030 >> ~/devopsians.env && echo DOCKERHUB_USERNAME=$DOCKERHUB_USERNAME >> ~/devopsians.env && echo FRONTEND_URL=$FRONTEND_URL >> ~/devopsians.env && echo MONGO_URL=$MONGO_URL >> ~/devopsians.env"
-    - echo "Deploying containers ..."
-    - ssh ${EC2_USER}@${EC2_HOST} "docker pull $DOCKERHUB_USERNAME/devopsians-backend:latest && docker pull $DOCKERHUB_USERNAME/devopsians-frontend:latest && docker compose -f docker-compose.yml down || true && source ~/devopsians.env && docker compose -f docker-compose.yml up -d"
-    - echo "Performing health check ..."
-    - ssh ${EC2_USER}@${EC2_HOST} "sleep 10 && curl -f http://localhost || echo 'Frontend not responding'"
+    - export COMPOSE_FILE="${DOCKER_COMPOSE_FILE:-Deploy/docker-compose.yml}"
+    - test -f "${COMPOSE_FILE}" || (echo "ERROR - Compose file not found at ${COMPOSE_FILE}" && exit 1)
+    - echo "Uploading ${COMPOSE_FILE} to remote server..."
+    - scp "${COMPOSE_FILE}" ${EC2_USER}@${EC2_HOST}:~/docker-compose.yml
+    - echo "Creating environment file on remote..."
+    - ssh ${EC2_USER}@${EC2_HOST} "echo NODE_ENV=production > ~/devopsians.env"
+    - ssh ${EC2_USER}@${EC2_HOST} "echo PORT=3030 >> ~/devopsians.env"
+    - ssh ${EC2_USER}@${EC2_HOST} "echo DOCKERHUB_USERNAME=${DOCKERHUB_USERNAME} >> ~/devopsians.env"
+    - ssh ${EC2_USER}@${EC2_HOST} "echo FRONTEND_URL=${FRONTEND_URL} >> ~/devopsians.env"
+    - ssh ${EC2_USER}@${EC2_HOST} "echo MONGO_URL=${MONGO_URL} >> ~/devopsians.env"
+    - echo "Pulling latest images and restarting services..."
+    - ssh ${EC2_USER}@${EC2_HOST} "docker pull ${DOCKERHUB_USERNAME}/devopsians-backend:latest"
+    - ssh ${EC2_USER}@${EC2_HOST} "docker pull ${DOCKERHUB_USERNAME}/devopsians-frontend:latest"
+    - ssh ${EC2_USER}@${EC2_HOST} "docker compose -f ~/docker-compose.yml down || true"
+    - ssh ${EC2_USER}@${EC2_HOST} "export \$(cat ~/devopsians.env | xargs) && docker compose -f ~/docker-compose.yml up -d"
+    - echo "Waiting for services to start..."
+    - sleep 15
+    - echo "Running health check..."
+    - ssh ${EC2_USER}@${EC2_HOST} "curl -f http://localhost:80 || echo 'WARNING - Frontend not responding on port 80'"
+    - ssh ${EC2_USER}@${EC2_HOST} "curl -f http://localhost:3030 || echo 'WARNING - Backend not responding on port 3030'"
   environment:
     name: production
     url: $FRONTEND_URL
