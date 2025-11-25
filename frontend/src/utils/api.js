@@ -220,6 +220,8 @@ export const deleteUserById = async (userId) => await API.delete(`/admin/delete-
 export const blockUserById = async (userId) => await API.put(`/admin/block-user/${userId}`);
 export const unblockUserById = async (userId) => await API.put(`/admin/unblock-user/${userId}`);
 export const updateUserById = async (userId, payload) => await API.put(`/admin/update-user/${userId}`, payload);
+// Live locations (polling) - returns minimal user location data
+export const fetchLiveLocations = async () => await API.get('/user/live-locations');
 
 /**
  * Fetches system-wide statistics (e.g., total ICUs, occupied count).
@@ -415,6 +417,14 @@ export const getMyAmbulanceRequest = async () => await API.get('/ambulance/my-re
  * Ambulance fetches their accepted request
  */
 export const getMyAcceptedRequest = async () => await API.get('/ambulance/my-accepted-request');
+
+/**
+ * Notify patient that ambulance is waiting at pickup location
+ * @param {string} ambulanceId
+ * @param {object} payload - { patientId, note? }
+ */
+export const notifyPatientWaiting = async (ambulanceId, payload) =>
+  await API.post(`/ambulance/${ambulanceId}/notify-waiting`, payload);
 
 
 // ============================================================

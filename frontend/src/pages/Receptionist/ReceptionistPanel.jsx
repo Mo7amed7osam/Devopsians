@@ -3,6 +3,7 @@ import { toast } from 'react-toastify';
 import styles from './ReceptionistDashboard.module.css';
 import Button from '../../components/common/Button';
 import { getICURequests, getCheckedInPatients, fetchActiveAmbulances, checkInPatient, checkOutPatient, calculateFeeReceptionist, markFeesPaid } from '../../utils/api';
+import useLiveLocations from '../../utils/useLiveLocations';
 import socket from '../../utils/socket';
 import { getUserData } from '../../utils/cookieUtils';
 
@@ -13,6 +14,8 @@ const ReceptionistPanel = () => {
     const [loading, setLoading] = useState(true);
     const [actionLoading, setActionLoading] = useState(null);
     const [patientFees, setPatientFees] = useState({});
+    // Live polling of all user locations (including ambulances) every 5s
+    const { locations: liveLocations } = useLiveLocations(true, 5000);
 
     useEffect(() => {
         loadData();
@@ -85,6 +88,41 @@ const ReceptionistPanel = () => {
             setLoading(false);
         }
     };
+
+    // Fallback polling update for ambulances (merge with socket updates)
+    useEffect(() => {
+        if (!liveLocations || liveLocations.length === 0) return;
+        // Filter only ambulance users that are en route
+        const polledAmbulances = liveLocations
+            .filter(u => u.role === 'Ambulance' && u.status === 'EN_ROUTE' && Array.isArray(u.coordinates) && u.coordinates.length === 2)
+            .map(u => ({
+                _id: u.id,
+                firstName: (u.name || '').split(' ')[0] || 'Ambulance',
+                lastName: (u.name || '').split(' ').slice(1).join(' '),
+                userName: u.name,
+                status: 'EN_ROUTE',
+                currentLocation: { type: 'Point', coordinates: u.coordinates },
+                eta: u.eta,
+                destination: u.destination,
+                assignedPatient: null,
+            }));
+
+        // Merge with existing ambulances, preferring socket-updated entries
+        setAmbulances(prev => {
+            const byId = new Map(prev.map(a => [a._id, a]));
+            polledAmbulances.forEach(p => {
+                if (!byId.has(p._id)) {
+                    byId.set(p._id, p);
+                } else {
+                    // Merge location & eta updates, keep other fields
+                    const existing = byId.get(p._id);
+                    byId.set(p._id, { ...existing, currentLocation: p.currentLocation || existing.currentLocation, eta: p.eta || existing.eta });
+                }
+            });
+            // Only keep EN_ROUTE for display
+            return Array.from(byId.values()).filter(a => a.status === 'EN_ROUTE');
+        });
+    }, [liveLocations]);
 
     const handleCheckIn = async (icuId, patientId, icuRoom) => {
         try {

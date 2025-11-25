@@ -14,6 +14,7 @@ import {
   cancelAmbulanceRequest,
   getMyAmbulanceRequest,
   getMyAcceptedRequest,
+  notifyPatientWaiting,
 } from "../controllers/ambulanceController.js";
 import { isAuthenticated, authorizeRoles } from "../utils/authMiddleware.js";
 
@@ -133,6 +134,14 @@ router.post(
   isAuthenticated,
   authorizeRoles("Ambulance"),
   markPatientArrived
+);
+
+// Notify patient that ambulance is waiting at pickup location
+router.post(
+  "/:ambulanceId/notify-waiting",
+  isAuthenticated,
+  authorizeRoles("Ambulance"),
+  notifyPatientWaiting
 );
 
 export default router;

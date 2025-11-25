@@ -213,3 +213,37 @@ export const sendemail = async (req, res, next) => {
       res.status(500).json({ error: "Failed to send email" });
     }
   };
+// Live locations for any users (roles that have currentLocation or location)
+// Returns minimal payload for real-time maps.
+export const getLiveLocations = async (req, res, next) => {
+  try {
+    // Find users that have a currentLocation geo point or general location coordinates
+    const users = await User.find({
+      $or: [
+        { 'currentLocation.coordinates.0': { $exists: true } },
+        { 'location.coordinates.0': { $exists: true } }
+      ]
+    })
+    .select('firstName lastName userName role currentLocation location status eta destination assignedHospital')
+    .populate('assignedHospital', 'name');
+
+    const mapped = users.map(u => ({
+      id: u._id,
+      name: `${u.firstName || ''} ${u.lastName || ''}`.trim() || u.userName,
+      role: u.role,
+      status: u.status,
+      eta: u.eta,
+      destination: u.destination,
+      hospital: u.assignedHospital ? { id: u.assignedHospital._id, name: u.assignedHospital.name } : null,
+      // Prefer currentLocation if present else fallback to static location
+      coordinates: u.currentLocation?.coordinates?.length === 2
+        ? u.currentLocation.coordinates
+        : (u.location?.coordinates?.length === 2 ? u.location.coordinates : null)
+    }));
+
+    res.status(200).json({ success: true, count: mapped.length, users: mapped });
+  } catch (err) {
+    console.error('getLiveLocations error:', err);
+    next(new ErrorHandler(err.message, 500));
+  }
+};

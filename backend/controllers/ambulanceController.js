@@ -822,6 +822,56 @@ export const getMyAcceptedRequest = async (req, res, next) => {
   }
 };
 
+// Notify patient that ambulance is waiting at pickup location
+export const notifyPatientWaiting = async (req, res, next) => {
+  try {
+    const { ambulanceId } = req.params;
+    const { patientId, note } = req.body;
+
+    const ambulance = await User.findById(ambulanceId);
+    if (!ambulance || ambulance.role !== "Ambulance") {
+      return next(new ErrorHandler("Ambulance not found", 404));
+    }
+
+    const patient = await User.findById(patientId);
+    if (!patient || patient.role !== "Patient") {
+      return next(new ErrorHandler("Patient not found", 404));
+    }
+
+    // Ensure this ambulance is assigned to this patient
+    if (!ambulance.assignedPatient || ambulance.assignedPatient.toString() !== patient._id.toString()) {
+      return next(new ErrorHandler("Ambulance is not assigned to this patient", 400));
+    }
+
+    // Emit socket events to notify the specific patient
+    if (io) {
+      io.emit("patientNotification", {
+        patientId: patient._id,
+        message: `🚑 Ambulance crew ${ambulance.firstName} ${ambulance.lastName} is waiting at your pickup location. ${note ? note : "Please proceed to meet them."}`,
+        type: "ambulance_waiting",
+        ambulanceId: ambulance._id,
+        location: ambulance.currentLocation || null,
+      });
+
+      // Optional dedicated event for patient clients
+      io.emit("ambulanceWaiting", {
+        patientId: patient._id,
+        ambulanceId: ambulance._id,
+        ambulanceName: `${ambulance.firstName} ${ambulance.lastName}`,
+        location: ambulance.currentLocation || null,
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Patient has been notified that ambulance is waiting",
+    });
+  } catch (error) {
+    console.error("Error notifying patient waiting:", error);
+    next(new ErrorHandler("Failed to notify patient", 500));
+  }
+};
+
 // Helper function to calculate distance between two coordinates (Haversine formula)
 function calculateDistance(lat1, lon1, lat2, lon2) {
   const R = 6371; // Earth's radius in kilometers

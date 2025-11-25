@@ -10,7 +10,8 @@ import {
     updateAmbulanceStatus, 
     getActiveAmbulanceRequests, 
     acceptAmbulanceRequest,
-    getMyAcceptedRequest 
+    getMyAcceptedRequest,
+    notifyPatientWaiting,
 } from '../../utils/api';
 import { getUserId, getToken } from '../../utils/cookieUtils';
 import socket from '../../utils/socket';
@@ -24,6 +25,7 @@ const AmbulancePanel = () => {
     const [currentLocation, setCurrentLocation] = useState(null);
     const [distance, setDistance] = useState(null);
     const [directions, setDirections] = useState(null);
+    const [hasPickedUp, setHasPickedUp] = useState(false); // toggle to show route to hospital after pickup
     const [mapCenter, setMapCenter] = useState({ lat: 30.0444, lng: 31.2357 });
     const [selectedRequest, setSelectedRequest] = useState(null);
     const [activePickup, setActivePickup] = useState(null); // Stores accepted patient's pickup location
@@ -139,6 +141,15 @@ const AmbulancePanel = () => {
                         latitude: myAmb.currentLocation.coordinates[1],
                         longitude: myAmb.currentLocation.coordinates[0]
                     });
+                    // Initialize currentLocation marker and center to fix disappearing pin
+                    setCurrentLocation({
+                        lat: myAmb.currentLocation.coordinates[1],
+                        lng: myAmb.currentLocation.coordinates[0]
+                    });
+                    setMapCenter({
+                        lat: myAmb.currentLocation.coordinates[1],
+                        lng: myAmb.currentLocation.coordinates[0]
+                    });
                 }
 
                 // If ambulance has an active assignment, fetch the pickup location
@@ -146,6 +157,7 @@ const AmbulancePanel = () => {
                     loadActivePickupLocation();
                 } else {
                     setActivePickup(null);
+                    setHasPickedUp(false);
                 }
             }
         } catch (err) {
@@ -297,11 +309,12 @@ const AmbulancePanel = () => {
                 
                 // Reload ambulance data
                 await loadData();
-                
-                // Start GPS tracking
-                if (!gpsTracking) {
-                    startGPSTracking();
+                // Automatically set status to EN_ROUTE if not already
+                if (myAmbulance?.status !== 'EN_ROUTE') {
+                    await handleStatusUpdate('EN_ROUTE');
                 }
+                // Start GPS tracking (handleStatusUpdate also starts it, but keep fallback)
+                if (!gpsTracking) startGPSTracking();
             }
         } catch (err) {
             console.error('Accept pickup request error:', err);
@@ -310,45 +323,34 @@ const AmbulancePanel = () => {
     };
 
     const handleAcceptPickup = async () => {
+        // In the new flow, this button confirms the patient is onboard (UI only)
+        // and switches routing to the hospital. Do not call the legacy accept-pickup API
+        // because backend requires status AVAILABLE and we are already EN_ROUTE.
+        if (!myAmbulance?.assignedPatient) {
+            toast.error('No patient assigned');
+            return;
+        }
+        setActivePickup(null);
+        setHasPickedUp(true);
+        toast.success('✅ Patient picked up. Routing to hospital.');
+    };
+
+    const handleNotifyPatientWaiting = async () => {
         if (!myAmbulance?.assignedPatient) {
             toast.error('No patient assigned');
             return;
         }
 
-        // Extract patient ID (handle both object and string formats)
-        const patientId = typeof myAmbulance.assignedPatient === 'object' 
-            ? myAmbulance.assignedPatient._id 
+        const patientId = typeof myAmbulance.assignedPatient === 'object'
+            ? myAmbulance.assignedPatient._id
             : myAmbulance.assignedPatient;
 
         try {
-            // First update status to EN_ROUTE
-            await handleStatusUpdate('EN_ROUTE');
-            
-            // Then accept the pickup
-            const token = getToken();
-            const response = await fetch(`http://localhost:3030/ambulance/${myAmbulanceId}/accept-pickup`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                credentials: 'include',
-                body: JSON.stringify({
-                    patientId: patientId
-                })
-            });
-
-            const data = await response.json();
-            
-            if (!response.ok) {
-                throw new Error(data.message || 'Failed to accept pickup');
-            }
-
-            toast.success('✅ Pickup accepted! Patient is now in transit.');
-            await loadData();
+            await notifyPatientWaiting(myAmbulanceId, { patientId });
+            toast.success('📣 Patient notified that you are waiting at pickup.');
         } catch (err) {
-            console.error('Accept pickup error:', err);
-            toast.error(err.message || 'Failed to accept pickup');
+            console.error('Notify patient waiting error:', err);
+            toast.error(err.response?.data?.message || 'Failed to notify patient');
         }
     };
 
@@ -468,6 +470,10 @@ const AmbulancePanel = () => {
             
             // Update status to arrived
             await handleStatusUpdate('ARRIVED_HOSPITAL');
+            // Clear active pickup locally
+            setActivePickup(null);
+            // Automatically mark AVAILABLE immediately after arrival
+            await handleStatusUpdate('AVAILABLE');
             await loadData();
         } catch (err) {
             console.error('Mark arrived error:', err);
@@ -804,7 +810,7 @@ const AmbulancePanel = () => {
                     <div>
                         <p><strong>Name:</strong> {myAmbulance.firstName} {myAmbulance.lastName}</p>
                         <p><strong>Username:</strong> {myAmbulance.userName}</p>
-                        <p><strong>Current Status:</strong> <span className={styles.statusBadge}>{myAmbulance.status?.replace('_', ' ')}</span></p>
+                        <p><strong>Current Status:</strong> <span className={styles.statusBadge} style={{ backgroundColor: 'transparent', color: '#000', fontWeight: 'normal' }}>{myAmbulance.status?.replace('_', ' ')}</span></p>
                         {myAmbulance.assignedPatient && (
                             <p><strong>Assigned Patient:</strong> {
                                 typeof myAmbulance.assignedPatient === 'object' 
@@ -847,33 +853,24 @@ const AmbulancePanel = () => {
                             >
                                 🏥 Mark Patient Arrived
                             </Button>
+                            <Button
+                                variant="secondary"
+                                onClick={handleNotifyPatientWaiting}
+                            >
+                                📣 Notify Patient I'm Waiting
+                            </Button>
+                            <Button
+                                variant="success"
+                                onClick={handleAcceptPickup}
+                            >
+                                ✅ Patient Picked Up
+                            </Button>
                         </div>
                     </div>
                 )}
                 
-                <div className={styles.grid} style={{ marginTop: '20px' }}>
-                    <Button 
-                        variant="success" 
-                        onClick={() => handleStatusUpdate('EN_ROUTE')}
-                        disabled={myAmbulance?.status === 'EN_ROUTE' || loading}
-                    >
-                        🚨 Mark EN ROUTE
-                    </Button>
-                    <Button 
-                        variant="primary" 
-                        onClick={() => handleStatusUpdate('ARRIVED_HOSPITAL')}
-                        disabled={myAmbulance?.status === 'ARRIVED_HOSPITAL' || loading}
-                    >
-                        🏥 Mark ARRIVED
-                    </Button>
-                    <Button 
-                        variant="secondary" 
-                        onClick={() => handleStatusUpdate('AVAILABLE')}
-                        disabled={myAmbulance?.status === 'AVAILABLE' || loading}
-                    >
-                        ✅ Mark AVAILABLE
-                    </Button>
-                </div>
+                {/* Manual status controls removed: now transitions are automatic.
+                    Accepting a pickup sets EN_ROUTE; marking arrival sets ARRIVED_HOSPITAL then AVAILABLE. */}
             </section>
 
             {/* Requests Sidebar + Map Section */}
@@ -1081,6 +1078,24 @@ const AmbulancePanel = () => {
                                     </Polyline>
                                 )}
                             </>
+                        )}
+
+                        {/* After pickup: route from ambulance to hospital */}
+                        {currentLocation && hasPickedUp && myAmbulance?.assignedHospital?.location?.coordinates?.length === 2 && (
+                            <Polyline
+                                positions={[
+                                    [currentLocation.lat, currentLocation.lng],
+                                    [myAmbulance.assignedHospital.location.coordinates[1], myAmbulance.assignedHospital.location.coordinates[0]]
+                                ]}
+                                pathOptions={{ color: '#ff5722', weight: 4, opacity: 0.85 }}
+                            >
+                                <Popup>
+                                    <div>
+                                        <strong>🏥 En Route to Hospital</strong>
+                                        <div>{myAmbulance.assignedHospital.name}</div>
+                                    </div>
+                                </Popup>
+                            </Polyline>
                         )}
                     </MapContainer>
                     </div>
