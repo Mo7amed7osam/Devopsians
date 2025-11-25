@@ -1,0 +1,146 @@
+# GitLab CI/CD pipeline for Devopsians
+# --------------------------------------------------
+# Stages:
+#  1. prepare   -> install dependencies (frontend + backend)
+#  2. test      -> placeholder (add tests when available)
+#  3. build     -> build frontend assets
+#  4. docker    -> build & push backend + frontend images
+#  5. deploy    -> pull & run on remote host via SSH using docker-compose
+# --------------------------------------------------
+# Required CI/CD Variables (Settings > CI/CD > Variables):
+#  DOCKERHUB_USERNAME      : Docker Hub username
+#  DOCKERHUB_PASSWORD      : Docker Hub password/token (masked, protected)
+#  EC2_HOST                : Public IP or hostname of deployment server
+#  EC2_USER                : SSH username (e.g., ubuntu)
+#  EC2_SSH_KEY             : Private key content (Type: File or Variable)
+#  MONGO_URL               : Mongo connection string
+#  FRONTEND_URL            : Public frontend URL (e.g. https://example.com)
+# --------------------------------------------------
+
+stages:
+  - prepare
+  - test
+  - build
+  - docker
+  - deploy
+
+.default_node: &default_node
+  image: node:20-alpine
+  cache:
+    key: "${CI_COMMIT_REF_SLUG}-node"
+    paths:
+      - frontend/node_modules/
+      - backend/node_modules/
+  before_script:
+    - node -v
+    - npm -v
+
+# Install dependencies for both workspaces
+prepare:deps:
+  stage: prepare
+  <<: *default_node
+  script:
+    - npm install --workspaces
+    - npm install --prefix backend
+    - npm install --prefix frontend
+  artifacts:
+    expire_in: 1h
+    paths:
+      - frontend/node_modules
+      - backend/node_modules
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
+# Placeholder test job (extend when tests exist)
+unit:test:
+  stage: test
+  <<: *default_node
+  needs: ["prepare:deps"]
+  script:
+    - echo "No tests defined yet. Skipping." && exit 0
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
+# Build frontend (Vite) to produce dist/ assets (kept as artifact if needed)
+build:frontend:
+  stage: build
+  <<: *default_node
+  needs: ["prepare:deps"]
+  script:
+    - export VITE_API_URL=${VITE_API_URL:-http://localhost:3030}
+    - cd frontend && npm run build
+  artifacts:
+    expire_in: 1 day
+    paths:
+      - frontend/dist
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
+# Docker build & push for backend and frontend images
+# Uses Docker-in-Docker
+# You may alternatively use Kaniko if privileged runners are restricted.
+docker:images:
+  stage: docker
+  image: docker:24.0.7
+  services:
+    - name: docker:dind
+      command: ["--tls=false"]
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_DRIVER: overlay2
+    IMAGE_TAG: ${IMAGE_TAG:-$CI_PIPELINE_IID}
+  needs: ["build:frontend"]
+  before_script:
+    - apk add --no-cache bash openssh-client
+    - echo "Logging into Docker Hub"
+    - echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+  script:
+    - echo "Building backend image"
+    - docker build -t ${DOCKERHUB_USERNAME}/devopsians-backend:${IMAGE_TAG} -t ${DOCKERHUB_USERNAME}/devopsians-backend:latest -f backend/Dockerfile .
+    - echo "Building frontend image (inject VITE_API_URL=${VITE_API_URL})"
+    - docker build --build-arg VITE_API_URL=${VITE_API_URL:-http://localhost:3030} -t ${DOCKERHUB_USERNAME}/devopsians-frontend:${IMAGE_TAG} -t ${DOCKERHUB_USERNAME}/devopsians-frontend:latest -f frontend/Dockerfile .
+    - echo "Pushing images"
+    - docker push ${DOCKERHUB_USERNAME}/devopsians-backend:${IMAGE_TAG}
+    - docker push ${DOCKERHUB_USERNAME}/devopsians-backend:latest
+    - docker push ${DOCKERHUB_USERNAME}/devopsians-frontend:${IMAGE_TAG}
+    - docker push ${DOCKERHUB_USERNAME}/devopsians-frontend:latest
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+  only:
+    - main
+
+# Deploy to remote host via SSH
+# Assumes remote host pulls latest :latest tags and runs docker-compose.
+deploy:production:
+  stage: deploy
+  image: alpine:3.20
+  needs: ["docker:images"]
+  variables:
+    COMPOSE_FILE: ${DOCKER_COMPOSE_FILE:-Deploy/docker-compose.yml}
+    IMAGE_TAG: ${IMAGE_TAG:-$CI_PIPELINE_IID}
+  before_script:
+    - apk add --no-cache openssh-client curl bash
+    - mkdir -p ~/.ssh
+    - if [ -n "$EC2_SSH_KEY" ]; then echo "$EC2_SSH_KEY" > ~/.ssh/id_rsa; chmod 600 ~/.ssh/id_rsa; fi
+    - echo -e "Host *\n  StrictHostKeyChecking no" > ~/.ssh/config
+  script:
+    - echo "Transferring docker-compose file";
+    - scp $COMPOSE_FILE ${EC2_USER}@${EC2_HOST}:~/docker-compose.yml
+    - echo "Creating env file on remote";
+    - ssh ${EC2_USER}@${EC2_HOST} "echo DOCKERHUB_USERNAME=$DOCKERHUB_USERNAME > ~/devopsians.env && echo NODE_ENV=production >> ~/devopsians.env && echo PORT=3030 >> ~/devopsians.env && echo FRONTEND_URL=${FRONTEND_URL} >> ~/devopsians.env && echo MONGO_URL=${MONGO_URL} >> ~/devopsians.env"
+    - echo "Pulling & starting containers";
+    - ssh ${EC2_USER}@${EC2_HOST} "docker pull ${DOCKERHUB_USERNAME}/devopsians-backend:latest && docker pull ${DOCKERHUB_USERNAME}/devopsians-frontend:latest && docker compose -f docker-compose.yml down || true && source ~/devopsians.env && docker compose -f docker-compose.yml up -d"
+    - echo "Health check (frontend)";
+    - ssh ${EC2_USER}@${EC2_HOST} "sleep 10 && curl -f http://localhost || echo 'Frontend not responding'"
+  environment:
+    name: production
+    url: $FRONTEND_URL
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+  only:
+    - main
+
+# EOF
