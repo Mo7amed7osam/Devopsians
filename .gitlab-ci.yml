@@ -109,8 +109,6 @@ docker:images:
     - docker push ${DOCKERHUB_USERNAME}/devopsians-frontend:latest
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
-  only:
-    - main
 
 # Deploy to remote host via SSH
 # Assumes remote host pulls latest :latest tags and runs docker-compose.
@@ -140,7 +138,5 @@ deploy:production:
     url: $FRONTEND_URL
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
-  only:
-    - main
 
 # EOF
