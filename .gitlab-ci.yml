@@ -26,6 +26,12 @@ stages:
   - docker
   - deploy
 
+# Use workflow rules to define when pipeline triggers
+workflow:
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+
 # -----------------------------------------------
 # GLOBAL NODE TEMPLATE
 # -----------------------------------------------
@@ -55,9 +61,6 @@ prepare:
     paths:
       - frontend/node_modules
       - backend/node_modules
-  rules:
-    - if: '$CI_COMMIT_BRANCH == "main"'
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
 
 # -----------------------------------------------
 # TEST PLACEHOLDER
@@ -68,9 +71,6 @@ test:
   needs: ["prepare"]
   script:
     - echo "No tests defined yet. Skipping."
-  rules:
-    - if: '$CI_COMMIT_BRANCH == "main"'
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
 
 # -----------------------------------------------
 # BUILD FRONTEND (Vite)
@@ -86,9 +86,6 @@ build:
     expire_in: 1 day
     paths:
       - frontend/dist
-  rules:
-    - if: '$CI_COMMIT_BRANCH == "main"'
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
 
 # -----------------------------------------------
 # DOCKER BUILD & PUSH
@@ -97,15 +94,17 @@ docker:
   stage: docker
   image: docker:24.0.7
   services:
-    - name: docker:dind
+    - name: docker:24.0.7-dind
       command: ["--tls=false"]
   variables:
     DOCKER_HOST: tcp://docker:2375
     DOCKER_DRIVER: overlay2
+    DOCKER_TLS_CERTDIR: ""
     IMAGE_TAG: ${IMAGE_TAG:-$CI_PIPELINE_IID}
   needs: ["build"]
   before_script:
     - apk add --no-cache bash openssh-client
+    - docker version
     - echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
   script:
     - echo "Building backend..."
@@ -126,8 +125,8 @@ docker:
     - docker push $DOCKERHUB_USERNAME/devopsians-backend:latest
     - docker push $DOCKERHUB_USERNAME/devopsians-frontend:$IMAGE_TAG
     - docker push $DOCKERHUB_USERNAME/devopsians-frontend:latest
-  rules:
-    - if: '$CI_COMMIT_BRANCH == "main"'
+  only:
+    - main
 
 # -----------------------------------------------
 # DEPLOYMENT TO EC2 (SSH + docker compose)
@@ -156,5 +155,5 @@ deploy:
   environment:
     name: production
     url: $FRONTEND_URL
-  rules:
-    - if: '$CI_COMMIT_BRANCH == "main"'
+  only:
+    - main
