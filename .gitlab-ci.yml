@@ -108,17 +108,10 @@ docker:
     - echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
   script:
     - echo "Building backend..."
-    - docker build \
-        -t $DOCKERHUB_USERNAME/devopsians-backend:$IMAGE_TAG \
-        -t $DOCKERHUB_USERNAME/devopsians-backend:latest \
-        -f backend/Dockerfile .
+    - docker build -t $DOCKERHUB_USERNAME/devopsians-backend:$IMAGE_TAG -t $DOCKERHUB_USERNAME/devopsians-backend:latest -f backend/Dockerfile .
 
     - echo "Building frontend..."
-    - docker build \
-        --build-arg VITE_API_URL=${VITE_API_URL:-http://localhost:3030} \
-        -t $DOCKERHUB_USERNAME/devopsians-frontend:$IMAGE_TAG \
-        -t $DOCKERHUB_USERNAME/devopsians-frontend:latest \
-        -f frontend/Dockerfile .
+    - docker build --build-arg VITE_API_URL=${VITE_API_URL:-http://localhost:3030} -t $DOCKERHUB_USERNAME/devopsians-frontend:$IMAGE_TAG -t $DOCKERHUB_USERNAME/devopsians-frontend:latest -f frontend/Dockerfile .
 
     - echo "Pushing images..."
     - docker push $DOCKERHUB_USERNAME/devopsians-backend:$IMAGE_TAG
