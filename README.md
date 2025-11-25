@@ -171,3 +171,47 @@ Expected Jenkins credentials/params
 ---
 
 Made with ❤️ by the Devopsians team.
+
+## CI/CD with GitLab
+
+An alternative GitLab pipeline is provided in `.gitlab-ci.yml` with stages:
+`prepare` → `test` → `build` → `docker` → `deploy`.
+
+### Required GitLab CI Variables
+Set these in `Settings > CI/CD > Variables` (masked/protected where sensitive):
+
+| Variable | Purpose |
+|----------|---------|
+| `DOCKERHUB_USERNAME` | Docker Hub namespace for images |
+| `DOCKERHUB_PASSWORD` | Docker Hub access token/password (masked) |
+| `EC2_HOST` | Target host/IP for SSH deployment |
+| `EC2_USER` | SSH username (e.g. `ubuntu`) |
+| `EC2_SSH_KEY` | Private key content used for SSH (masked, file or variable) |
+| `MONGO_URL` | Production MongoDB connection string |
+| `FRONTEND_URL` | Public URL of the deployed frontend (e.g. `http://your-domain`) |
+| `VITE_API_URL` | Backend API base injected at build (defaults to `http://localhost:3030` if unset) |
+| `IMAGE_TAG` (optional) | Override tag (defaults to pipeline IID) |
+| `DOCKER_COMPOSE_FILE` (optional) | Alternate compose file path (defaults to `Deploy/docker-compose.yml`) |
+
+### Pipeline Behavior
+* Frontend build uses `VITE_API_URL` (falls back to localhost:3030).
+* Images pushed as `devopsians-backend:latest` and `devopsians-frontend:latest` plus unique tag.
+* Deploy job SSHes to the host, writes `~/devopsians.env`, pulls latest images, and runs `docker compose up -d`.
+* Health check curls the frontend root.
+
+### Common GitLab Issues
+| Symptom | Fix |
+|---------|-----|
+| `config key may not be used with rules` | Remove legacy `only/except` when using `rules`. |
+| Pipeline cannot parse YAML | Ensure no heredoc (`<<EOF`) blocks; use chained commands instead. |
+| Frontend cannot reach backend | Set `VITE_API_URL` and expose port 3030 in compose. |
+| Missing environment URL warning | Ensure `FRONTEND_URL` includes protocol (`http://` or `https://`). |
+
+### Local Validation
+You can lint the file with:
+```bash
+curl -s --request POST --header "PRIVATE-TOKEN: <token>" \
+  --form "content=$(cat .gitlab-ci.yml)" \
+  https://gitlab.com/api/v4/ci/lint
+```
+
