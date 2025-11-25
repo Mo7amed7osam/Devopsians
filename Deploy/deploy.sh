@@ -96,12 +96,25 @@ check_prerequisites() {
 
 # Build or pull images
 build_or_pull_images() {
+    # Check if we should use MongoDB Atlas configuration
+    source .env
+    if [[ "${MONGO_URL}" == mongodb+srv://* ]]; then
+        print_info "Detected MongoDB Atlas configuration"
+        USE_ATLAS=true
+    fi
+    
     # Check if we should build locally or pull from registry
     if [ -f "docker-compose.local.yml" ] && [ "${DEPLOY_ENV:-development}" = "development" ]; then
         print_info "Building Docker images locally..."
         docker-compose -f docker-compose.local.yml build || docker compose -f docker-compose.local.yml build
         COMPOSE_FILE="docker-compose.local.yml"
         print_success "Images built successfully"
+    elif [ "$USE_ATLAS" = true ] && [ -f "docker-compose.atlas.yml" ]; then
+        print_info "Using MongoDB Atlas configuration (no local MongoDB container)"
+        print_info "Pulling latest Docker images from registry..."
+        docker-compose -f docker-compose.atlas.yml pull || docker compose -f docker-compose.atlas.yml pull
+        COMPOSE_FILE="docker-compose.atlas.yml"
+        print_success "Images pulled successfully"
     else
         print_info "Pulling latest Docker images from registry..."
         docker-compose pull || docker compose pull

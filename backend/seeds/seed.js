@@ -26,24 +26,24 @@ const connectDB = async () => {
   }
 };
 
-// Ensure only the admin user exists (idempotent)
-const ensureAdminOnly = async () => {
+// Ensure seed users exist (idempotent)
+const ensureSeedUsers = async () => {
   try {
-    console.log("🧹 Removing all users except admin seed...");
-    // Remove all users except one matching seed admin email (if exists kept)
-    const adminEmail = seedData.users[0].email;
-    await User.deleteMany({ email: { $ne: adminEmail } });
-    const existingAdmin = await User.findOne({ email: adminEmail }).select("_id email");
-    if (existingAdmin) {
-      console.log("✅ Admin already exists, skipping creation");
-      return existingAdmin;
+    console.log("🧹 Checking existing users...");
+    
+    for (const userData of seedData.users) {
+      const existingUser = await User.findOne({ email: userData.email }).select("_id email");
+      
+      if (existingUser) {
+        console.log(`✅ User already exists: ${userData.email}`);
+      } else {
+        console.log(`➕ Creating user: ${userData.email}...`);
+        const createdUser = await User.create(userData);
+        console.log(`✅ User created: ${createdUser.email} (${createdUser.role})`);
+      }
     }
-    console.log("➕ Creating admin user...");
-    const [createdAdmin] = await User.create([seedData.users[0]]);
-    console.log("✅ Admin created:", createdAdmin.email);
-    return createdAdmin;
   } catch (error) {
-    console.error("❌ Error ensuring admin user:", error);
+    console.error("❌ Error ensuring seed users:", error);
     throw error;
   }
 };
@@ -54,10 +54,12 @@ const ensureAdminOnly = async () => {
 const seedDatabase = async () => {
   try {
     await connectDB();
-    await ensureAdminOnly();
-    console.log("\n✨ Admin-only seeding complete!\n");
-    console.log("\n🎉 Login with:");
-    console.log("   Email: admin@demo.com  Password: 123456");
+    await ensureSeedUsers();
+    console.log("\n✨ Database seeding complete!\n");
+    console.log("\n🎉 Login with any of these accounts:");
+    seedData.users.forEach(user => {
+      console.log(`   Email: ${user.email}  Password: 123456  Role: ${user.role}`);
+    });
     
     process.exit(0);
   } catch (error) {
