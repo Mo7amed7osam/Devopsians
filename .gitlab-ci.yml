@@ -120,16 +120,25 @@ deploy:
     - echo "Host *" > ~/.ssh/config
     - echo "  StrictHostKeyChecking no" >> ~/.ssh/config
   script:
-    - export COMPOSE_FILE="${DOCKER_COMPOSE_FILE:-Deploy/docker-compose.yml}"
+    - export COMPOSE_FILE="${DOCKER_COMPOSE_FILE:-Deploy/docker-compose.production.yml}"
     - test -f "${COMPOSE_FILE}" || (echo "ERROR - Compose file not found at ${COMPOSE_FILE}" && exit 1)
-    - echo "Uploading ${COMPOSE_FILE} to remote server..."
+    - echo "Uploading ${COMPOSE_FILE} and required assets to remote server..."
     - scp "${COMPOSE_FILE}" ${EC2_USER}@${EC2_HOST}:~/docker-compose.yml
+    - scp -r Deploy/nginx ${EC2_USER}@${EC2_HOST}:~/nginx
+    - scp -r Deploy/monitoring ${EC2_USER}@${EC2_HOST}:~/monitoring
+    - ssh ${EC2_USER}@${EC2_HOST} "mkdir -p ~/backups"
     - echo "Creating environment file on remote..."
     - ssh ${EC2_USER}@${EC2_HOST} "echo NODE_ENV=production > ~/devopsians.env"
     - ssh ${EC2_USER}@${EC2_HOST} "echo PORT=3030 >> ~/devopsians.env"
     - ssh ${EC2_USER}@${EC2_HOST} "echo DOCKERHUB_USERNAME=${DOCKERHUB_USERNAME} >> ~/devopsians.env"
+    - ssh ${EC2_USER}@${EC2_HOST} "echo IMAGE_TAG=${IMAGE_TAG:-latest} >> ~/devopsians.env"
     - ssh ${EC2_USER}@${EC2_HOST} "echo FRONTEND_URL=${FRONTEND_URL} >> ~/devopsians.env"
     - ssh ${EC2_USER}@${EC2_HOST} "echo MONGO_URL=${MONGO_URL} >> ~/devopsians.env"
+    - ssh ${EC2_USER}@${EC2_HOST} "echo MONGO_ROOT_USERNAME=${MONGO_ROOT_USERNAME:-admin} >> ~/devopsians.env"
+    - ssh ${EC2_USER}@${EC2_HOST} "echo MONGO_ROOT_PASSWORD=${MONGO_ROOT_PASSWORD:-adminpassword} >> ~/devopsians.env"
+    - ssh ${EC2_USER}@${EC2_HOST} "echo MONGO_DATABASE=${MONGO_DATABASE:-devopsians} >> ~/devopsians.env"
+    - ssh ${EC2_USER}@${EC2_HOST} "echo VITE_API_URL=${VITE_API_URL} >> ~/devopsians.env"
+    - ssh ${EC2_USER}@${EC2_HOST} "echo JWT_SECRET_KEY=${JWT_SECRET_KEY} >> ~/devopsians.env"
     - echo "Pulling latest images and restarting services..."
     - ssh ${EC2_USER}@${EC2_HOST} "docker pull ${DOCKERHUB_USERNAME}/devopsians-backend:latest"
     - ssh ${EC2_USER}@${EC2_HOST} "docker pull ${DOCKERHUB_USERNAME}/devopsians-frontend:latest"
