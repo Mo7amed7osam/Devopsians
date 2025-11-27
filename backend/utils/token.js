@@ -40,14 +40,17 @@ export const jsontoken = (user, message, statusCode, res) => {
   // Ensure COOKIE_EXPIRE is a valid number (fallback to 1 day if invalid or undefined)
   const cookieExpireDays = Number(process.env.COOKIE_EXPIRE) || 1; // Default to 1 day if not set
 
+  // Determine if we're in production/HTTPS environment
+  const isSecure = process.env.NODE_ENV === "production" || process.env.SECURE_COOKIES === "true";
+
   // Set the cookie and respond
   res
     .status(statusCode)
     .cookie(cookieName, token, {
       expires: new Date(Date.now() + cookieExpireDays * 24 * 60 * 60 * 1000), // Expires in cookieExpireDays days
       httpOnly: true, // Secure cookie, not accessible via JavaScript
-      secure: process.env.NODE_ENV === "production", // Only set the cookie over HTTPS in production
-      sameSite: "Strict", // Prevent CSRF attacks
+      secure: isSecure, // Only set secure flag when using HTTPS
+      sameSite: isSecure ? "Strict" : "Lax", // Use Lax for HTTP, Strict for HTTPS
     })
     .json({
       success: true,

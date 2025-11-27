@@ -1,8 +1,8 @@
 import { io } from "socket.io-client";
 import { API_BASE as SOCKET_URL } from "../utils/api";
 
-// Prefer env override, fallback to API base
-const url = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE) || SOCKET_URL;
+// Prefer env override (VITE_API_URL), fallback to API base
+const url = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL) || SOCKET_URL;
 
 const socket = io(url, {
   // Allow polling fallback if pure websockets fail

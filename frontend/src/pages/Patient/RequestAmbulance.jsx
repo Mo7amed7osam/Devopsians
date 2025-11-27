@@ -8,6 +8,7 @@ import Button from '../../components/common/Button';
 import { getUserId, getToken } from '../../utils/cookieUtils';
 import { showUserDetails } from '../../utils/api';
 import socket from '../../utils/socket';
+import { API_BASE } from '../../utils/api';
 
 // Fix Leaflet default marker icon issue
 delete L.Icon.Default.prototype._getIconUrl;
@@ -126,7 +127,7 @@ const RequestAmbulance = () => {
   const checkActiveRequest = async () => {
     try {
       const token = getToken();
-      const response = await fetch('http://localhost:3030/ambulance/my-request', {
+      const response = await fetch(`${API_BASE}/ambulance/my-request`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -175,7 +176,7 @@ const RequestAmbulance = () => {
 
     try {
       const token = getToken();
-      const response = await fetch('http://localhost:3030/ambulance/request', {
+      const response = await fetch(`${API_BASE}/ambulance/request`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -222,7 +223,7 @@ const RequestAmbulance = () => {
 
     try {
       const token = getToken();
-      const response = await fetch(`http://localhost:3030/ambulance/requests/${activeRequest._id}/cancel`, {
+      const response = await fetch(`${API_BASE}/ambulance/requests/${activeRequest._id}/cancel`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`

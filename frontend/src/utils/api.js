@@ -8,8 +8,11 @@ import { getToken, clearSession } from './cookieUtils';
 // Backend server runs on port 3030
 // ============================================================
 
+// Use Vite env variable when available (set during build/deploy).
+const INTERNAL_API_BASE = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL) || 'http://localhost:3030';
+
 const API = axios.create({
-  baseURL: 'http://localhost:3030', // ⬅️ Backend URL
+  baseURL: INTERNAL_API_BASE,
   headers: { 'Content-Type': 'application/json' },
   timeout: 10000,
 });
@@ -169,7 +172,7 @@ export const viewAllHospitals = async () => {
 // Public endpoint to fetch nearby hospitals (no authentication required)
 export const fetchNearbyHospitalsPublic = async (latitude, longitude, maxDistance = 50000) => {
   // Use axios directly without the interceptor to avoid sending auth token
-  const response = await axios.get('http://localhost:3030/hospital/nearby', {
+  const response = await axios.get(`${INTERNAL_API_BASE}/hospital/nearby`, {
     params: { latitude, longitude, maxDistance }
   });
   return response;
@@ -431,5 +434,5 @@ export const notifyPatientWaiting = async (ambulanceId, payload) =>
 //    EXPORTS
 // ============================================================
 
-export const API_BASE = 'http://localhost:3030'; // Export base URL for other modules
+export const API_BASE = INTERNAL_API_BASE; // Export base URL for other modules (read from env or fallback)
 export default API;

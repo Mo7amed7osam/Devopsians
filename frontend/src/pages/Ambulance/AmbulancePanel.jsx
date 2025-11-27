@@ -15,6 +15,7 @@ import {
 } from '../../utils/api';
 import { getUserId, getToken } from '../../utils/cookieUtils';
 import socket from '../../utils/socket';
+import { API_BASE } from '../../utils/api';
 
 const AmbulancePanel = () => {
     const [ambulances, setAmbulances] = useState([]);
@@ -367,7 +368,7 @@ const AmbulancePanel = () => {
 
         try {
             const token = getToken();
-            const response = await fetch(`http://localhost:3030/ambulance/${myAmbulanceId}/approve-pickup`, {
+            const response = await fetch(`${API_BASE}/ambulance/${myAmbulanceId}/approve-pickup`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -408,7 +409,7 @@ const AmbulancePanel = () => {
         
         try {
             const token = getToken();
-            const response = await fetch(`http://localhost:3030/ambulance/${myAmbulanceId}/reject-pickup`, {
+            const response = await fetch(`${API_BASE}/ambulance/${myAmbulanceId}/reject-pickup`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -448,7 +449,7 @@ const AmbulancePanel = () => {
 
         try {
             const token = getToken();
-            const response = await fetch(`http://localhost:3030/ambulance/${myAmbulanceId}/mark-arrived`, {
+            const response = await fetch(`${API_BASE}/ambulance/${myAmbulanceId}/mark-arrived`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

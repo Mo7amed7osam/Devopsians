@@ -42,14 +42,20 @@ const mongoUrl = process.env.MONGO_URL;
 })();
 
 // Middleware
-const allowedOrigins = [
+// Allow configuring CORS via env vars. For quick testing set CORS_ALLOW_ALL=true
+const corsAllowAll = process.env.CORS_ALLOW_ALL === 'true';
+let allowedOrigins = [
   process.env.FRONTEND_URL,
   'http://localhost:3001',
-  'http://localhost:5173'
+  'http://localhost:3002',
+  'http://localhost:5173',
 ];
+// remove falsy entries
+allowedOrigins = allowedOrigins.filter(Boolean);
+
 app.use(
   cors({
-    origin: allowedOrigins,
+    origin: corsAllowAll ? true : allowedOrigins,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     credentials: true,
   })
@@ -99,7 +105,7 @@ httpServer.listen(port, () => {
 // Set up Socket.IO
 const io = new Server(httpServer, {
   cors: {
-    origin: allowedOrigins,
+    origin: corsAllowAll ? true : allowedOrigins,
     methods: ["GET", "POST","PUT","DELETE"],
     credentials: true,
   },
