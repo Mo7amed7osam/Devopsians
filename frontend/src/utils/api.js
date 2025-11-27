@@ -9,13 +9,16 @@ import { getToken, clearSession } from './cookieUtils';
 // ============================================================
 
 // Use Vite env variable when available (set during build/deploy).
-const INTERNAL_API_BASE = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL) || 'http://localhost:3030';
+// If VITE_API_URL is '/' or empty, use empty string so axios doesn't double slashes
+const envURL = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL);
+const INTERNAL_API_BASE = (envURL && envURL !== '/' && envURL !== '') ? envURL : '';
 
 const API = axios.create({
   baseURL: INTERNAL_API_BASE,
   headers: { 'Content-Type': 'application/json' },
   timeout: 10000,
 });
+
 
 // ============================================================
 //   Request Interceptor — attach JWT Token (if any saved)
