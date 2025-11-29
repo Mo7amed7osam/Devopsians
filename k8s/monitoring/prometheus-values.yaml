@@ -1,0 +1,37 @@
+# Prometheus configuration
+prometheus:
+  prometheusSpec:
+    retention: 7d
+    retentionSize: "10GB"
+    # No persistent storage - data in pod only (for testing)
+
+# Grafana configuration
+grafana:
+  enabled: true
+  adminPassword: "devopsians-admin"
+  
+  # No persistent storage
+  persistence:
+    enabled: false
+  
+  # ClusterIP - we'll expose via ingress
+  service:
+    type: ClusterIP
+  
+  # Configure for /grafana path
+  grafana.ini:
+    server:
+      root_url: "%(protocol)s://%(domain)s:%(http_port)s/grafana/"
+      serve_from_sub_path: true
+
+# Node exporter - monitors nodes
+nodeExporter:
+  enabled: true
+
+# Kubernetes state metrics
+kube-state-metrics:
+  enabled: true
+
+# Disable alertmanager
+alertmanager:
+  enabled: false

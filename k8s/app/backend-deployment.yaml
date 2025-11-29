@@ -21,25 +21,6 @@ spec:
           imagePullPolicy: Always
           ports:
             - containerPort: 3030
-          env:
-            # Allow all CORS origins temporarily for testing
-            # Remove this after confirming everything works
-            - name: CORS_ALLOW_ALL
-              value: "true"
-            - name: PORT
-              value: "3030"
           envFrom:
             - secretRef:
                 name: backend-secret
-          livenessProbe:
-            httpGet:
-              path: /health
-              port: 3030
-            initialDelaySeconds: 30
-            periodSeconds: 10
-          readinessProbe:
-            httpGet:
-              path: /health
-              port: 3030
-            initialDelaySeconds: 10
-            periodSeconds: 5

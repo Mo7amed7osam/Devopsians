@@ -1,5 +1,5 @@
 # -----------------------------------------------
-# Devopsians – GitLab CI/CD Pipeline (Fixed)
+# Devopsians – GitLab CI/CD Pipeline (Kubernetes/EKS)
 # -----------------------------------------------
 
 stages:
@@ -9,10 +9,13 @@ stages:
   - docker
   - deploy
 
+# Trigger on every commit to main branch
 workflow:
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
+      when: always
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      when: always
 
 # -----------------------------------------------
 # GLOBAL NODE TEMPLATE
@@ -55,14 +58,14 @@ test:
     - echo "No tests defined yet. Skipping."
 
 # -----------------------------------------------
-# BUILD FRONTEND (Vite)
+# BUILD FRONTEND (Vite) - Using relative API URL
 # -----------------------------------------------
 build:
   stage: build
   <<: *default_node
   needs: ["prepare"]
   script:
-    - export VITE_API_URL=${VITE_API_URL:-http://localhost:3030}
+    - export VITE_API_URL=/
     - cd frontend && npm run build
   artifacts:
     expire_in: 1 day
@@ -80,77 +83,115 @@ docker:
       command: ["--tls=false"]
   needs: ["build"]
   before_script:
-    - apk add --no-cache bash git openssh-client
+    - apk add --no-cache bash git
     - docker version
     - echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
   script:
-    # Ensure IMAGE_TAG is never empty
-    - export IMAGE_TAG=${IMAGE_TAG:-$CI_COMMIT_SHORT_SHA}
-    - echo "Using IMAGE_TAG=$IMAGE_TAG"
+    # Use commit SHA as tag
+    - export IMAGE_TAG=${CI_COMMIT_SHORT_SHA}
+    - echo "Building with IMAGE_TAG=$IMAGE_TAG"
 
     # Build backend
     - echo "Building backend..."
     - docker build -t "${DOCKERHUB_USERNAME}/devopsians-backend:${IMAGE_TAG}" -t "${DOCKERHUB_USERNAME}/devopsians-backend:latest" -f backend/Dockerfile .
 
-    # Build frontend
-    - echo "Building frontend..."
-    - docker build --build-arg VITE_API_URL=${VITE_API_URL:-http://localhost:3030} -t "${DOCKERHUB_USERNAME}/devopsians-frontend:${IMAGE_TAG}" -t "${DOCKERHUB_USERNAME}/devopsians-frontend:latest" -f frontend/Dockerfile .
+    # Build frontend with relative API URL
+    - echo "Building frontend with VITE_API_URL=/ ..."
+    - docker build --build-arg VITE_API_URL=/ -t "${DOCKERHUB_USERNAME}/devopsians-frontend:${IMAGE_TAG}" -t "${DOCKERHUB_USERNAME}/devopsians-frontend:latest" -f frontend/Dockerfile .
 
-    # Push images
+    # Push all tags
     - echo "Pushing images..."
     - docker push "${DOCKERHUB_USERNAME}/devopsians-backend:${IMAGE_TAG}"
     - docker push "${DOCKERHUB_USERNAME}/devopsians-backend:latest"
     - docker push "${DOCKERHUB_USERNAME}/devopsians-frontend:${IMAGE_TAG}"
     - docker push "${DOCKERHUB_USERNAME}/devopsians-frontend:latest"
-  only:
-    - main
+    
+    - echo "Images pushed successfully!"
+    - echo "Backend: ${DOCKERHUB_USERNAME}/devopsians-backend:latest"
+    - echo "Frontend: ${DOCKERHUB_USERNAME}/devopsians-frontend:latest"
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+      when: always
 
 # -----------------------------------------------
-# DEPLOYMENT TO EC2 (SSH + docker compose)
+# DEPLOYMENT TO EKS (Using Your Scripts)
 # -----------------------------------------------
 deploy:
   stage: deploy
-  image: alpine:3.20
+  image: alpine:latest
   needs: ["docker"]
   before_script:
-    - apk add --no-cache openssh-client bash curl
-    - mkdir -p ~/.ssh
-    - echo "$EC2_SSH_KEY" | tr -d '\r' > ~/.ssh/id_rsa
-    - chmod 600 ~/.ssh/id_rsa
-    - echo "Host *" > ~/.ssh/config
-    - echo "  StrictHostKeyChecking no" >> ~/.ssh/config
+    # Install required tools
+    - apk add --no-cache curl bash aws-cli
+    
+    # Install kubectl
+    - curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+    - chmod +x kubectl
+    - mv kubectl /usr/local/bin/
+    - kubectl version --client
+    
+    # Configure AWS credentials
+    - aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
+    - aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
+    - aws configure set region $AWS_REGION
+    
+    # Connect to EKS cluster
+    - aws eks update-kubeconfig --name $EKS_CLUSTER_NAME --region $AWS_REGION
+    
+    # Verify connection
+    - echo "Verifying cluster connection..."
+    - kubectl get nodes
+    - kubectl get namespaces
+    
+    # Make scripts executable
+    - chmod +x k8s/scripts/*.sh
   script:
-    - export COMPOSE_FILE="${DOCKER_COMPOSE_FILE:-Deploy/docker-compose.production.yml}"
-    - test -f "${COMPOSE_FILE}" || (echo "ERROR - Compose file not found at ${COMPOSE_FILE}" && exit 1)
-    - echo "Uploading ${COMPOSE_FILE} and required assets to remote server..."
-    - scp "${COMPOSE_FILE}" ${EC2_USER}@${EC2_HOST}:~/docker-compose.yml
-    - scp -r Deploy/nginx ${EC2_USER}@${EC2_HOST}:~/nginx
-    - scp -r Deploy/monitoring ${EC2_USER}@${EC2_HOST}:~/monitoring
-    - ssh ${EC2_USER}@${EC2_HOST} "mkdir -p ~/backups"
-    - echo "Creating environment file on remote..."
-    - ssh ${EC2_USER}@${EC2_HOST} "echo NODE_ENV=production > ~/devopsians.env"
-    - ssh ${EC2_USER}@${EC2_HOST} "echo PORT=3030 >> ~/devopsians.env"
-    - ssh ${EC2_USER}@${EC2_HOST} "echo DOCKERHUB_USERNAME=${DOCKERHUB_USERNAME} >> ~/devopsians.env"
-    - ssh ${EC2_USER}@${EC2_HOST} "echo IMAGE_TAG=${IMAGE_TAG:-latest} >> ~/devopsians.env"
-    - ssh ${EC2_USER}@${EC2_HOST} "echo FRONTEND_URL=${FRONTEND_URL} >> ~/devopsians.env"
-    - ssh ${EC2_USER}@${EC2_HOST} "echo MONGO_URL=${MONGO_URL} >> ~/devopsians.env"
-    - ssh ${EC2_USER}@${EC2_HOST} "echo MONGO_ROOT_USERNAME=${MONGO_ROOT_USERNAME:-admin} >> ~/devopsians.env"
-    - ssh ${EC2_USER}@${EC2_HOST} "echo MONGO_ROOT_PASSWORD=${MONGO_ROOT_PASSWORD:-adminpassword} >> ~/devopsians.env"
-    - ssh ${EC2_USER}@${EC2_HOST} "echo MONGO_DATABASE=${MONGO_DATABASE:-devopsians} >> ~/devopsians.env"
-    - ssh ${EC2_USER}@${EC2_HOST} "echo VITE_API_URL=${VITE_API_URL} >> ~/devopsians.env"
-    - ssh ${EC2_USER}@${EC2_HOST} "echo JWT_SECRET_KEY=${JWT_SECRET_KEY} >> ~/devopsians.env"
-    - echo "Pulling latest images and restarting services..."
-    - ssh ${EC2_USER}@${EC2_HOST} "docker pull ${DOCKERHUB_USERNAME}/devopsians-backend:latest"
-    - ssh ${EC2_USER}@${EC2_HOST} "docker pull ${DOCKERHUB_USERNAME}/devopsians-frontend:latest"
-    - ssh ${EC2_USER}@${EC2_HOST} "docker compose -f ~/docker-compose.yml down || true"
-    - ssh ${EC2_USER}@${EC2_HOST} "export \$(cat ~/devopsians.env | xargs) && docker compose -f ~/docker-compose.yml up -d"
-    - echo "Waiting for services to start..."
+    - echo "========================================================"
+    - echo "🚀 Deploying Devopsians to EKS"
+    - echo "========================================================"
+    - echo "Cluster: $EKS_CLUSTER_NAME"
+    - echo "Region: $AWS_REGION"
+    - echo "Static IP: $STATIC_IP"
+    - echo "Commit: $CI_COMMIT_SHORT_SHA"
+    - echo ""
+    
+    # Update backend secret with latest MONGO_URL
+    - echo "📝 Updating backend secret..."
+    - |
+      kubectl create secret generic backend-secret \
+        --from-literal=MONGO_URL="$MONGO_URL" \
+        --from-literal=FRONTEND_URL="https://$STATIC_IP" \
+        --dry-run=client -o yaml | kubectl apply -f - -n devopsians
+    
+    # Run the full deployment script
+    - echo "🚀 Running full deployment..."
+    - cd k8s/scripts
+    - ./full-deploy.sh
+    
+    # Show final status
+    - echo ""
+    - echo "========================================================"
+    - echo "✅ Deployment Complete!"
+    - echo "========================================================"
+    - kubectl get pods -n devopsians -o wide
+    - kubectl get svc -n devopsians
+    - kubectl get ingress -n devopsians
+    
+    # Health check
+    - echo ""
+    - echo "🔍 Running health check..."
     - sleep 15
-    - echo "Running health check..."
-    - ssh ${EC2_USER}@${EC2_HOST} "curl -f http://localhost:80 || echo 'WARNING - Frontend not responding on port 80'"
-    - ssh ${EC2_USER}@${EC2_HOST} "curl -f http://localhost:3030 || echo 'WARNING - Backend not responding on port 3030'"
+    - curl -I --connect-timeout 10 http://$STATIC_IP || echo "⚠️  Warning: Health check failed (may take a few minutes to be ready)"
+    
+    # Final message
+    - echo ""
+    - echo "🎯 Application URL: https://$STATIC_IP"
+    - echo "📊 Grafana: https://$STATIC_IP/grafana (if monitoring installed)"
+    - echo "📝 Commit: $CI_COMMIT_SHORT_SHA"
   environment:
     name: production
-    url: $FRONTEND_URL
-  only:
-    - main
+    url: https://$STATIC_IP
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+      when: always
+  allow_failure: false

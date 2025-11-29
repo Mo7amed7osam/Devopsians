@@ -1,0 +1,247 @@
+# -----------------------------------------------
+# Devopsians – Test CI/CD (Build Only - No Deploy)
+# -----------------------------------------------
+name: Test Build Pipeline
+
+on:
+  push:
+    branches:
+      - main
+      - test-ci
+  pull_request:
+    branches:
+      - main
+
+env:
+  DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+
+jobs:
+  # -----------------------------------------------
+  # INSTALL DEPENDENCIES
+  # -----------------------------------------------
+  prepare:
+    name: Prepare - Install Dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Display Node version
+        run: |
+          node -v
+          npm -v
+
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        id: cache
+        with:
+          path: |
+            backend/node_modules
+            frontend/node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('backend/package-lock.json', 'frontend/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Install backend dependencies
+        run: |
+          echo "Installing backend dependencies..."
+          cd backend
+          npm install
+
+      - name: Install frontend dependencies
+        run: |
+          echo "Installing frontend dependencies..."
+          cd frontend
+          npm install
+
+      - name: Upload node_modules artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: node-modules
+          path: |
+            backend/node_modules
+            frontend/node_modules
+          retention-days: 1
+
+      - name: Prepare stage complete
+        run: |
+          echo "✅ Dependencies installed successfully!"
+          echo "Backend node_modules size: $(du -sh backend/node_modules | cut -f1)"
+          echo "Frontend node_modules size: $(du -sh frontend/node_modules | cut -f1)"
+
+  # -----------------------------------------------
+  # TEST PLACEHOLDER
+  # -----------------------------------------------
+  test:
+    name: Test - Run Tests
+    runs-on: ubuntu-latest
+    needs: [prepare]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Display Node version
+        run: |
+          node -v
+          npm -v
+
+      - name: Download node_modules
+        uses: actions/download-artifact@v4
+        with:
+          name: node-modules
+
+      - name: Run tests
+        run: |
+          echo "No tests defined yet. Skipping."
+          echo "✅ Test stage passed"
+
+  # -----------------------------------------------
+  # BUILD FRONTEND (Vite) - Using VITE_API_URL=/
+  # -----------------------------------------------
+  build:
+    name: Build - Build Frontend
+    runs-on: ubuntu-latest
+    needs: [prepare]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Display Node version
+        run: |
+          node -v
+          npm -v
+
+      - name: Download node_modules
+        uses: actions/download-artifact@v4
+        with:
+          name: node-modules
+
+      - name: Build frontend with Vite
+        run: |
+          echo "Building frontend with VITE_API_URL=/"
+          export VITE_API_URL=/
+          cd frontend
+          npm run build
+          echo "✅ Frontend build complete"
+
+      - name: Check build output
+        run: |
+          echo "Build output size: $(du -sh frontend/dist | cut -f1)"
+          echo "Files in dist:"
+          ls -lah frontend/dist/
+
+      - name: Upload frontend build
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist
+          retention-days: 1
+
+  # -----------------------------------------------
+  # DOCKER BUILD & PUSH
+  # -----------------------------------------------
+  docker:
+    name: Docker - Build & Push Images
+    runs-on: ubuntu-latest
+    needs: [test, build]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+      - name: Display Docker version
+        run: docker version
+
+      - name: Set IMAGE_TAG
+        id: vars
+        run: |
+          echo "IMAGE_TAG=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
+          echo "🏷️  IMAGE_TAG=$(echo ${{ github.sha }} | cut -c1-7)"
+
+      - name: Build backend image
+        run: |
+          echo "========================================"
+          echo "🐳 Building backend image..."
+          echo "========================================"
+          docker build \
+            -t "${{ secrets.DOCKERHUB_USERNAME }}/devopsians-backend:${{ steps.vars.outputs.IMAGE_TAG }}" \
+            -t "${{ secrets.DOCKERHUB_USERNAME }}/devopsians-backend:latest" \
+            -f backend/Dockerfile \
+            .
+          echo "✅ Backend image built successfully"
+
+      - name: Build frontend image
+        run: |
+          echo "========================================"
+          echo "🐳 Building frontend image..."
+          echo "========================================"
+          docker build \
+            -t "${{ secrets.DOCKERHUB_USERNAME }}/devopsians-frontend:${{ steps.vars.outputs.IMAGE_TAG }}" \
+            -t "${{ secrets.DOCKERHUB_USERNAME }}/devopsians-frontend:latest" \
+            -f frontend/Dockerfile \
+            --build-arg VITE_API_URL=/ \
+            .
+          echo "✅ Frontend image built successfully"
+
+      - name: List built images
+        run: |
+          echo ""
+          echo "========================================"
+          echo "📦 Built Docker Images:"
+          echo "========================================"
+          docker images | grep devopsians
+
+      - name: Push backend images
+        run: |
+          echo "Pushing backend images..."
+          docker push "${{ secrets.DOCKERHUB_USERNAME }}/devopsians-backend:${{ steps.vars.outputs.IMAGE_TAG }}"
+          docker push "${{ secrets.DOCKERHUB_USERNAME }}/devopsians-backend:latest"
+          echo "✅ Backend images pushed"
+
+      - name: Push frontend images
+        run: |
+          echo "Pushing frontend images..."
+          docker push "${{ secrets.DOCKERHUB_USERNAME }}/devopsians-frontend:${{ steps.vars.outputs.IMAGE_TAG }}"
+          docker push "${{ secrets.DOCKERHUB_USERNAME }}/devopsians-frontend:latest"
+          echo "✅ Frontend images pushed"
+
+      - name: Docker build summary
+        run: |
+          echo ""
+          echo "========================================"
+          echo "✅ DOCKER BUILD COMPLETE!"
+          echo "========================================"
+          echo ""
+          echo "📦 Images pushed to Docker Hub:"
+          echo "  Backend:  ${{ secrets.DOCKERHUB_USERNAME }}/devopsians-backend:latest"
+          echo "  Backend:  ${{ secrets.DOCKERHUB_USERNAME }}/devopsians-backend:${{ steps.vars.outputs.IMAGE_TAG }}"
+          echo "  Frontend: ${{ secrets.DOCKERHUB_USERNAME }}/devopsians-frontend:latest"
+          echo "  Frontend: ${{ secrets.DOCKERHUB_USERNAME }}/devopsians-frontend:${{ steps.vars.outputs.IMAGE_TAG }}"
+          echo ""
+          echo "🔧 Build args used:"
+          echo "  VITE_API_URL=/"
+          echo ""
+          echo "🎉 All stages completed successfully!"
