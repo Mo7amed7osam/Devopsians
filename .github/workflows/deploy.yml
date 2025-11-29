@@ -1,26 +1,29 @@
 # -----------------------------------------------
-# Devopsians – Test CI/CD (Build Only - No Deploy)
+# Devopsians – CI/CD Pipeline
+# Build → Docker → Terraform → Deploy
 # -----------------------------------------------
-name: Test Build Pipeline
+name: Build and Deploy
 
 on:
   push:
     branches:
       - main
-      - test-ci
   pull_request:
     branches:
       - main
 
 env:
+  AWS_REGION: us-east-1
+  EKS_CLUSTER_NAME: devopsians-eks-cluster
+  STATIC_IP: 34.228.5.183
   DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
 
 jobs:
   # -----------------------------------------------
-  # TEST PLACEHOLDER
+  # 1. TEST
   # -----------------------------------------------
   test:
-    name: Test - Run Tests
+    name: Test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -37,11 +40,12 @@ jobs:
           echo "✅ Test stage passed"
 
   # -----------------------------------------------
-  # BUILD FRONTEND (Vite) - Using VITE_API_URL=/
+  # 2. BUILD FRONTEND
   # -----------------------------------------------
   build:
-    name: Build - Build Frontend
+    name: Build Frontend
     runs-on: ubuntu-latest
+    needs: [test]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -58,7 +62,7 @@ jobs:
           cd frontend
           npm ci
 
-      - name: Build frontend with Vite
+      - name: Build frontend
         run: |
           echo "Building frontend with VITE_API_URL=/"
           export VITE_API_URL=/
@@ -66,26 +70,14 @@ jobs:
           npm run build
           echo "✅ Frontend build complete"
 
-      - name: Check build output
-        run: |
-          echo "Build output size: $(du -sh frontend/dist | cut -f1)"
-          echo "Files in dist:"
-          ls -lah frontend/dist/
-
-      - name: Upload frontend build
-        uses: actions/upload-artifact@v4
-        with:
-          name: frontend-dist
-          path: frontend/dist
-          retention-days: 1
-
   # -----------------------------------------------
-  # DOCKER BUILD & PUSH
+  # 3. DOCKER BUILD & PUSH
   # -----------------------------------------------
   docker:
-    name: Docker - Build & Push Images
+    name: Docker Build & Push
     runs-on: ubuntu-latest
-    needs: [test, build]
+    needs: [build]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -99,16 +91,13 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
-      - name: Display Docker version
-        run: docker version
-
       - name: Set IMAGE_TAG
         id: vars
         run: |
           echo "IMAGE_TAG=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
           echo "🏷️  IMAGE_TAG=$(echo ${{ github.sha }} | cut -c1-7)"
 
-      - name: Build backend image
+      - name: Build and push backend
         run: |
           echo "========================================"
           echo "🐳 Building backend image..."
@@ -118,9 +107,13 @@ jobs:
             -t "${{ secrets.DOCKERHUB_USERNAME }}/devopsians-backend:latest" \
             -f backend/Dockerfile \
             .
-          echo "✅ Backend image built successfully"
+          
+          echo "📦 Pushing backend images..."
+          docker push "${{ secrets.DOCKERHUB_USERNAME }}/devopsians-backend:${{ steps.vars.outputs.IMAGE_TAG }}"
+          docker push "${{ secrets.DOCKERHUB_USERNAME }}/devopsians-backend:latest"
+          echo "✅ Backend images pushed"
 
-      - name: Build frontend image
+      - name: Build and push frontend
         run: |
           echo "========================================"
           echo "🐳 Building frontend image..."
@@ -131,44 +124,127 @@ jobs:
             -f frontend/Dockerfile \
             --build-arg VITE_API_URL=/ \
             .
-          echo "✅ Frontend image built successfully"
-
-      - name: List built images
-        run: |
-          echo ""
-          echo "========================================"
-          echo "📦 Built Docker Images:"
-          echo "========================================"
-          docker images | grep devopsians
-
-      - name: Push backend images
-        run: |
-          echo "Pushing backend images..."
-          docker push "${{ secrets.DOCKERHUB_USERNAME }}/devopsians-backend:${{ steps.vars.outputs.IMAGE_TAG }}"
-          docker push "${{ secrets.DOCKERHUB_USERNAME }}/devopsians-backend:latest"
-          echo "✅ Backend images pushed"
-
-      - name: Push frontend images
-        run: |
-          echo "Pushing frontend images..."
+          
+          echo "📦 Pushing frontend images..."
           docker push "${{ secrets.DOCKERHUB_USERNAME }}/devopsians-frontend:${{ steps.vars.outputs.IMAGE_TAG }}"
           docker push "${{ secrets.DOCKERHUB_USERNAME }}/devopsians-frontend:latest"
           echo "✅ Frontend images pushed"
 
-      - name: Docker build summary
+      - name: Docker summary
         run: |
           echo ""
           echo "========================================"
-          echo "✅ DOCKER BUILD COMPLETE!"
+          echo "✅ DOCKER BUILD COMPLETE"
           echo "========================================"
           echo ""
           echo "📦 Images pushed to Docker Hub:"
           echo "  Backend:  ${{ secrets.DOCKERHUB_USERNAME }}/devopsians-backend:latest"
-          echo "  Backend:  ${{ secrets.DOCKERHUB_USERNAME }}/devopsians-backend:${{ steps.vars.outputs.IMAGE_TAG }}"
           echo "  Frontend: ${{ secrets.DOCKERHUB_USERNAME }}/devopsians-frontend:latest"
-          echo "  Frontend: ${{ secrets.DOCKERHUB_USERNAME }}/devopsians-frontend:${{ steps.vars.outputs.IMAGE_TAG }}"
+
+  # -----------------------------------------------
+  # 4. TERRAFORM (After Docker Push)
+  # -----------------------------------------------
+  terraform:
+    name: Terraform Infrastructure
+    runs-on: ubuntu-latest
+    needs: [docker]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.5.0
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Terraform Format Check
+        run: |
+          cd terraform
+          terraform fmt -check -recursive || echo "⚠️ Some files need formatting"
+
+      - name: Terraform Init
+        run: |
+          cd terraform
+          echo "🔧 Initializing Terraform..."
+          terraform init
+          echo "✅ Terraform initialized"
+
+      - name: Terraform Validate
+        run: |
+          cd terraform
+          terraform validate
+          echo "✅ Configuration is valid"
+
+      - name: Terraform Plan
+        run: |
+          cd terraform
+          echo "📋 Planning infrastructure changes..."
+          terraform plan -out=tfplan -no-color
+          echo "✅ Plan generated"
+
+      - name: Show Plan
+        run: |
+          cd terraform
           echo ""
-          echo "🔧 Build args used:"
-          echo "  VITE_API_URL=/"
+          echo "========================================"
+          echo "📋 TERRAFORM PLAN"
+          echo "========================================"
+          terraform show -no-color tfplan
           echo ""
-          echo "🎉 All stages completed successfully!"
+
+      - name: Terraform Apply
+        run: |
+          cd terraform
+          echo ""
+          echo "========================================"
+          echo "🚀 APPLYING TERRAFORM CHANGES"
+          echo "========================================"
+          terraform apply -auto-approve tfplan
+          echo "✅ Infrastructure updated"
+
+      - name: Show Outputs
+        run: |
+          cd terraform
+          echo ""
+          echo "========================================"
+          echo "📊 INFRASTRUCTURE OUTPUTS"
+          echo "========================================"
+          terraform output -no-color
+          echo ""
+      - name: Verify EKS Cluster
+        run: |
+          echo "🔍 Verifying EKS cluster..."
+          aws eks describe-cluster \
+            --name ${{ env.EKS_CLUSTER_NAME }} \
+            --region ${{ env.AWS_REGION }} \
+            --query 'cluster.{Name:name,Status:status,Version:version}' \
+            --output table
+          echo "✅ Cluster verified"
+
+      - name: Verify Node Group
+        run: |
+          echo "🔍 Checking worker nodes..."
+          aws eks describe-nodegroup \
+            --cluster-name ${{ env.EKS_CLUSTER_NAME }} \
+            --nodegroup-name devopsians-node-group \
+            --region ${{ env.AWS_REGION }} \
+            --query 'nodegroup.{Status:status,Desired:scalingConfig.desiredSize}' \
+            --output table
+          echo "✅ Nodes verified"
+
+      - name: Pipeline Complete
+        run: |
+          echo ""
+          echo "========================================"
+          echo "✅ PIPELINE COMPLETE"
+          echo "========================================"
+          echo "Terraform applied successfully"
+          echo "Ready to add K8s deployment stage"
