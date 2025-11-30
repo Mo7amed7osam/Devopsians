@@ -144,235 +144,235 @@ jobs:
   # -----------------------------------------------
   # 4. TERRAFORM (After Docker Push)
   # -----------------------------------------------
-  terraform:
-    name: Terraform Infrastructure
-    runs-on: ubuntu-latest
-    needs: [docker]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+  # terraform:
+  #   name: Terraform Infrastructure
+  #   runs-on: ubuntu-latest
+  #   needs: [docker]
+  #   if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
 
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: 1.5.0
+  #     - name: Setup Terraform
+  #       uses: hashicorp/setup-terraform@v3
+  #       with:
+  #         terraform_version: 1.5.0
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
+  #     - name: Configure AWS credentials
+  #       uses: aws-actions/configure-aws-credentials@v4
+  #       with:
+  #         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  #         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  #         aws-region: ${{ env.AWS_REGION }}
 
-      - name: Terraform Format Check
-        run: |
-          cd terraform
-          terraform fmt -check -recursive || echo "⚠️ Some files need formatting"
+  #     - name: Terraform Format Check
+  #       run: |
+  #         cd terraform
+  #         terraform fmt -check -recursive || echo "⚠️ Some files need formatting"
 
-      - name: Terraform Init
-        run: |
-          cd terraform
-          echo "🔧 Initializing Terraform..."
-          terraform init
-          echo "✅ Terraform initialized"
+  #     - name: Terraform Init
+  #       run: |
+  #         cd terraform
+  #         echo "🔧 Initializing Terraform..."
+  #         terraform init
+  #         echo "✅ Terraform initialized"
 
-      - name: Terraform Validate
-        run: |
-          cd terraform
-          terraform validate
-          echo "✅ Configuration is valid"
+  #     - name: Terraform Validate
+  #       run: |
+  #         cd terraform
+  #         terraform validate
+  #         echo "✅ Configuration is valid"
 
-      - name: Terraform Plan
-        run: |
-          cd terraform
-          echo "📋 Planning infrastructure changes..."
-          terraform plan -out=tfplan -no-color
-          echo "✅ Plan generated"
+  #     - name: Terraform Plan
+  #       run: |
+  #         cd terraform
+  #         echo "📋 Planning infrastructure changes..."
+  #         terraform plan -out=tfplan -no-color
+  #         echo "✅ Plan generated"
 
-      - name: Show Plan
-        run: |
-          cd terraform
-          echo ""
-          echo "========================================"
-          echo "📋 TERRAFORM PLAN"
-          echo "========================================"
-          terraform show -no-color tfplan
-          echo ""
+  #     - name: Show Plan
+  #       run: |
+  #         cd terraform
+  #         echo ""
+  #         echo "========================================"
+  #         echo "📋 TERRAFORM PLAN"
+  #         echo "========================================"
+  #         terraform show -no-color tfplan
+  #         echo ""
 
-      - name: Terraform Apply
-        run: |
-          cd terraform
-          echo ""
-          echo "========================================"
-          echo "🚀 APPLYING TERRAFORM CHANGES"
-          echo "========================================"
-          terraform apply -auto-approve tfplan
-          echo "✅ Infrastructure updated"
+  #     - name: Terraform Apply
+  #       run: |
+  #         cd terraform
+  #         echo ""
+  #         echo "========================================"
+  #         echo "🚀 APPLYING TERRAFORM CHANGES"
+  #         echo "========================================"
+  #         terraform apply -auto-approve tfplan
+  #         echo "✅ Infrastructure updated"
 
-      - name: Show Outputs
-        run: |
-          cd terraform
-          echo ""
-          echo "========================================"
-          echo "📊 INFRASTRUCTURE OUTPUTS"
-          echo "========================================"
-          terraform output -no-color
-          echo ""
-      - name: Verify EKS Cluster
-        run: |
-          echo "🔍 Verifying EKS cluster..."
-          aws eks describe-cluster \
-            --name ${{ env.EKS_CLUSTER_NAME }} \
-            --region ${{ env.AWS_REGION }} \
-            --query 'cluster.{Name:name,Status:status,Version:version}' \
-            --output table
-          echo "✅ Cluster verified"
+  #     - name: Show Outputs
+  #       run: |
+  #         cd terraform
+  #         echo ""
+  #         echo "========================================"
+  #         echo "📊 INFRASTRUCTURE OUTPUTS"
+  #         echo "========================================"
+  #         terraform output -no-color
+  #         echo ""
+  #     - name: Verify EKS Cluster
+  #       run: |
+  #         echo "🔍 Verifying EKS cluster..."
+  #         aws eks describe-cluster \
+  #           --name ${{ env.EKS_CLUSTER_NAME }} \
+  #           --region ${{ env.AWS_REGION }} \
+  #           --query 'cluster.{Name:name,Status:status,Version:version}' \
+  #           --output table
+  #         echo "✅ Cluster verified"
 
-      - name: Verify Node Group
-        run: |
-          echo "🔍 Checking worker nodes..."
-          aws eks describe-nodegroup \
-            --cluster-name ${{ env.EKS_CLUSTER_NAME }} \
-            --nodegroup-name devopsians-node-group \
-            --region ${{ env.AWS_REGION }} \
-            --query 'nodegroup.{Status:status,Desired:scalingConfig.desiredSize}' \
-            --output table
-          echo "✅ Nodes verified"
+  #     - name: Verify Node Group
+  #       run: |
+  #         echo "🔍 Checking worker nodes..."
+  #         aws eks describe-nodegroup \
+  #           --cluster-name ${{ env.EKS_CLUSTER_NAME }} \
+  #           --nodegroup-name devopsians-node-group \
+  #           --region ${{ env.AWS_REGION }} \
+  #           --query 'nodegroup.{Status:status,Desired:scalingConfig.desiredSize}' \
+  #           --output table
+  #         echo "✅ Nodes verified"
 
-      - name: Pipeline Complete
-        run: |
-          echo ""
-          echo "========================================"
-          echo "✅ PIPELINE COMPLETE"
-          echo "========================================"
-          echo "Terraform applied successfully"
-          echo "Ready to add K8s deployment stage"
+  #     - name: Pipeline Complete
+  #       run: |
+  #         echo ""
+  #         echo "========================================"
+  #         echo "✅ PIPELINE COMPLETE"
+  #         echo "========================================"
+  #         echo "Terraform applied successfully"
+  #         echo "Ready to add K8s deployment stage"
 
-  # -----------------------------------------------
-  # 5. DEPLOY TO KUBERNETES (using scripts)
-  # -----------------------------------------------
-  deploy-k8s:
-    name: Deploy to Kubernetes
-    runs-on: ubuntu-latest
-    needs: [terraform]         # runs AFTER Terraform success
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+  # # -----------------------------------------------
+  # # 5. DEPLOY TO KUBERNETES (using scripts)
+  # # -----------------------------------------------
+  # deploy-k8s:
+  #   name: Deploy to Kubernetes
+  #   runs-on: ubuntu-latest
+  #   needs: [terraform]         # runs AFTER Terraform success
+  #   if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
+  #     - name: Configure AWS credentials
+  #       uses: aws-actions/configure-aws-credentials@v4
+  #       with:
+  #         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  #         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  #         aws-region: ${{ env.AWS_REGION }}
 
-      - name: Install kubectl
-        uses: azure/setup-kubectl@v4
-        with:
-          version: 'v1.28.0'
+  #     - name: Install kubectl
+  #       uses: azure/setup-kubectl@v4
+  #       with:
+  #         version: 'v1.28.0'
 
-      - name: Connect to EKS cluster
-        run: |
-          echo "🔗 Connecting to EKS cluster..."
-          aws eks update-kubeconfig \
-            --name ${{ env.EKS_CLUSTER_NAME }} \
-            --region ${{ env.AWS_REGION }}
-          kubectl get nodes
+  #     - name: Connect to EKS cluster
+  #       run: |
+  #         echo "🔗 Connecting to EKS cluster..."
+  #         aws eks update-kubeconfig \
+  #           --name ${{ env.EKS_CLUSTER_NAME }} \
+  #           --region ${{ env.AWS_REGION }}
+  #         kubectl get nodes
 
-      - name: Make scripts executable
-        run: |
-          chmod +x k8s/scripts/*.sh
+  #     - name: Make scripts executable
+  #       run: |
+  #         chmod +x k8s/scripts/*.sh
 
-      - name: Install NGINX Ingress (NLB + Static IP)
-        run: |
-          echo "📦 Running install-ingress-nginx.sh..."
-          k8s/scripts/install-ingress-nginx.sh
+  #     - name: Install NGINX Ingress (NLB + Static IP)
+  #       run: |
+  #         echo "📦 Running install-ingress-nginx.sh..."
+  #         k8s/scripts/install-ingress-nginx.sh
 
-      - name: Full application deploy (backend + frontend + ingress + TLS)
-        run: |
-          echo "🚀 Running full-deploy.sh..."
-          k8s/scripts/full-deploy.sh
+  #     - name: Full application deploy (backend + frontend + ingress + TLS)
+  #       run: |
+  #         echo "🚀 Running full-deploy.sh..."
+  #         k8s/scripts/full-deploy.sh
 
-      - name: Show final status
-        run: |
-          echo ""
-          echo "========================================"
-          echo "📊 KUBERNETES STATUS"
-          echo "========================================"
-          echo ""
-          echo "Namespaces:"
-          kubectl get ns
-          echo ""
-          echo "Pods (devopsians):"
-          kubectl get pods -n devopsians -o wide
-          echo ""
-          echo "Services (devopsians):"
-          kubectl get svc -n devopsians
-          echo ""
-          echo "Ingress (devopsians):"
-          kubectl get ingress -n devopsians
-          echo ""
-          echo "Ingress-NGINX Service:"
-          kubectl get svc -n ingress-nginx ingress-nginx-controller
-          echo ""
-          echo "✅ K8s deploy via scripts completed"
-  # -----------------------------------------------
-  # 6. INSTALL MONITORING (Prometheus + Grafana)
-  # -----------------------------------------------
-  monitoring:
-    name: Install Monitoring (Prometheus + Grafana)
-    runs-on: ubuntu-latest
-    needs: [deploy-k8s]      # run AFTER app is deployed
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+  #     - name: Show final status
+  #       run: |
+  #         echo ""
+  #         echo "========================================"
+  #         echo "📊 KUBERNETES STATUS"
+  #         echo "========================================"
+  #         echo ""
+  #         echo "Namespaces:"
+  #         kubectl get ns
+  #         echo ""
+  #         echo "Pods (devopsians):"
+  #         kubectl get pods -n devopsians -o wide
+  #         echo ""
+  #         echo "Services (devopsians):"
+  #         kubectl get svc -n devopsians
+  #         echo ""
+  #         echo "Ingress (devopsians):"
+  #         kubectl get ingress -n devopsians
+  #         echo ""
+  #         echo "Ingress-NGINX Service:"
+  #         kubectl get svc -n ingress-nginx ingress-nginx-controller
+  #         echo ""
+  #         echo "✅ K8s deploy via scripts completed"
+  # # -----------------------------------------------
+  # # 6. INSTALL MONITORING (Prometheus + Grafana)
+  # # -----------------------------------------------
+  # monitoring:
+  #   name: Install Monitoring (Prometheus + Grafana)
+  #   runs-on: ubuntu-latest
+  #   needs: [deploy-k8s]      # run AFTER app is deployed
+  #   if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
+  #     - name: Configure AWS credentials
+  #       uses: aws-actions/configure-aws-credentials@v4
+  #       with:
+  #         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  #         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  #         aws-region: ${{ env.AWS_REGION }}
 
-      - name: Install kubectl
-        uses: azure/setup-kubectl@v4
-        with:
-          version: 'v1.28.0'
+  #     - name: Install kubectl
+  #       uses: azure/setup-kubectl@v4
+  #       with:
+  #         version: 'v1.28.0'
 
-      - name: Connect to EKS cluster
-        run: |
-          echo "🔗 Connecting to EKS cluster..."
-          aws eks update-kubeconfig \
-            --name ${{ env.EKS_CLUSTER_NAME }} \
-            --region ${{ env.AWS_REGION }}
-          kubectl get nodes
+  #     - name: Connect to EKS cluster
+  #       run: |
+  #         echo "🔗 Connecting to EKS cluster..."
+  #         aws eks update-kubeconfig \
+  #           --name ${{ env.EKS_CLUSTER_NAME }} \
+  #           --region ${{ env.AWS_REGION }}
+  #         kubectl get nodes
 
-      - name: Make scripts executable
-        run: |
-          chmod +x k8s/scripts/*.sh
+  #     - name: Make scripts executable
+  #       run: |
+  #         chmod +x k8s/scripts/*.sh
 
-      - name: Install Prometheus + Grafana
-        run: |
-          echo "📊 Running install-monitoring.sh..."
-          k8s/scripts/install-monitoring.sh
+  #     - name: Install Prometheus + Grafana
+  #       run: |
+  #         echo "📊 Running install-monitoring.sh..."
+  #         k8s/scripts/install-monitoring.sh
 
-      - name: Show monitoring status
-        run: |
-          echo ""
-          echo "========================================"
-          echo "📊 MONITORING STATUS"
-          echo "========================================"
-          echo ""
-          echo "Pods (monitoring):"
-          kubectl get pods -n monitoring -o wide || true
-          echo ""
-          echo "Services (monitoring):"
-          kubectl get svc -n monitoring || true
-          echo ""
-          echo "Ingress (monitoring):"
-          kubectl get ingress -n monitoring || true
-          echo ""
-          echo "✅ Monitoring install step finished"
+  #     - name: Show monitoring status
+  #       run: |
+  #         echo ""
+  #         echo "========================================"
+  #         echo "📊 MONITORING STATUS"
+  #         echo "========================================"
+  #         echo ""
+  #         echo "Pods (monitoring):"
+  #         kubectl get pods -n monitoring -o wide || true
+  #         echo ""
+  #         echo "Services (monitoring):"
+  #         kubectl get svc -n monitoring || true
+  #         echo ""
+  #         echo "Ingress (monitoring):"
+  #         kubectl get ingress -n monitoring || true
+  #         echo ""
+  #         echo "✅ Monitoring install step finished"
