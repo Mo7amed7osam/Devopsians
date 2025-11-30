@@ -318,3 +318,61 @@ jobs:
           kubectl get svc -n ingress-nginx ingress-nginx-controller
           echo ""
           echo "✅ K8s deploy via scripts completed"
+  # -----------------------------------------------
+  # 6. INSTALL MONITORING (Prometheus + Grafana)
+  # -----------------------------------------------
+  monitoring:
+    name: Install Monitoring (Prometheus + Grafana)
+    runs-on: ubuntu-latest
+    needs: [deploy-k8s]      # run AFTER app is deployed
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v4
+        with:
+          version: 'v1.28.0'
+
+      - name: Connect to EKS cluster
+        run: |
+          echo "🔗 Connecting to EKS cluster..."
+          aws eks update-kubeconfig \
+            --name ${{ env.EKS_CLUSTER_NAME }} \
+            --region ${{ env.AWS_REGION }}
+          kubectl get nodes
+
+      - name: Make scripts executable
+        run: |
+          chmod +x k8s/scripts/*.sh
+
+      - name: Install Prometheus + Grafana
+        run: |
+          echo "📊 Running install-monitoring.sh..."
+          k8s/scripts/install-monitoring.sh
+
+      - name: Show monitoring status
+        run: |
+          echo ""
+          echo "========================================"
+          echo "📊 MONITORING STATUS"
+          echo "========================================"
+          echo ""
+          echo "Pods (monitoring):"
+          kubectl get pods -n monitoring -o wide || true
+          echo ""
+          echo "Services (monitoring):"
+          kubectl get svc -n monitoring || true
+          echo ""
+          echo "Ingress (monitoring):"
+          kubectl get ingress -n monitoring || true
+          echo ""
+          echo "✅ Monitoring install step finished"
