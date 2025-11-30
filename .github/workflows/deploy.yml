@@ -249,8 +249,7 @@ jobs:
           echo "Terraform applied successfully"
           echo "Ready to add K8s deployment stage"
 
-
-            # -----------------------------------------------
+  # -----------------------------------------------
   # 5. DEPLOY TO KUBERNETES (using scripts)
   # -----------------------------------------------
   deploy-k8s:
@@ -258,8 +257,6 @@ jobs:
     runs-on: ubuntu-latest
     needs: [terraform]         # runs AFTER Terraform success
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    env:
-      AWS_REGION: ${{ env.AWS_REGION }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
