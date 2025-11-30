@@ -248,3 +248,76 @@ jobs:
           echo "========================================"
           echo "Terraform applied successfully"
           echo "Ready to add K8s deployment stage"
+
+
+            # -----------------------------------------------
+  # 5. DEPLOY TO KUBERNETES (using scripts)
+  # -----------------------------------------------
+  deploy-k8s:
+    name: Deploy to Kubernetes
+    runs-on: ubuntu-latest
+    needs: [terraform]         # runs AFTER Terraform success
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    env:
+      AWS_REGION: ${{ env.AWS_REGION }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v4
+        with:
+          version: 'v1.28.0'
+
+      - name: Connect to EKS cluster
+        run: |
+          echo "🔗 Connecting to EKS cluster..."
+          aws eks update-kubeconfig \
+            --name ${{ env.EKS_CLUSTER_NAME }} \
+            --region ${{ env.AWS_REGION }}
+          kubectl get nodes
+
+      - name: Make scripts executable
+        run: |
+          chmod +x k8s/scripts/*.sh
+
+      - name: Install NGINX Ingress (NLB + Static IP)
+        run: |
+          echo "📦 Running install-ingress-nginx.sh..."
+          k8s/scripts/install-ingress-nginx.sh
+
+      - name: Full application deploy (backend + frontend + ingress + TLS)
+        run: |
+          echo "🚀 Running full-deploy.sh..."
+          k8s/scripts/full-deploy.sh
+
+      - name: Show final status
+        run: |
+          echo ""
+          echo "========================================"
+          echo "📊 KUBERNETES STATUS"
+          echo "========================================"
+          echo ""
+          echo "Namespaces:"
+          kubectl get ns
+          echo ""
+          echo "Pods (devopsians):"
+          kubectl get pods -n devopsians -o wide
+          echo ""
+          echo "Services (devopsians):"
+          kubectl get svc -n devopsians
+          echo ""
+          echo "Ingress (devopsians):"
+          kubectl get ingress -n devopsians
+          echo ""
+          echo "Ingress-NGINX Service:"
+          kubectl get svc -n ingress-nginx ingress-nginx-controller
+          echo ""
+          echo "✅ K8s deploy via scripts completed"
