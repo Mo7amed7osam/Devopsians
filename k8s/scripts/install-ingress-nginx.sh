@@ -106,12 +106,18 @@ echo ""
 
 # Delete existing namespace if present
 if kubectl get namespace ingress-nginx &>/dev/null; then
-  echo "🗑️  Removing existing ingress-nginx namespace..."
-  kubectl delete namespace ingress-nginx --wait=true --timeout=60s
-  echo "✅ Cleaned up"
+  echo "🗑️ Removing existing ingress-nginx namespace..."
+  # Don't let a timeout kill the whole script in CI
+  if ! kubectl delete namespace ingress-nginx --wait=true --timeout=60s; then
+    echo "⚠️ Namespace deletion timed out, namespace may still be terminating."
+    echo "   Continuing and will recreate resources if possible."
+  else
+    echo "✅ Cleaned up"
+  fi
   echo ""
   sleep 5
 fi
+
 
 # Create namespace
 echo "5️⃣ Creating ingress-nginx namespace..."
