@@ -331,7 +331,4 @@ aws elbv2 describe-load-balancers \
 echo ""
 echo "✅ Test your static IP:"
 echo "   curl -I http://$STATIC_IP"
-echo ""
-echo "📝 Note: Using single-subnet configuration with Cluster traffic policy"
-echo "   - Cost optimized (1 Elastic IP = free in first year)"
-echo "   - All
+
