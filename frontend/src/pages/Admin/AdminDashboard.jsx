@@ -30,7 +30,6 @@ const AdminDashboard = () => {
     const [dashboardStats, setDashboardStats] = useState({
         totalHospitals: 0,
         totalManagers: 8,
-        totalEmployees: 124,
         avgRating: 4.2,
         totalIcus: 0,
         occupiedIcus: 0,
@@ -44,8 +43,14 @@ const AdminDashboard = () => {
             try {
                 // Fetch system stats, hospitals, and user lists to compute counts
                 const [statsRes, hospitalsRes, managersRes, adminsRes] = await Promise.all([
-                    fetchSystemStats(),
-                    viewAllHospitals(),
+                    fetchSystemStats().catch(err => {
+                        console.warn('Failed to fetch system stats:', err.response?.status);
+                        return { data: { totalIcus: 0, occupiedIcus: 0, availableIcus: 0 } };
+                    }),
+                    viewAllHospitals().catch(err => {
+                        console.warn('Failed to fetch hospitals:', err.response?.status);
+                        return { data: [] };
+                    }),
                     viewAllManagers().catch(() => ({ data: [] })),
                     viewAllAdmins().catch(() => ({ data: [] })),
                 ]);
@@ -60,14 +65,20 @@ const AdminDashboard = () => {
                     ? adminsRes.data
                     : (adminsRes?.data?.data || adminsRes?.data?.admins || adminsRes?.data || []);
 
+                console.log('Dashboard Stats Debug:', {
+                    hospitals: hospitalsArray.length,
+                    totalIcus: statsRes?.data?.totalIcus,
+                    occupiedIcus: statsRes?.data?.occupiedIcus,
+                    availableIcus: statsRes?.data?.availableIcus
+                });
+
                 setDashboardStats(prev => ({
                     ...prev,
                     totalHospitals: hospitalsArray.length,
-                    totalIcus: statsRes?.data?.totalIcus ?? prev.totalIcus,
-                    occupiedIcus: statsRes?.data?.occupiedIcus ?? prev.occupiedIcus,
-                    availableIcus: statsRes?.data?.availableIcus ?? prev.availableIcus,
-                    totalManagers: managersArrayForStats.length || prev.totalManagers,
-                    totalEmployees: (managersArrayForStats.length || 0) + (adminsArrayForStats.length || 0)
+                    totalIcus: statsRes?.data?.totalIcus ?? 0,
+                    occupiedIcus: statsRes?.data?.occupiedIcus ?? 0,
+                    availableIcus: statsRes?.data?.availableIcus ?? 0,
+                    totalManagers: managersArrayForStats.length || prev.totalManagers
                 }));
 
                 // Populate hospitals dropdown
@@ -330,47 +341,78 @@ const AdminDashboard = () => {
                         </div>
                         {isCreatingUser && (
                             <Modal isOpen={isCreatingUser} onClose={() => setIsCreatingUser(false)} contentLabel="create-user">
-                                <form onSubmit={handleCreateUserSubmit} className={styles.formCard}>
-                                    <h3>Create New User</h3>
-                                    <label>First Name *</label>
-                                    <input name="firstName" value={createUserForm.firstName} onChange={handleCreateUserChange} placeholder="First name" required />
-                                    <label>Last Name *</label>
-                                    <input name="lastName" value={createUserForm.lastName} onChange={handleCreateUserChange} placeholder="Last name" required />
-                                    <label>Username</label>
-                                    <input name="userName" value={createUserForm.userName} onChange={handleCreateUserChange} placeholder="Username (optional)" />
-                                    <label>Email</label>
-                                    <input name="email" type="email" value={createUserForm.email} onChange={handleCreateUserChange} placeholder="Email (optional)" />
-                                    <label>Password *</label>
-                                    <input name="password" type="password" value={createUserForm.password} onChange={handleCreateUserChange} placeholder="Password" required minLength={6} />
-                                    <label>Phone</label>
-                                    <input name="phone" value={createUserForm.phone} onChange={handleCreateUserChange} placeholder="Phone" />
-                                    <label>Gender</label>
-                                    <select name="gender" value={createUserForm.gender} onChange={handleCreateUserChange}>
-                                        <option value="Male">Male</option>
-                                        <option value="Female">Female</option>
-                                    </select>
-                                    <label>Role *</label>
-                                    <select name="role" value={createUserForm.role} onChange={handleCreateUserChange} required>
-                                        <option value="Admin">Admin</option>
-                                        <option value="Manager">Manager</option>
-                                        <option value="Receptionist">Receptionist</option>
-                                        <option value="Ambulance">Ambulance</option>
-                                        <option value="Patient">Patient</option>
-                                    </select>
-                                    {(createUserForm.role === 'Receptionist' || createUserForm.role === 'Ambulance' || createUserForm.role === 'Manager') && (
-                                        <>
-                                            <label>Assign to Hospital</label>
-                                            <select name="assignedHospital" value={createUserForm.assignedHospital} onChange={handleCreateUserChange}>
-                                                <option value="">-- Select Hospital (Optional) --</option>
-                                                {hospitalsList.map(h => (
-                                                    <option key={h._id || h.id} value={h._id || h.id}>{h.name || h.address}</option>
-                                                ))}
+                                <form onSubmit={handleCreateUserSubmit} className={styles.createUserForm}>
+                                    <div className={styles.formHeader}>
+                                        <h3>Create New User</h3>
+                                        <p>Fill in the details to create a new user account</p>
+                                    </div>
+                                    
+                                    <div className={styles.formGrid}>
+                                        <div className={styles.formGroup}>
+                                            <label>First Name <span className={styles.required}>*</span></label>
+                                            <input name="firstName" value={createUserForm.firstName} onChange={handleCreateUserChange} placeholder="Enter first name" required />
+                                        </div>
+                                        
+                                        <div className={styles.formGroup}>
+                                            <label>Last Name <span className={styles.required}>*</span></label>
+                                            <input name="lastName" value={createUserForm.lastName} onChange={handleCreateUserChange} placeholder="Enter last name" required />
+                                        </div>
+                                        
+                                        <div className={styles.formGroup}>
+                                            <label>Username</label>
+                                            <input name="userName" value={createUserForm.userName} onChange={handleCreateUserChange} placeholder="Enter username (optional)" />
+                                        </div>
+                                        
+                                        <div className={styles.formGroup}>
+                                            <label>Email</label>
+                                            <input name="email" type="email" value={createUserForm.email} onChange={handleCreateUserChange} placeholder="Enter email (optional)" />
+                                        </div>
+                                        
+                                        <div className={styles.formGroup}>
+                                            <label>Password <span className={styles.required}>*</span></label>
+                                            <input name="password" type="password" value={createUserForm.password} onChange={handleCreateUserChange} placeholder="Min 6 characters" required minLength={6} />
+                                        </div>
+                                        
+                                        <div className={styles.formGroup}>
+                                            <label>Phone</label>
+                                            <input name="phone" value={createUserForm.phone} onChange={handleCreateUserChange} placeholder="Enter phone number" />
+                                        </div>
+                                        
+                                        <div className={styles.formGroup}>
+                                            <label>Gender</label>
+                                            <select name="gender" value={createUserForm.gender} onChange={handleCreateUserChange}>
+                                                <option value="Male">Male</option>
+                                                <option value="Female">Female</option>
                                             </select>
-                                        </>
-                                    )}
-                                    <div style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem' }}>
-                                        <Button type="submit" variant="primary">Create User</Button>
+                                        </div>
+                                        
+                                        <div className={styles.formGroup}>
+                                            <label>Role <span className={styles.required}>*</span></label>
+                                            <select name="role" value={createUserForm.role} onChange={handleCreateUserChange} required>
+                                                <option value="Admin">Admin</option>
+                                                <option value="Manager">Manager</option>
+                                                <option value="Receptionist">Receptionist</option>
+                                                <option value="Ambulance">Ambulance</option>
+                                                <option value="Patient">Patient</option>
+                                            </select>
+                                        </div>
+                                        
+                                        {(createUserForm.role === 'Receptionist' || createUserForm.role === 'Ambulance' || createUserForm.role === 'Manager') && (
+                                            <div className={styles.formGroupFull}>
+                                                <label>Assign to Hospital</label>
+                                                <select name="assignedHospital" value={createUserForm.assignedHospital} onChange={handleCreateUserChange}>
+                                                    <option value="">-- Select Hospital (Optional) --</option>
+                                                    {hospitalsList.map(h => (
+                                                        <option key={h._id || h.id} value={h._id || h.id}>{h.name || h.address}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                        )}
+                                    </div>
+                                    
+                                    <div className={styles.formActions}>
                                         <Button type="button" variant="secondary" onClick={() => setIsCreatingUser(false)}>Cancel</Button>
+                                        <Button type="submit" variant="primary">Create User</Button>
                                     </div>
                                 </form>
                             </Modal>
@@ -482,27 +524,21 @@ const AdminDashboard = () => {
             <section className={styles.statsGrid}>
                 <DashBoardCard 
                     title="Total Hospitals" 
-                    value={loadingStats ? '...' : dashboardStats.totalHospitals} 
+                    value={loadingStats ? '...' : (dashboardStats.totalHospitals || 0)} 
                     icon={iconHospital} 
                     color="#007bff"
                 />
                 <DashBoardCard 
                     title="Total ICUs (System)" 
-                    value={loadingStats ? '...' : dashboardStats.totalIcus} 
+                    value={loadingStats ? '...' : (dashboardStats.totalIcus || 0)} 
                     icon={iconTotalIcu} 
                     color="#6f42c1"
                 />
                 <DashBoardCard 
                     title="Occupied ICUs" 
-                    value={loadingStats ? '...' : `${dashboardStats.occupiedIcus} / ${dashboardStats.totalIcus}`}
+                    value={loadingStats ? '...' : `${dashboardStats.occupiedIcus || 0} / ${dashboardStats.totalIcus || 0}`}
                     icon={iconOccupiedIcu} 
                     color="#dc3545"
-                />
-                <DashBoardCard 
-                    title="Total Employees" 
-                    value={dashboardStats.totalEmployees} 
-                    icon={iconEmployee} 
-                    color="#17a2b8"
                 />
             </section>
             <nav className={styles.tabsNav}>
