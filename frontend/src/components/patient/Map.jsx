@@ -55,21 +55,28 @@ function RecenterButton({ latitude, longitude }) {
         top: '10px',
         right: '10px',
         zIndex: 1000,
-        padding: '10px 15px',
-        backgroundColor: '#28a745',
+        padding: '12px 20px',
+        background: 'linear-gradient(135deg, #28a745 0%, #20c997 100%)',
         color: 'white',
         border: 'none',
-        borderRadius: '5px',
+        borderRadius: '10px',
         cursor: 'pointer',
-        fontWeight: 'bold',
-        boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
+        fontWeight: '600',
+        boxShadow: '0 4px 12px rgba(40, 167, 69, 0.4)',
         fontSize: '14px',
         display: 'flex',
         alignItems: 'center',
-        gap: '5px'
+        gap: '8px',
+        transition: 'all 0.3s ease'
       }}
-      onMouseEnter={(e) => e.target.style.backgroundColor = '#218838'}
-      onMouseLeave={(e) => e.target.style.backgroundColor = '#28a745'}
+      onMouseEnter={(e) => {
+        e.target.style.transform = 'translateY(-2px)';
+        e.target.style.boxShadow = '0 6px 16px rgba(40, 167, 69, 0.5)';
+      }}
+      onMouseLeave={(e) => {
+        e.target.style.transform = 'translateY(0)';
+        e.target.style.boxShadow = '0 4px 12px rgba(40, 167, 69, 0.4)';
+      }}
     >
       📍 My Location
     </button>

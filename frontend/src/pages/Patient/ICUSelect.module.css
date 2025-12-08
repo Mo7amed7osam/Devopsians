@@ -1,75 +1,116 @@
 /* src/pages/ICUSelect.module.css */
 .finderPage {
-    max-width: 1600px;
+    max-width: 100%;
     margin: 0 auto;
-    padding: 30px;
+    padding: 20px;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .pageHeader {
     text-align: center;
-    margin-bottom: 30px;
+    margin-bottom: 20px;
 }
 
 .pageHeader h1 {
     color: var(--color-primary-dark);
     margin-bottom: 5px;
+    font-size: clamp(1.5rem, 4vw, 2.5rem);
 }
 
 .pageHeader p {
     color: var(--color-text-muted);
-    font-size: 1.1em;
+    font-size: clamp(0.9rem, 2vw, 1.1rem);
 }
 
 .controls {
     display: flex;
+    flex-wrap: wrap;
     justify-content: center;
-    gap: 15px;
+    gap: 12px;
     align-items: center;
-    padding: 20px;
+    padding: 16px;
     background-color: var(--color-background-white);
     border-radius: 8px;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-    margin-bottom: 30px;
+    margin-bottom: 20px;
 }
 
 .controls input,
 .controls select {
     padding: 12px;
-    font-size: 16px;
+    font-size: 14px;
     border-radius: 5px;
     border: 1px solid var(--color-border);
+    min-width: 0;
+    flex: 1 1 auto;
 }
 
 .controls input {
-    width: 350px;
+    max-width: 350px;
+    min-width: 200px;
 }
 
 .controls select {
-    width: 250px;
+    max-width: 250px;
+    min-width: 180px;
 }
 
 .controls button {
     width: auto;
     height: 48px; 
-    padding: 0 25px;
+    padding: 0 20px;
+    white-space: nowrap;
 }
 
 .contentGrid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 30px;
+    gap: 20px;
     align-items: flex-start;
+    min-height: 500px;
+    width: 100%;
 }
 
 .mapArea {
     position: sticky;
     top: 20px;
-    height: calc(100vh - 120px);
+    height: calc(100vh - 200px);
+    min-height: 400px;
+    max-height: 700px;
+    width: 100%;
+}
+
+.mapArea > div {
+    width: 100%;
+    height: 100%;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.listArea {
+    min-height: 400px;
+    max-height: calc(100vh - 200px);
+    overflow-y: auto;
+    padding-right: 10px;
+    background: transparent;
+    width: 100%;
 }
 
 .listArea h3 {
-    margin-top: 0;
-    margin-bottom: 15px;
+    margin: 0 0 20px 0;
+    padding: 14px 16px;
+    color: white;
+    font-size: clamp(1.2rem, 3vw, 1.6rem);
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    z-index: 10;
+    text-align: center;
 }
 
 
@@ -78,4 +119,89 @@
     padding: 50px;
     font-size: 1.2em;
     color: var(--color-primary);
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+    .contentGrid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    .mapArea {
+        position: relative;
+        height: 450px;
+        min-height: 450px;
+        max-height: 450px;
+        top: 0;
+        order: 1;
+    }
+    
+    .listArea {
+        max-height: none;
+        order: 2;
+    }
+    
+    .finderPage {
+        padding: 15px;
+    }
+}
+
+@media (max-width: 768px) {
+    .finderPage {
+        padding: 10px;
+    }
+    
+    .controls {
+        flex-direction: column;
+        gap: 10px;
+        padding: 12px;
+    }
+    
+    .controls input,
+    .controls select {
+        width: 100%;
+        max-width: 100%;
+        min-width: 100%;
+    }
+    
+    .controls button {
+        width: 100%;
+        padding: 12px 20px;
+    }
+    
+    .mapArea {
+        height: 350px;
+        min-height: 350px;
+        max-height: 350px;
+    }
+    
+    .pageHeader h1 {
+        font-size: 1.5rem;
+    }
+    
+    .pageHeader p {
+        font-size: 0.9rem;
+    }
+    
+    .listArea h3 {
+        font-size: 1.2rem;
+        padding: 12px 14px;
+    }
+}
+
+@media (max-width: 480px) {
+    .finderPage {
+        padding: 8px;
+    }
+    
+    .controls {
+        padding: 10px;
+    }
+    
+    .mapArea {
+        height: 300px;
+        min-height: 300px;
+        max-height: 300px;
+    }
 }

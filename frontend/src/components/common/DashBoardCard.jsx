@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import styles from "./DashBoardCard.module.css";
 
-function DashboardCard({ title, icon, color, route }) {
+function DashboardCard({ title, value, icon, color, route }) {
   const navigate = useNavigate();
 
   function handleNavigation() {
@@ -9,9 +9,10 @@ function DashboardCard({ title, icon, color, route }) {
   }
 
   return (
-    <div className={`${styles.card} ${color || ""}`} onClick={handleNavigation}>
+    <div className={`${styles.card} ${color || ""}`} onClick={handleNavigation} style={{ borderColor: color }}>
       <div className={styles.content}>
         <span className={styles.title}>{title}</span>
+        {value !== undefined && <span className={styles.value}>{value}</span>}
         <span className={styles.icon}>{icon}</span>
       </div>
     </div>

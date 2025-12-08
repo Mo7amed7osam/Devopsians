@@ -34,7 +34,7 @@ export const getToken = () => Cookies.get(TOKEN_KEY);
 export const removeToken = () => Cookies.remove(TOKEN_KEY);
 
 // ============================================================
-//    ROLE MANAGEMENT — stored in localStorage
+//    ROLE MANAGEMENT — stored in sessionStorage
 // ============================================================
 
 /**
@@ -42,23 +42,23 @@ export const removeToken = () => Cookies.remove(TOKEN_KEY);
  * @param {string} role
  */
 export const setRole = (role) => {
-  localStorage.setItem(ROLE_KEY, role);
+  sessionStorage.setItem(ROLE_KEY, role);
 };
 
 /**
  * Retrieves the user's stored role.
  */
-export const getRole = () => localStorage.getItem(ROLE_KEY);
+export const getRole = () => sessionStorage.getItem(ROLE_KEY);
 
 /**
  * Removes the stored user role.
  */
 export const removeRole = () => {
-  localStorage.removeItem(ROLE_KEY);
+  sessionStorage.removeItem(ROLE_KEY);
 };
 
 // ============================================================
-//    USER NAME MANAGEMENT — stored in localStorage
+//    USER NAME MANAGEMENT — stored in sessionStorage
 // ============================================================
 
 /**
@@ -68,23 +68,23 @@ export const removeRole = () => {
  */
 export const setUserName = (firstName, lastName) => {
   const fullName = `${firstName} ${lastName}`.trim();
-  localStorage.setItem(USER_NAME_KEY, fullName);
+  sessionStorage.setItem(USER_NAME_KEY, fullName);
 };
 
 /**
  * Retrieves the user's stored name.
  */
-export const getUserName = () => localStorage.getItem(USER_NAME_KEY);
+export const getUserName = () => sessionStorage.getItem(USER_NAME_KEY);
 
 /**
  * Removes the stored user name.
  */
 export const removeUserName = () => {
-  localStorage.removeItem(USER_NAME_KEY);
+  sessionStorage.removeItem(USER_NAME_KEY);
 };
 
 // ============================================================
-//    HOSPITAL NAME MANAGEMENT — stored in localStorage
+//    HOSPITAL NAME MANAGEMENT — stored in sessionStorage
 // ============================================================
 
 /**
@@ -93,24 +93,24 @@ export const removeUserName = () => {
  */
 export const setHospitalName = (hospitalName) => {
   if (hospitalName) {
-    localStorage.setItem(HOSPITAL_NAME_KEY, hospitalName);
+    sessionStorage.setItem(HOSPITAL_NAME_KEY, hospitalName);
   }
 };
 
 /**
  * Retrieves the stored hospital name.
  */
-export const getHospitalName = () => localStorage.getItem(HOSPITAL_NAME_KEY);
+export const getHospitalName = () => sessionStorage.getItem(HOSPITAL_NAME_KEY);
 
 /**
  * Removes the stored hospital name.
  */
 export const removeHospitalName = () => {
-  localStorage.removeItem(HOSPITAL_NAME_KEY);
+  sessionStorage.removeItem(HOSPITAL_NAME_KEY);
 };
 
 // ============================================================
-//    USER ID MANAGEMENT — stored in localStorage
+//    USER ID MANAGEMENT — stored in sessionStorage
 // ============================================================
 
 /**
@@ -118,14 +118,14 @@ export const removeHospitalName = () => {
  * @param {string} id
  */
 export const setUserId = (id) => {
-  localStorage.setItem(USER_ID_KEY, id);
+  sessionStorage.setItem(USER_ID_KEY, id);
 };
 
 /**
  * Retrieves the user's stored ID.
  */
 export const getUserId = () => {
-  const stored = localStorage.getItem(USER_ID_KEY);
+  const stored = sessionStorage.getItem(USER_ID_KEY);
   if (stored) return stored;
   // Fallback: try to decode JWT to obtain user id
   try {
@@ -144,7 +144,7 @@ export const getUserId = () => {
  * Removes the stored user ID.
  */
 export const removeUserId = () => {
-  localStorage.removeItem(USER_ID_KEY);
+  sessionStorage.removeItem(USER_ID_KEY);
 };
 
 // ============================================================

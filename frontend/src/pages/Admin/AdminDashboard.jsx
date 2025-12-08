@@ -44,15 +44,21 @@ const AdminDashboard = () => {
                 // Fetch system stats, hospitals, and user lists to compute counts
                 const [statsRes, hospitalsRes, managersRes, adminsRes] = await Promise.all([
                     fetchSystemStats().catch(err => {
-                        console.warn('Failed to fetch system stats:', err.response?.status);
+                        console.warn('Failed to fetch system stats:', err.response?.status || err.message);
                         return { data: { totalIcus: 0, occupiedIcus: 0, availableIcus: 0 } };
                     }),
                     viewAllHospitals().catch(err => {
-                        console.warn('Failed to fetch hospitals:', err.response?.status);
+                        console.warn('Failed to fetch hospitals:', err.response?.status || err.message);
                         return { data: [] };
                     }),
-                    viewAllManagers().catch(() => ({ data: [] })),
-                    viewAllAdmins().catch(() => ({ data: [] })),
+                    viewAllManagers().catch(err => {
+                        console.warn('Failed to fetch managers:', err.response?.status || err.message);
+                        return { data: [] };
+                    }),
+                    viewAllAdmins().catch(err => {
+                        console.warn('Failed to fetch admins:', err.response?.status || err.message);
+                        return { data: [] };
+                    }),
                 ]);
 
                 const hospitalsArray = Array.isArray(hospitalsRes.data) ? hospitalsRes.data : hospitalsRes.data?.hospitals || hospitalsRes.data?.hospitalsList || [];
@@ -65,21 +71,13 @@ const AdminDashboard = () => {
                     ? adminsRes.data
                     : (adminsRes?.data?.data || adminsRes?.data?.admins || adminsRes?.data || []);
 
-                console.log('Dashboard Stats Debug:', {
-                    hospitals: hospitalsArray.length,
-                    totalIcus: statsRes?.data?.totalIcus,
-                    occupiedIcus: statsRes?.data?.occupiedIcus,
-                    availableIcus: statsRes?.data?.availableIcus
-                });
-
-                setDashboardStats(prev => ({
-                    ...prev,
-                    totalHospitals: hospitalsArray.length,
+                setDashboardStats({
+                    totalHospitals: hospitalsArray.length || 0,
                     totalIcus: statsRes?.data?.totalIcus ?? 0,
                     occupiedIcus: statsRes?.data?.occupiedIcus ?? 0,
                     availableIcus: statsRes?.data?.availableIcus ?? 0,
-                    totalManagers: managersArrayForStats.length || prev.totalManagers
-                }));
+                    totalManagers: managersArrayForStats.length || 0
+                });
 
                 // Populate hospitals dropdown
                 setHospitalsList(hospitalsArray);
@@ -153,6 +151,8 @@ const AdminDashboard = () => {
                 setUsersList(prev => prev.filter(u => (u.id || u._id) !== user.id));
                 toast.success(`User ${user.firstName || user.userName || ''} deleted.`);
                 setIsUserModalOpen(false);
+                // Reload stats to update counters
+                loadStats();
             } catch (err) {
                 console.error('Delete user failed', err);
                 toast.error('Failed to delete user.');
@@ -194,6 +194,18 @@ const AdminDashboard = () => {
 
     const handleCreateUserSubmit = async (e) => {
         e.preventDefault();
+        
+        // Validate required fields
+        if (!createUserForm.firstName || !createUserForm.lastName || !createUserForm.password || !createUserForm.role) {
+            toast.error('Please fill in all required fields (First Name, Last Name, Password, Role)');
+            return;
+        }
+        
+        if (createUserForm.password.length < 6) {
+            toast.error('Password must be at least 6 characters');
+            return;
+        }
+        
         try {
             await createUserAccount(createUserForm);
             toast.success(`${createUserForm.role} created successfully!`);
@@ -217,10 +229,12 @@ const AdminDashboard = () => {
                 ];
                 setUsersList(combined);
             }
+            // Reload stats to update counters
+            loadStats();
         } catch (err) {
-            console.error('Create user failed', err);
+            console.error('Create user failed:', err.response?.data || err);
             const serverMsg = err?.response?.data?.message || err?.message;
-            toast.error(serverMsg || 'Failed to create user.');
+            toast.error(`Failed to create user: ${serverMsg}`);
         }
     };
 
@@ -238,6 +252,8 @@ const AdminDashboard = () => {
             toast.success('User updated successfully.');
             setIsEditingUser(false);
             setIsUserModalOpen(false);
+            // Reload stats to update counters
+            loadStats();
         } catch (err) {
             console.error('Update user failed', err);
             toast.error('Failed to update user.');
@@ -247,6 +263,8 @@ const AdminDashboard = () => {
     const handleHospitalAdded = (newHospitalData) => {
         setHospitalUpdateKey(prev => prev + 1);
         setActiveTab('viewHospitals');
+        // Reload stats to update hospital counter
+        loadStats();
     };
 
     const handleManagerChange = (e) => {
@@ -461,30 +479,55 @@ const AdminDashboard = () => {
                                             <p><strong>Joined:</strong> {selectedUser.createdAt ? new Date(selectedUser.createdAt).toLocaleString() : 'N/A'}</p>
                                         </>
                                     ) : (
-                                        <div className={styles.formCard}>
-                                            <label>Name</label>
-                                            <input name="firstName" value={editForm.firstName ?? ''} onChange={handleEditChange} placeholder="First name" />
-                                            <input name="lastName" value={editForm.lastName ?? ''} onChange={handleEditChange} placeholder="Last name" />
-                                            <label>Email</label>
-                                            <input name="email" value={editForm.email ?? ''} onChange={handleEditChange} placeholder="Email" />
-                                            <label>Phone</label>
-                                            <input name="phone" value={editForm.phone ?? ''} onChange={handleEditChange} placeholder="Phone" />
-                                            <label>New Password</label>
-                                            <input name="password" value={editForm.password ?? ''} onChange={handleEditChange} placeholder="Leave blank to keep current password" type="password" />
-                                            <label>Role</label>
-                                            <select name="role" value={editForm.role} onChange={handleEditChange}>
-                                                <option value="Admin">Admin</option>
-                                                <option value="Manager">Manager</option>
-                                                {/* Doctor role removed from project */}
-                                                <option value="Receptionist">Receptionist</option>
-                                                <option value="Ambulance">Ambulance</option>
-                                                <option value="Patient">Patient</option>
-                                            </select>
-                                            <div style={{ marginTop: 12, display: 'flex', gap: 8 }}>
-                                                <Button size="small" variant="primary" onClick={handleSaveUser}>Save</Button>
-                                                <Button size="small" variant="secondary" onClick={() => setIsEditingUser(false)}>Cancel</Button>
+                                        <form onSubmit={(e) => { e.preventDefault(); handleSaveUser(); }} className={styles.createUserForm}>
+                                            <div className={styles.formHeader}>
+                                                <h3>Edit User</h3>
+                                                <p>Update user details below</p>
                                             </div>
-                                        </div>
+                                            
+                                            <div className={styles.formGrid}>
+                                                <div className={styles.formGroup}>
+                                                    <label>First Name <span className={styles.required}>*</span></label>
+                                                    <input name="firstName" value={editForm.firstName ?? ''} onChange={handleEditChange} placeholder="Enter first name" required />
+                                                </div>
+                                                
+                                                <div className={styles.formGroup}>
+                                                    <label>Last Name <span className={styles.required}>*</span></label>
+                                                    <input name="lastName" value={editForm.lastName ?? ''} onChange={handleEditChange} placeholder="Enter last name" required />
+                                                </div>
+                                                
+                                                <div className={styles.formGroup}>
+                                                    <label>Email</label>
+                                                    <input name="email" type="email" value={editForm.email ?? ''} onChange={handleEditChange} placeholder="Enter email" />
+                                                </div>
+                                                
+                                                <div className={styles.formGroup}>
+                                                    <label>Phone</label>
+                                                    <input name="phone" value={editForm.phone ?? ''} onChange={handleEditChange} placeholder="Enter phone number" />
+                                                </div>
+                                                
+                                                <div className={styles.formGroup}>
+                                                    <label>New Password</label>
+                                                    <input name="password" type="password" value={editForm.password ?? ''} onChange={handleEditChange} placeholder="Leave blank to keep current" />
+                                                </div>
+                                                
+                                                <div className={styles.formGroup}>
+                                                    <label>Role <span className={styles.required}>*</span></label>
+                                                    <select name="role" value={editForm.role} onChange={handleEditChange} required>
+                                                        <option value="Admin">Admin</option>
+                                                        <option value="Manager">Manager</option>
+                                                        <option value="Receptionist">Receptionist</option>
+                                                        <option value="Ambulance">Ambulance</option>
+                                                        <option value="Patient">Patient</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            
+                                            <div className={styles.formActions}>
+                                                <Button type="button" variant="secondary" onClick={() => setIsEditingUser(false)}>Cancel</Button>
+                                                <Button type="submit" variant="primary">Save Changes</Button>
+                                            </div>
+                                        </form>
                                     )}
                                 </div>
                                 <div className={styles.modalActions}>

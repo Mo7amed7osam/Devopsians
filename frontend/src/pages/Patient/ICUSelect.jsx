@@ -52,7 +52,8 @@ const ICUSelect = () => {
         try {
             // Fetch available ICUs from backend (public endpoint)
             const response = await getAvailableICUsFromServer();
-            const allIcus = Array.isArray(response.data) ? response.data : response.data?.icus || response.data?.icusList || [];
+            // Backend returns array directly, not wrapped in data object
+            const allIcus = Array.isArray(response.data) ? response.data : [];
 
             // Filter available ICUs only (controller already returns available, but keep guard)
             const availableIcus = allIcus.filter(icu => icu && (icu.status || '').toString().toLowerCase() === 'available' && !icu.isReserved);
@@ -63,8 +64,9 @@ const ICUSelect = () => {
                 toast.info('No available ICUs at the moment. Please try again later.');
             }
         } catch (err) {
-            console.error("Failed to load ICU data:", err);
-            toast.error('Failed to fetch ICU data. Please try again.');
+            console.error("Failed to load ICU data:", err.response?.data || err.message);
+            const errorMsg = err.response?.data?.message || 'Failed to fetch ICU data. Please try again.';
+            toast.error(errorMsg);
         } finally {
             setLoading(false);
         }
