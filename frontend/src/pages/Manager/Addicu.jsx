@@ -4,6 +4,8 @@ import { toast } from 'react-toastify'; // 1. Import toast
 import { registerICUOnServer, getICUSpecializations } from '../../utils/api'; 
 import styles from './Addicu.module.css';
 import Button from '../../components/common/Button';
+import SecureInput from '../../components/common/SecureInput';
+import SecureSelect from '../../components/common/SecureSelect';
 
 const Addicu = ({ hospitalId, onIcuRegistered }) => {
     const [formData, setFormData] = useState({
@@ -91,7 +93,7 @@ const Addicu = ({ hospitalId, onIcuRegistered }) => {
             <form onSubmit={handleSubmit} className={styles.form}>
                 <div className={styles.formGroup}>
                     <label htmlFor="roomNumber">Room Number/Identifier</label>
-                    <input type="text" id="roomNumber" name="roomNumber" value={formData.roomNumber} onChange={handleChange} required disabled={loading} />
+                    <SecureInput type="text" id="roomNumber" name="roomNumber" value={formData.roomNumber} onChange={handleChange} required disabled={loading} maxLength={50} />
                 </div>
                 
                 <div className={styles.formGroup}>
@@ -106,18 +108,18 @@ const Addicu = ({ hospitalId, onIcuRegistered }) => {
                 <div className={styles.rowGroup}>
                     <div className={styles.formGroup}>
                         <label htmlFor="capacity">Beds/Capacity</label>
-                        <input type="number" id="capacity" name="capacity" value={formData.capacity} min="1" onChange={handleChange} required disabled={loading} />
+                        <SecureInput type="number" id="capacity" name="capacity" value={formData.capacity} min="1" max="100" onChange={handleChange} required disabled={loading} />
                     </div>
                     <div className={styles.formGroup}>
                         <label htmlFor="feeStructure">Daily Fee (EGP)</label>
-                        <input type="number" id="feeStructure" name="feeStructure" value={formData.feeStructure} onChange={handleChange} required disabled={loading} />
+                        <SecureInput type="number" id="feeStructure" name="feeStructure" value={formData.feeStructure} min="0" max="1000000" onChange={handleChange} required disabled={loading} />
                     </div>
                 </div>
 
                 <div className={styles.formGroup}>
                     <label htmlFor="initialStatus">Initial Status</label>
-                    <select id="initialStatus" name="initialStatus" value={formData.initialStatus} onChange={handleChange} disabled={loading}>
-                        <option value="AVAILABLE">AVAILABLE</option>
+                    <SecureSelect id="initialStatus" name="initialStatus" value={formData.initialStatus} onChange={handleChange} disabled={loading} options={[
+                        { value: 'AVAILABLE', label: 'AVAILABLE' },
                         <option value="MAINTENANCE">MAINTENANCE</option>
                     </select>
                 </div>

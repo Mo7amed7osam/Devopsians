@@ -7,6 +7,7 @@ import socket from '../../utils/socket';
 import styles from './PatientHomePage.module.css'; 
 import Button from '../../components/common/Button';
 import Modal from '../../components/common/Modal';
+import SecureTextarea from '../../components/common/SecureTextarea';
 import ICUSelect from './ICUSelect';
 import { useNavigate } from 'react-router-dom';
 
@@ -348,11 +349,13 @@ const PatientHomePage = () => {
                             );
                         })}
                     </div>
-                    <textarea 
+                    <SecureTextarea 
+                        name="ratingComment"
                         className={styles.modalTextarea}
                         placeholder="Leave a comment (optional)..."
                         value={ratingComment}
                         onChange={(e) => setRatingComment(e.target.value)}
+                        maxLength={500}
                     />
                     <Button type="submit" variant="primary" style={{ width: '100%', marginTop: '20px' }}>Submit Rating</Button>
                 </form>

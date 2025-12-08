@@ -4,6 +4,7 @@ import { toast } from 'react-toastify'; // 1. Import toast
 import { updateMedicalHistory } from '../../utils/api';
 import styles from './UpdateMedicalDetails.module.css';
 import Button from '../../components/common/Button';
+import SecureTextarea from '../../components/common/SecureTextarea';
 
 const UpdateMedicalDetails = ({ patientId, initialHistory, onUpdateComplete }) => {
     const [history, setHistory] = useState(initialHistory || '');
@@ -42,14 +43,16 @@ const UpdateMedicalDetails = ({ patientId, initialHistory, onUpdateComplete }) =
 
             <form onSubmit={handleSubmit} className={styles.form}>
                 <label className={styles.label} htmlFor="medicalHistory">Current Medical Status & Allergies:</label>
-                <textarea 
+                <SecureTextarea 
                     id="medicalHistory"
+                    name="medicalHistory"
                     value={history}
                     onChange={(e) => setHistory(e.target.value)}
-                    rows="8"
+                    rows={8}
                     required
                     disabled={loading}
                     className={styles.textArea}
+                    maxLength={3000}
                 />
                 <Button type="submit" disabled={loading} variant="primary">
                     {loading ? 'Saving...' : 'Save Updates'}
