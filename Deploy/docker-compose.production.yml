@@ -83,8 +83,10 @@ services:
       - JWT_SECRET_KEY=${JWT_SECRET_KEY:-change-this-secret-in-production}
       - JWT_EXPIRES=${JWT_EXPIRES:-1d}
       
-      # Frontend URL
+      # Frontend URL (for CORS)
       - FRONTEND_URL=${FRONTEND_URL:-http://localhost}
+      # CORS Configuration
+      - CORS_ALLOW_ALL=${CORS_ALLOW_ALL:-false}
       
       # Email Configuration (Optional)
       - EMAIL_USER=${EMAIL_USER:-}
