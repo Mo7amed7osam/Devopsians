@@ -1,6 +1,7 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import { useEffect } from "react";
 import { clearSession, getRole, getUserName, getToken } from "../../utils/cookieUtils";
+import { safeNavigate } from "../../utils/security";
 import styles from "./Navigation.module.css";
 
 function Navigation() {
@@ -62,7 +63,7 @@ function Navigation() {
       <nav className={styles.nav}>
         <div className={styles.navContent}>
           <div className={styles.leftSection}>
-            <div className={styles.brand} onClick={() => navigate("/")}>
+            <div className={styles.brand} onClick={() => safeNavigate(navigate, "/")}>
               <svg className={styles.logo} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                 <path d="M2 17L12 22L22 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -73,7 +74,7 @@ function Navigation() {
           </div>
           
           <div className={styles.rightSection}>
-            <button onClick={() => navigate("/login")} className={styles.loginButton}>
+            <button onClick={() => safeNavigate(navigate, "/login")} className={styles.loginButton}>
               <svg className={styles.loginIcon} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M15 3H19C19.5304 3 20.0391 3.21071 20.4142 3.58579C20.7893 3.96086 21 4.46957 21 5V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                 <path d="M10 17L15 12L10 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -116,7 +117,7 @@ function Navigation() {
               else if (roleKey.includes('receptionist')) dest = '/receptionist';
               else if (roleKey.includes('ambulance')) dest = '/ambulance';
               else if (roleKey.includes('patient')) dest = '/patient-dashboard';
-              navigate(dest);
+              safeNavigate(navigate, dest);
             }}
             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault();
                 const roleKey = (userRole || '').toString().toLowerCase();
@@ -126,7 +127,7 @@ function Navigation() {
                 else if (roleKey.includes('receptionist')) dest = '/receptionist';
                 else if (roleKey.includes('ambulance')) dest = '/ambulance';
                 else if (roleKey.includes('patient')) dest = '/patient-dashboard';
-                navigate(dest);
+                safeNavigate(navigate, dest);
               } }}
             title={`Go to ${capitalizeRole(userRole)} dashboard`}
             style={{ cursor: 'pointer' }}

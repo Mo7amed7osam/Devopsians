@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import PropTypes from "prop-types";
 import axios from "axios";
 import { getUserData } from "../utils/cookieUtils";
+import { safeNavigate } from "../utils/security";
 import { API_BASE as API_URL } from "../utils/api";
 
 const PrivateRoute = ({ children, requiredRole }) => {
@@ -14,26 +15,25 @@ const PrivateRoute = ({ children, requiredRole }) => {
     const userData = getUserData();
     
     if (!userData || !userData.token) {
-      navigate("/login");
+      safeNavigate(navigate, "/login");
       return;
     }
 
-    // If we already have the role in cookies, check it immediately
-    if (userData.role && requiredRole && userData.role !== requiredRole) {
-      navigate("/unauthorized");
-      return;
-    }
-
-    // Verify token by sending it in the body
+    // ALWAYS verify token and role with backend - never trust client-side data
     axios
       .post(`${API_URL}/user/verify-token`, { token: userData.token })
       .then((response) => {
         if (response.status === 200) {
-          setIsAuthenticated(true);
-          // Check if the role matches the required role
-          if (requiredRole && response.data.role !== requiredRole) {
-            navigate("/unauthorized"); // Redirect to Unauthorized page
+          const backendRole = response.data.role;
+          
+          // Check if backend role matches required role
+          if (requiredRole && backendRole !== requiredRole) {
+            console.warn(`Access denied: User has role "${backendRole}" but "${requiredRole}" is required`);
+            safeNavigate(navigate, "/unauthorized");
+            return;
           }
+          
+          setIsAuthenticated(true);
         }
       })
       .catch((error) => {
@@ -42,7 +42,7 @@ const PrivateRoute = ({ children, requiredRole }) => {
           error.response?.data || error.message
         );
         setIsAuthenticated(false);
-        navigate("/login");
+        safeNavigate(navigate, "/login");
       })
       .finally(() => {
         setLoading(false);

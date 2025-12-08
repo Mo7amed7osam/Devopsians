@@ -289,7 +289,7 @@ const PatientHomePage = () => {
                         <div style={{ marginTop: '10px' }}>
                             <Button
                                 variant="primary"
-                                onClick={() => navigate('/patient/request-ambulance')}
+                                onClick={() => safeNavigate(navigate, '/patient/request-ambulance')}
                             >
                                 Track Ambulance / Manage Request
                             </Button>

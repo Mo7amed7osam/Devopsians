@@ -218,7 +218,7 @@ const ICUSelect = () => {
             setShowPickupModal(false);
             
             // Redirect to patient dashboard and refresh
-            navigate('/patient-dashboard');
+            safeNavigate(navigate, '/patient-dashboard');
             setTimeout(() => {
                 window.location.reload();
             }, 100);

@@ -55,6 +55,7 @@ else
   echo "⚠️  TLS certificate not found in devopsians namespace"
   echo "   Monitoring will use HTTP only until app is deployed"
   echo "   Run this script again after deploying the application"
+  echo "   Continuing without TLS for now..."
 fi
 
 echo ""

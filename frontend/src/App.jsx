@@ -83,11 +83,11 @@ const App = () => {
                     <Route path="/login" element={<LoginForm />} />
                     <Route path="/register" element={<RegisterForm />} />
 
-                    {/* --- PATIENT/ENDUSER ROUTES (Role: patient) --- */}
+                    {/* --- PATIENT/ENDUSER ROUTES (Role: Patient) --- */}
                     <Route
                         path="/patient-dashboard"
                         element={
-                            <PrivateRoute allowedRoles={['patient']}>
+                            <PrivateRoute requiredRole="Patient">
                                 <PatientHomePage />
                             </PrivateRoute>
                         }
@@ -95,27 +95,27 @@ const App = () => {
                     <Route
                         path="/patient/request-ambulance"
                         element={
-                            <PrivateRoute allowedRoles={['patient']}>
+                            <PrivateRoute requiredRole="Patient">
                                 <RequestAmbulance />
                             </PrivateRoute>
                         }
                     />
 
-                    {/* --- ADMIN ROUTE (Role: admin) --- */}
+                    {/* --- ADMIN ROUTE (Role: Admin) --- */}
                     <Route
                         path="/admin"
                         element={
-                            <PrivateRoute allowedRoles={['admin']}>
+                            <PrivateRoute requiredRole="Admin">
                                 <AdminDashboard />
                             </PrivateRoute>
                         }
                     />
 
-                    {/* --- MANAGER ROUTE (Role: manager) --- */}
+                    {/* --- MANAGER ROUTE (Role: Manager) --- */}
                     <Route
                         path="/manager"
                         element={
-                            <PrivateRoute allowedRoles={['manager']}>
+                            <PrivateRoute requiredRole="Manager">
                                 <ManagerDashboard />
                             </PrivateRoute>
                         }
@@ -123,7 +123,7 @@ const App = () => {
                     <Route
                         path="/manager/receptionists"
                         element={
-                            <PrivateRoute allowedRoles={['manager']}>
+                            <PrivateRoute requiredRole="Manager">
                                 <ManageReceptionists />
                             </PrivateRoute>
                         }
@@ -135,7 +135,7 @@ const App = () => {
                     <Route
                         path="/receptionist"
                         element={
-                            <PrivateRoute allowedRoles={['receptionist']}>
+                            <PrivateRoute requiredRole="Receptionist">
                                 <ReceptionistPanel />
                             </PrivateRoute>
                         }
@@ -145,7 +145,7 @@ const App = () => {
                     <Route
                         path="/ambulance"
                         element={
-                            <PrivateRoute allowedRoles={['ambulance']}>
+                            <PrivateRoute requiredRole="Ambulance">
                                 <AmbulancePanel />
                             </PrivateRoute>
                         }
