@@ -107,21 +107,40 @@ echo ""
 # Delete existing namespace if present
 if kubectl get namespace ingress-nginx &>/dev/null; then
   echo "🗑️ Removing existing ingress-nginx namespace..."
-  # Don't let a timeout kill the whole script in CI
-  if ! kubectl delete namespace ingress-nginx --wait=true --timeout=60s; then
-    echo "⚠️ Namespace deletion timed out, namespace may still be terminating."
-    echo "   Continuing and will recreate resources if possible."
-  else
-    echo "✅ Cleaned up"
+  
+  # Try graceful deletion first
+  kubectl delete namespace ingress-nginx --wait=false &>/dev/null || true
+  
+  # Wait up to 60 seconds for deletion
+  echo "   Waiting for namespace to terminate..."
+  for i in {1..60}; do
+    if ! kubectl get namespace ingress-nginx &>/dev/null; then
+      echo "✅ Namespace deleted"
+      break
+    fi
+    
+    # If still terminating after 30 seconds, force remove finalizers
+    if [ $i -eq 30 ]; then
+      echo "   ⚙️  Removing finalizers to force deletion..."
+      kubectl get namespace ingress-nginx -o json | \
+        jq '.spec.finalizers = []' | \
+        kubectl replace --raw "/api/v1/namespaces/ingress-nginx/finalize" -f - &>/dev/null || true
+    fi
+    
+    sleep 1
+  done
+  
+  # Final check
+  if kubectl get namespace ingress-nginx &>/dev/null; then
+    echo "⚠️  Warning: Namespace still exists, will try to work with it"
   fi
   echo ""
   sleep 5
 fi
 
-
-# Create namespace
+# Create namespace (idempotent)
 echo "5️⃣ Creating ingress-nginx namespace..."
-kubectl create namespace ingress-nginx
+kubectl create namespace ingress-nginx 2>/dev/null || echo "   Namespace already exists, continuing..."
 
 echo ""
 echo "6️⃣ Installing ingress-nginx controller..."
