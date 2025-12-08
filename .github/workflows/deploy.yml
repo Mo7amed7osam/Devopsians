@@ -249,7 +249,7 @@ jobs:
           echo "Terraform applied successfully"
           echo "Ready to add K8s deployment stage"
 
-  # -----------------------------------------------
+  # ----------------------------------------------
   # 5. DEPLOY TO KUBERNETES (using scripts)
   # -----------------------------------------------
   deploy-k8s:
