@@ -16,9 +16,11 @@ const HOSPITAL_NAME_KEY = 'hospital_name';
  * @param {string} token - JWT or mock token.
  */
 export const setToken = (token) => {
+  const isSecureContext = typeof window !== 'undefined' && window.location?.protocol === 'https:';
   Cookies.set(TOKEN_KEY, token, {
     expires: 7, // valid for 7 days
-    secure: process.env.NODE_ENV === 'production', // only HTTPS in production
+    // Use secure cookies only when actually on HTTPS to avoid browsers dropping the cookie in staging/http
+    secure: isSecureContext,
     sameSite: 'Strict', // prevent CSRF
     path: '/', // accessible across all routes
   });
@@ -43,9 +45,10 @@ export const removeToken = () => Cookies.remove(TOKEN_KEY, { path: '/' });
  * @param {string} role
  */
 export const setRole = (role) => {
+  const isSecureContext = typeof window !== 'undefined' && window.location?.protocol === 'https:';
   Cookies.set(ROLE_KEY, role, {
     expires: 7,
-    secure: process.env.NODE_ENV === 'production',
+    secure: isSecureContext,
     sameSite: 'Strict',
     path: '/',
   });
@@ -73,10 +76,11 @@ export const removeRole = () => {
  * @param {string} lastName
  */
 export const setUserName = (firstName, lastName) => {
+  const isSecureContext = typeof window !== 'undefined' && window.location?.protocol === 'https:';
   const fullName = `${firstName} ${lastName}`.trim();
   Cookies.set(USER_NAME_KEY, fullName, {
     expires: 7,
-    secure: process.env.NODE_ENV === 'production',
+    secure: isSecureContext,
     sameSite: 'Strict',
     path: '/',
   });
@@ -103,10 +107,11 @@ export const removeUserName = () => {
  * @param {string} hospitalName
  */
 export const setHospitalName = (hospitalName) => {
+  const isSecureContext = typeof window !== 'undefined' && window.location?.protocol === 'https:';
   if (hospitalName) {
     Cookies.set(HOSPITAL_NAME_KEY, hospitalName, {
       expires: 7,
-      secure: process.env.NODE_ENV === 'production',
+      secure: isSecureContext,
       sameSite: 'Strict',
       path: '/',
     });
@@ -134,9 +139,10 @@ export const removeHospitalName = () => {
  * @param {string} id
  */
 export const setUserId = (id) => {
+  const isSecureContext = typeof window !== 'undefined' && window.location?.protocol === 'https:';
   Cookies.set(USER_ID_KEY, id, {
     expires: 7,
-    secure: process.env.NODE_ENV === 'production',
+    secure: isSecureContext,
     sameSite: 'Strict',
     path: '/',
   });
