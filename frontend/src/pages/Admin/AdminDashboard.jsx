@@ -6,6 +6,8 @@ import ViewAllHospital from './ViewAllHospital.jsx';
 import Modal from '../../components/common/Modal';
 import styles from './AdminDashboard.module.css';
 import Button from '../../components/common/Button';
+import SecureInput from '../../components/common/SecureInput';
+import SecureSelect from '../../components/common/SecureSelect';
 // Employee management moved to Manager dashboard
 import { fetchSystemStats, viewAllHospitals, createManagerAccount, createUserAccount, viewAllManagers, viewAllAdmins, deleteUserById, blockUserById, unblockUserById, updateUserById } from '../../utils/api';
 
@@ -331,15 +333,12 @@ const AdminDashboard = () => {
                 return (
                     <form onSubmit={handleManagerSubmit} className={styles.formCard}>
                         <h3 className={styles.formTitle}>Add & Assign Manager</h3>
-                        <input type="text" name="name" value={managerForm.name ?? ''} onChange={handleManagerChange} placeholder="Name" required />
-                        <input type="email" name="email" value={managerForm.email ?? ''} onChange={handleManagerChange} placeholder="Email" required />
-                        <input type="password" name="password" value={managerForm.password ?? ''} onChange={handleManagerChange} placeholder="Initial Password" required />
-                        <input type="tel" name="phone" value={managerForm.phone ?? ''} onChange={handleManagerChange} placeholder="Phone (optional)" />
+                        <SecureInput type="text" name="name" value={managerForm.name ?? ''} onChange={handleManagerChange} placeholder="Name" required maxLength={100} />
+                        <SecureInput type="email" name="email" value={managerForm.email ?? ''} onChange={handleManagerChange} placeholder="Email" required validateEmail={true} />
+                        <SecureInput type="password" name="password" value={managerForm.password ?? ''} onChange={handleManagerChange} placeholder="Initial Password" required maxLength={128} />
+                        <SecureInput type="tel" name="phone" value={managerForm.phone ?? ''} onChange={handleManagerChange} placeholder="Phone (optional)" validatePhone={true} />
                         <label htmlFor="gender">Gender</label>
-                        <select name="gender" id="gender" value={managerForm.gender} onChange={handleManagerChange}>
-                            <option value="Male">Male</option>
-                            <option value="Female">Female</option>
-                        </select>
+                        <SecureSelect name="gender" id="gender" value={managerForm.gender} onChange={handleManagerChange} options={['Male', 'Female']} />
                         <label htmlFor="hospitalId">Assign to Hospital</label>
                         <select name="hospitalId" id="hospitalId" value={managerForm.hospitalId} onChange={handleManagerChange} required>
                             <option value="">Select a hospital...</option>
@@ -368,51 +367,42 @@ const AdminDashboard = () => {
                                     <div className={styles.formGrid}>
                                         <div className={styles.formGroup}>
                                             <label>First Name <span className={styles.required}>*</span></label>
-                                            <input name="firstName" value={createUserForm.firstName} onChange={handleCreateUserChange} placeholder="Enter first name" required />
+                                            <SecureInput name="firstName" value={createUserForm.firstName} onChange={handleCreateUserChange} placeholder="Enter first name" required maxLength={50} />
                                         </div>
                                         
                                         <div className={styles.formGroup}>
                                             <label>Last Name <span className={styles.required}>*</span></label>
-                                            <input name="lastName" value={createUserForm.lastName} onChange={handleCreateUserChange} placeholder="Enter last name" required />
+                                            <SecureInput name="lastName" value={createUserForm.lastName} onChange={handleCreateUserChange} placeholder="Enter last name" required maxLength={50} />
                                         </div>
                                         
                                         <div className={styles.formGroup}>
                                             <label>Username</label>
-                                            <input name="userName" value={createUserForm.userName} onChange={handleCreateUserChange} placeholder="Enter username (optional)" />
+                                            <SecureInput name="userName" value={createUserForm.userName} onChange={handleCreateUserChange} placeholder="Enter username (optional)" maxLength={50} />
                                         </div>
                                         
                                         <div className={styles.formGroup}>
                                             <label>Email</label>
-                                            <input name="email" type="email" value={createUserForm.email} onChange={handleCreateUserChange} placeholder="Enter email (optional)" />
+                                            <SecureInput name="email" type="email" value={createUserForm.email} onChange={handleCreateUserChange} placeholder="Enter email (optional)" validateEmail={true} />
                                         </div>
                                         
                                         <div className={styles.formGroup}>
                                             <label>Password <span className={styles.required}>*</span></label>
-                                            <input name="password" type="password" value={createUserForm.password} onChange={handleCreateUserChange} placeholder="Min 6 characters" required minLength={6} />
+                                            <SecureInput name="password" type="password" value={createUserForm.password} onChange={handleCreateUserChange} placeholder="Min 6 characters" required maxLength={128} />
                                         </div>
                                         
                                         <div className={styles.formGroup}>
                                             <label>Phone</label>
-                                            <input name="phone" value={createUserForm.phone} onChange={handleCreateUserChange} placeholder="Enter phone number" />
+                                            <SecureInput name="phone" type="tel" value={createUserForm.phone} onChange={handleCreateUserChange} placeholder="Enter phone number" validatePhone={true} />
                                         </div>
                                         
                                         <div className={styles.formGroup}>
                                             <label>Gender</label>
-                                            <select name="gender" value={createUserForm.gender} onChange={handleCreateUserChange}>
-                                                <option value="Male">Male</option>
-                                                <option value="Female">Female</option>
-                                            </select>
+                                            <SecureSelect name="gender" value={createUserForm.gender} onChange={handleCreateUserChange} options={['Male', 'Female']} />
                                         </div>
                                         
                                         <div className={styles.formGroup}>
                                             <label>Role <span className={styles.required}>*</span></label>
-                                            <select name="role" value={createUserForm.role} onChange={handleCreateUserChange} required>
-                                                <option value="Admin">Admin</option>
-                                                <option value="Manager">Manager</option>
-                                                <option value="Receptionist">Receptionist</option>
-                                                <option value="Ambulance">Ambulance</option>
-                                                <option value="Patient">Patient</option>
-                                            </select>
+                                            <SecureSelect name="role" value={createUserForm.role} onChange={handleCreateUserChange} required options={['Admin', 'Manager', 'Receptionist', 'Ambulance', 'Patient']} />
                                         </div>
                                         
                                         {(createUserForm.role === 'Receptionist' || createUserForm.role === 'Ambulance' || createUserForm.role === 'Manager') && (
@@ -488,38 +478,32 @@ const AdminDashboard = () => {
                                             <div className={styles.formGrid}>
                                                 <div className={styles.formGroup}>
                                                     <label>First Name <span className={styles.required}>*</span></label>
-                                                    <input name="firstName" value={editForm.firstName ?? ''} onChange={handleEditChange} placeholder="Enter first name" required />
+                                                    <SecureInput name="firstName" value={editForm.firstName ?? ''} onChange={handleEditChange} placeholder="Enter first name" required maxLength={50} />
                                                 </div>
                                                 
                                                 <div className={styles.formGroup}>
                                                     <label>Last Name <span className={styles.required}>*</span></label>
-                                                    <input name="lastName" value={editForm.lastName ?? ''} onChange={handleEditChange} placeholder="Enter last name" required />
+                                                    <SecureInput name="lastName" value={editForm.lastName ?? ''} onChange={handleEditChange} placeholder="Enter last name" required maxLength={50} />
                                                 </div>
                                                 
                                                 <div className={styles.formGroup}>
                                                     <label>Email</label>
-                                                    <input name="email" type="email" value={editForm.email ?? ''} onChange={handleEditChange} placeholder="Enter email" />
+                                                    <SecureInput name="email" type="email" value={editForm.email ?? ''} onChange={handleEditChange} placeholder="Enter email" validateEmail={true} />
                                                 </div>
                                                 
                                                 <div className={styles.formGroup}>
                                                     <label>Phone</label>
-                                                    <input name="phone" value={editForm.phone ?? ''} onChange={handleEditChange} placeholder="Enter phone number" />
+                                                    <SecureInput name="phone" type="tel" value={editForm.phone ?? ''} onChange={handleEditChange} placeholder="Enter phone number" validatePhone={true} />
                                                 </div>
                                                 
                                                 <div className={styles.formGroup}>
                                                     <label>New Password</label>
-                                                    <input name="password" type="password" value={editForm.password ?? ''} onChange={handleEditChange} placeholder="Leave blank to keep current" />
+                                                    <SecureInput name="password" type="password" value={editForm.password ?? ''} onChange={handleEditChange} placeholder="Leave blank to keep current" maxLength={128} />
                                                 </div>
                                                 
                                                 <div className={styles.formGroup}>
                                                     <label>Role <span className={styles.required}>*</span></label>
-                                                    <select name="role" value={editForm.role} onChange={handleEditChange} required>
-                                                        <option value="Admin">Admin</option>
-                                                        <option value="Manager">Manager</option>
-                                                        <option value="Receptionist">Receptionist</option>
-                                                        <option value="Ambulance">Ambulance</option>
-                                                        <option value="Patient">Patient</option>
-                                                    </select>
+                                                    <SecureSelect name="role" value={editForm.role} onChange={handleEditChange} required options={['Admin', 'Manager', 'Receptionist', 'Ambulance', 'Patient']} />
                                                 </div>
                                             </div>
                                             

@@ -174,6 +174,52 @@ class RateLimiter {
 export const apiRateLimiter = new RateLimiter(50, 60000); // 50 requests per minute
 
 /**
+ * Validate email format
+ */
+export const isValidEmail = (email) => {
+  if (!email || typeof email !== 'string') return false;
+  
+  // RFC 5322 compliant email regex (simplified)
+  const emailRegex = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
+  
+  // Additional checks
+  if (email.length > 254) return false; // RFC 5321
+  if (email.includes('..')) return false; // No consecutive dots
+  
+  return emailRegex.test(email);
+};
+
+/**
+ * Validate phone number format (Egyptian format)
+ */
+export const isValidPhone = (phone) => {
+  if (!phone || typeof phone !== 'string') return false;
+  
+  // Remove spaces and dashes
+  const cleaned = phone.replace(/[\s\-]/g, '');
+  
+  // Egyptian phone format: 01XXXXXXXXX (11 digits starting with 01)
+  const phoneRegex = /^01[0-9]{9}$/;
+  
+  return phoneRegex.test(cleaned);
+};
+
+/**
+ * Validate URL format
+ */
+export const isValidUrl = (url) => {
+  if (!url || typeof url !== 'string') return false;
+  
+  try {
+    const urlObj = new URL(url);
+    // Only allow http and https protocols
+    return urlObj.protocol === 'http:' || urlObj.protocol === 'https:';
+  } catch {
+    return false;
+  }
+};
+
+/**
  * Secure form submission helper
  */
 export const secureFormSubmit = (formData) => {

@@ -6,6 +6,7 @@ import { saveSession } from '../../utils/cookieUtils';
 import { useAuth } from '../../contexts/AuthContext';
 import styles from './LoginForm.module.css';
 import Button from '../../components/common/Button';
+import SecureInput from '../../components/common/SecureInput';
 
 const LoginForm = () => {
     const [credentials, setCredentials] = useState({ emailOrUsername: '', password: '' });
@@ -57,7 +58,7 @@ const LoginForm = () => {
                 {error && <div className={styles.errorMessage}>{error}</div>}
 
                 <label className={styles.label}>Email or Username:</label>
-                <input
+                <SecureInput
                     type="text"
                     name="emailOrUsername"
                     value={credentials.emailOrUsername}
@@ -66,9 +67,10 @@ const LoginForm = () => {
                     className={styles.inputField}
                     placeholder="Enter your email or username"
                     required
+                    maxLength={254}
                 />
                 <label className={styles.label}>Password:</label>
-                <input
+                <SecureInput
                     type="password"
                     name="password"
                     value={credentials.password}
@@ -76,6 +78,7 @@ const LoginForm = () => {
                     disabled={loading}
                     className={styles.inputField}
                     required
+                    maxLength={128}
                 />
                 
                 <Button type="submit" variant="success" disabled={loading}>

@@ -4,6 +4,7 @@ import { toast } from 'react-toastify'; // 1. Import toast
 import { addHospital } from '../../utils/api';
 import styles from './AddHospital.module.css';
 import Button from '../../components/common/Button';
+import SecureInput from '../../components/common/SecureInput';
 
 const AddHospital = ({ onHospitalAdded }) => {
     const [formData, setFormData] = useState({
@@ -73,30 +74,30 @@ const AddHospital = ({ onHospitalAdded }) => {
             <form onSubmit={handleSubmit} className={styles.form}>
                 <div className={styles.formGroup}>
                     <label htmlFor="name">Hospital Name</label>
-                    <input type="text" id="name" name="name" value={formData.name} onChange={handleChange} required disabled={loading} />
+                    <SecureInput type="text" id="name" name="name" value={formData.name} onChange={handleChange} required disabled={loading} maxLength={200} />
                 </div>
                 <div className={styles.formGroup}>
                     <label htmlFor="address">Address</label>
-                    <input type="text" id="address" name="address" value={formData.address} onChange={handleChange} required disabled={loading} />
+                    <SecureInput type="text" id="address" name="address" value={formData.address} onChange={handleChange} required disabled={loading} maxLength={500} />
                 </div>
                 <div className={styles.formGroup}>
                     <label htmlFor="phone">Phone</label>
-                    <input type="tel" id="phone" name="phone" value={formData.phone} onChange={handleChange} required disabled={loading} />
+                    <SecureInput type="tel" id="phone" name="phone" value={formData.phone} onChange={handleChange} required disabled={loading} validatePhone={true} />
                 </div>
                 <div className={styles.formGroup}>
                     <label htmlFor="email">Email</label>
-                    <input type="email" id="email" name="email" value={formData.email} onChange={handleChange} required disabled={loading} />
+                    <SecureInput type="email" id="email" name="email" value={formData.email} onChange={handleChange} required disabled={loading} validateEmail={true} />
                 </div>
                 
                 <h4 className={styles.subtitle}>Geographic Coordinates (For Leaflet Map)</h4>
                 <div className={styles.coordinatesGroup}>
                     <div className={styles.formGroup}>
                         <label htmlFor="latitude">Latitude</label>
-                        <input type="number" id="latitude" name="latitude" value={formData.latitude} onChange={handleChange} placeholder="e.g., 30.0444" required disabled={loading} />
+                        <SecureInput type="number" id="latitude" name="latitude" value={formData.latitude} onChange={handleChange} placeholder="e.g., 30.0444" required disabled={loading} step="0.000001" min="-90" max="90" />
                     </div>
                     <div className={styles.formGroup}>
                         <label htmlFor="longitude">Longitude</label>
-                        <input type="number" id="longitude" name="longitude" value={formData.longitude} onChange={handleChange} placeholder="e.g., 31.2357" required disabled={loading} />
+                        <SecureInput type="number" id="longitude" name="longitude" value={formData.longitude} onChange={handleChange} placeholder="e.g., 31.2357" required disabled={loading} step="0.000001" min="-180" max="180" />
                     </div>
                 </div>
 

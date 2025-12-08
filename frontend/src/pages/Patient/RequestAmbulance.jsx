@@ -5,6 +5,9 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import styles from './RequestAmbulance.module.css';
 import Button from '../../components/common/Button';
+import SecureInput from '../../components/common/SecureInput';
+import SecureTextarea from '../../components/common/SecureTextarea';
+import SecureSelect from '../../components/common/SecureSelect';
 import { getUserId, getToken } from '../../utils/cookieUtils';
 import { showUserDetails } from '../../utils/api';
 import socket from '../../utils/socket';
@@ -357,37 +360,43 @@ const RequestAmbulance = () => {
           <form onSubmit={handleSubmitRequest}>
             <div className={styles.formGroup}>
               <label htmlFor="pickupLocation">Pickup Address (Optional)</label>
-              <input
+              <SecureInput
                 type="text"
                 id="pickupLocation"
+                name="pickupLocation"
                 value={pickupLocation}
                 onChange={(e) => setPickupLocation(e.target.value)}
                 placeholder="e.g., 123 Main St, Cairo"
+                maxLength={500}
               />
               <small>Or click on the map below to set your pickup location</small>
             </div>
 
             <div className={styles.formGroup}>
               <label htmlFor="urgency">Urgency Level</label>
-              <select
+              <SecureSelect
                 id="urgency"
+                name="urgency"
                 value={urgency}
                 onChange={(e) => setUrgency(e.target.value)}
-              >
-                <option value="normal">Normal</option>
-                <option value="urgent">Urgent</option>
-                <option value="critical">Critical</option>
-              </select>
+                options={[
+                  { value: 'normal', label: 'Normal' },
+                  { value: 'urgent', label: 'Urgent' },
+                  { value: 'critical', label: 'Critical' }
+                ]}
+              />
             </div>
 
             <div className={styles.formGroup}>
               <label htmlFor="notes">Additional Notes (Optional)</label>
-              <textarea
+              <SecureTextarea
                 id="notes"
+                name="notes"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Any special instructions or medical conditions..."
                 rows={3}
+                maxLength={1000}
               />
             </div>
 
