@@ -3,9 +3,9 @@ import { getToken, getRole, removeToken, removeRole } from '../utils/cookieUtils
 
 const AuthContext = createContext(null);
 
-// <-- NEW: Helper function to get initial dark mode state from localStorage
+// <-- NEW: Helper function to get initial dark mode state from sessionStorage
 const getInitialDarkMode = () => {
-    const savedMode = localStorage.getItem('darkMode');
+    const savedMode = sessionStorage.getItem('darkMode');
     return savedMode ? JSON.parse(savedMode) : false;
 };
 
@@ -19,7 +19,7 @@ export const AuthProvider = ({ children }) => {
     const toggleDarkMode = () => {
         setIsDarkMode(prevMode => {
             const newMode = !prevMode;
-            localStorage.setItem('darkMode', JSON.stringify(newMode));
+            sessionStorage.setItem('darkMode', JSON.stringify(newMode));
             return newMode;
         });
     };

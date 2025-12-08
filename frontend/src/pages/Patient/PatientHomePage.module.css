@@ -1,10 +1,11 @@
 /* src/pages/PatientHomePage.module.css */
 .dashboard {
-    padding: 40px 30px;
+    padding: 40px 20px;
     max-width: 1400px;
     margin: 0 auto;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     min-height: 100vh;
+    box-sizing: border-box;
 }
 
 .header {
@@ -31,7 +32,7 @@
 .welcomeTitle {
     color: #2d3748;
     margin-bottom: 15px;
-    font-size: 2.2em;
+    font-size: clamp(1.5rem, 4vw, 2.2rem);
     font-weight: 700;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     -webkit-background-clip: text;
@@ -40,14 +41,16 @@
 }
 
 .icuStatus {
-    font-size: 1.1em;
+    font-size: clamp(0.9rem, 2vw, 1.1rem);
     color: #4a5568;
-    padding: 15px 25px;
+    padding: 12px 20px;
     background: linear-gradient(135deg, #f6f8fb 0%, #e9ecef 100%);
     border-radius: 50px;
     display: inline-block;
     margin-top: 10px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    max-width: 100%;
+    word-wrap: break-word;
 }
 
 .icuStatus i {
@@ -281,4 +284,86 @@
 
 .starEmpty {
   color: #e4e5e9;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .dashboard {
+    padding: 30px 15px;
+  }
+  
+  .infoGrid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  
+  .header {
+    padding: 25px 20px;
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard {
+    padding: 20px 10px;
+  }
+  
+  .header {
+    padding: 20px 15px;
+    margin-bottom: 20px;
+  }
+  
+  .welcomeTitle {
+    font-size: 1.5rem;
+    margin-bottom: 10px;
+  }
+  
+  .icuStatus {
+    font-size: 0.9rem;
+    padding: 10px 15px;
+  }
+  
+  .card {
+    padding: 20px;
+  }
+  
+  .card h3 {
+    font-size: 1.1em;
+  }
+  
+  .btnAction,
+  .btnRate {
+    padding: 12px 20px;
+    font-size: 0.95em;
+  }
+  
+  .starRating {
+    font-size: 2.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .dashboard {
+    padding: 15px 8px;
+  }
+  
+  .header {
+    padding: 15px 12px;
+    border-radius: 12px;
+  }
+  
+  .welcomeTitle {
+    font-size: 1.3rem;
+  }
+  
+  .card {
+    padding: 15px;
+  }
+  
+  .feeAmount {
+    font-size: 2rem;
+  }
+  
+  .starRating {
+    font-size: 2rem;
+  }
 }

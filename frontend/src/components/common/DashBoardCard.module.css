@@ -19,23 +19,28 @@
 
 .content {
   flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .title {
   font-size: 14px;
   color: #6c757d;
-  margin-bottom: 5px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  font-weight: 500;
 }
 
 .value {
-  font-size: 28px;
+  font-size: 32px;
   font-weight: 700;
   color: #333;
+  line-height: 1;
 }
 
 .icon {
   font-size: 40px;
   color: rgba(0, 123, 255, 0.6); /* Slightly transparent version of primary color */
+  margin-left: 15px;
 }

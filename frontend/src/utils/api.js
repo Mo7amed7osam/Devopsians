@@ -342,7 +342,7 @@ export const updateMedicalHistoryForPatient = async (historyPayload) => await AP
 export const rateHospitalByPatient = async (ratingPayload) => await API.post('/patient/rate-hospital', ratingPayload);
 export const getMedicineScheduleForUser = async (userId) => await API.get(`/patient/medicine-schedule/${userId}`);
 export const getTotalFeesForUser = async (userId) => await API.get(`/patient/total-fees/${userId}`);
-export const reserveICUForPatient = async (payload) => await API.post('/patient/reserve-icu', payload);
+export const reserveICUForPatient = async (payload) => await API.post('/icu/reserve', payload);
 export const freeICUForPatient = async (payload) => await API.post('/patient/free-icu', payload);
 export const getAvailableICUsPatient = async () => await API.get('/patient/get-available-icus');
 export const reserveVisitorRoomPatient = async (payload) => await API.post('/patient/reserve-visitor-room', payload);
