@@ -1,6 +1,7 @@
 // src/utils/api.js
 import axios from 'axios';
 import { getToken, clearSession } from './cookieUtils';
+import { sanitizeInput, secureFormSubmit, apiRateLimiter } from './security';
 
 // ============================================================
 //    BACKEND SETUP
@@ -15,18 +16,36 @@ const INTERNAL_API_BASE = (envURL && envURL !== '/' && envURL !== '') ? envURL :
 
 const API = axios.create({
   baseURL: INTERNAL_API_BASE,
-  headers: { 'Content-Type': 'application/json' },
+  headers: { 
+    'Content-Type': 'application/json',
+    'X-Content-Type-Options': 'nosniff',
+    'X-Frame-Options': 'DENY',
+    'X-XSS-Protection': '1; mode=block',
+  },
   timeout: 10000,
 });
 
 
 // ============================================================
-//   Request Interceptor — attach JWT Token (if any saved)
+//   Request Interceptor — attach JWT Token + Sanitize Data
 // ============================================================
 API.interceptors.request.use(
   (config) => {
+    // Check rate limit
+    const endpoint = config.url || 'default';
+    if (!apiRateLimiter.canMakeRequest(endpoint)) {
+      return Promise.reject(new Error('Too many requests. Please slow down.'));
+    }
+
+    // Attach JWT token
     const token = getToken();
     if (token) config.headers.Authorization = `Bearer ${token}`;
+    
+    // Sanitize request data to prevent XSS and injection
+    if (config.data && typeof config.data === 'object') {
+      config.data = secureFormSubmit(config.data);
+    }
+    
     return config;
   },
   (error) => Promise.reject(error)
