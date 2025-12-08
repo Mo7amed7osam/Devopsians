@@ -97,41 +97,71 @@ const ICUSelect = () => {
     useEffect(() => {
         const userId = getUserId();
         
-        if (socket && userId) {
-            socket.on('patientNotification', (data) => {
-                if (data.patientId === userId) {
-                    if (data.type === 'ambulance_assigned') {
-                        toast.success(`🚑 ${data.message}`, {
-                            autoClose: 8000,
-                            position: "top-center"
-                        });
-                    } else if (data.type === 'pickup_request_sent') {
-                        toast.info(`🚑 ${data.message}`, {
-                            autoClose: 8000,
-                            position: "top-center"
-                        });
-                    } else if (data.type === 'ambulance_accepted') {
-                        toast.success(`🚑 ${data.message}`, {
-                            autoClose: 8000,
-                            position: "top-center"
-                        });
+        if (socket) {
+            // Patient-specific notifications (only if logged in)
+            if (userId) {
+                socket.on('patientNotification', (data) => {
+                    if (data.patientId === userId) {
+                        if (data.type === 'ambulance_assigned') {
+                            toast.success(`🚑 ${data.message}`, {
+                                autoClose: 8000,
+                                position: "top-center"
+                            });
+                        } else if (data.type === 'pickup_request_sent') {
+                            toast.info(`🚑 ${data.message}`, {
+                                autoClose: 8000,
+                                position: "top-center"
+                            });
+                        } else if (data.type === 'ambulance_accepted') {
+                            toast.success(`🚑 ${data.message}`, {
+                                autoClose: 8000,
+                                position: "top-center"
+                            });
+                        }
                     }
-                }
-            });
+                });
+            }
 
-            // Listen for real-time ICU updates
+            // Listen for real-time ICU updates (public - no auth needed)
             socket.on('icuReserved', (data) => {
+                console.log('[ICUSelect] ICU reserved event received:', data);
                 // Remove reserved ICU from available list
                 setIcus(prev => prev.filter(icu => icu._id !== data.icuId));
+                toast.info(`🏥 ICU at ${data.hospitalName} was just reserved`, {
+                    autoClose: 3000
+                });
             });
 
             socket.on('icuReservationCancelled', (data) => {
+                console.log('[ICUSelect] ICU cancellation event received:', data);
                 // Reload ICUs to show newly available ICU
                 loadICUs();
+                toast.info('✨ New ICU became available!', {
+                    autoClose: 3000
+                });
             });
 
             socket.on('icuCheckOut', (data) => {
+                console.log('[ICUSelect] ICU checkout event received:', data);
                 // Reload ICUs to show newly available ICU
+                loadICUs();
+                toast.info('✨ New ICU became available!', {
+                    autoClose: 3000
+                });
+            });
+
+            socket.on('icuStatusUpdate', (data) => {
+                console.log('[ICUSelect] ICU status update event received:', data);
+                // Reload ICUs to reflect status changes
+                loadICUs();
+                toast.info(`🏥 ICU status updated at ${data.hospitalName}`, {
+                    autoClose: 3000
+                });
+            });
+
+            socket.on('icuUpdated', (data) => {
+                console.log('[ICUSelect] ICU updated event received:', data);
+                // Reload ICUs to reflect all changes
                 loadICUs();
             });
         }
@@ -142,6 +172,8 @@ const ICUSelect = () => {
                 socket.off('icuReserved');
                 socket.off('icuReservationCancelled');
                 socket.off('icuCheckOut');
+                socket.off('icuStatusUpdate');
+                socket.off('icuUpdated');
             }
         };
     }, [loadICUs]);

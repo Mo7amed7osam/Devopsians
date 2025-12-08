@@ -63,12 +63,16 @@ export const updateAmbulanceStatus = async (req, res, next) => {
 
     // Emit socket event for real-time update
     if (io) {
-      io.emit("ambulanceStatusUpdate", {
+      const eventData = {
         ambulanceId: ambulance._id,
         status: ambulance.status,
         location: ambulance.currentLocation,
         eta: ambulance.eta,
-      });
+      };
+      console.log('🚑 [Socket] Emitting ambulanceStatusUpdate:', eventData);
+      io.emit("ambulanceStatusUpdate", eventData);
+    } else {
+      console.warn('⚠️ Socket.IO instance not available for ambulanceStatusUpdate');
     }
 
     res.status(200).json({
@@ -137,13 +141,17 @@ export const assignAmbulance = async (req, res, next) => {
 
     // Emit socket event with hospital location
     if (io) {
-      io.emit("ambulanceAssigned", {
+      const eventData = {
         ambulanceId: ambulance._id,
         patientId,
         hospitalId,
         destination: ambulance.destination,
         hospitalLocation: hospitalDetails?.location,
-      });
+      };
+      console.log('🚑 [Socket] Emitting ambulanceAssigned:', eventData);
+      io.emit("ambulanceAssigned", eventData);
+    } else {
+      console.warn('⚠️ Socket.IO instance not available for ambulanceAssigned');
     }
 
     res.status(200).json({
@@ -183,7 +191,7 @@ export const approvePickupRequest = async (req, res, next) => {
     
     // Emit socket event to notify receptionist
     if (io) {
-      io.emit("ambulanceApprovedPickup", {
+      const approvedData = {
         ambulanceId: ambulance._id,
         ambulanceName: `${ambulance.firstName} ${ambulance.lastName}`,
         patientId: patient._id,
@@ -192,14 +200,20 @@ export const approvePickupRequest = async (req, res, next) => {
         hospitalName: ambulance.assignedHospital?.name,
         pickupLocation: patient.pickupLocation,
         icuId: patient.reservedICU
-      });
+      };
+      console.log('🚑 [Socket] Emitting ambulanceApprovedPickup:', approvedData);
+      io.emit("ambulanceApprovedPickup", approvedData);
 
       // Notify patient that ambulance approved
-      io.emit("patientNotification", {
+      const patientData = {
         patientId: patient._id,
         message: "Ambulance crew has approved your pickup request! Waiting for receptionist confirmation.",
         type: "ambulance_approved"
-      });
+      };
+      console.log('📢 [Socket] Emitting patientNotification:', patientData);
+      io.emit("patientNotification", patientData);
+    } else {
+      console.warn('⚠️ Socket.IO instance not available for ambulance approval events');
     }
 
     res.status(200).json({
@@ -326,27 +340,35 @@ export const acceptPickup = async (req, res, next) => {
     // Emit socket event to notify patient
     if (io) {
       // Notify the specific patient
-      io.emit("ambulanceAccepted", {
+      const acceptedData = {
         patientId: patient._id,
         ambulanceId: ambulance._id,
         ambulanceName: `${ambulance.firstName} ${ambulance.lastName}`,
         message: `🚑 ${ambulance.firstName} ${ambulance.lastName} is on the way to pick you up!`
-      });
+      };
+      console.log('🚑 [Socket] Emitting ambulanceAccepted:', acceptedData);
+      io.emit("ambulanceAccepted", acceptedData);
 
       // Notify all ambulances that this request is no longer available
-      io.emit("pickupRequestTaken", {
+      const takenData = {
         patientId: patient._id,
         ambulanceId: ambulance._id
-      });
+      };
+      console.log('📍 [Socket] Emitting pickupRequestTaken:', takenData);
+      io.emit("pickupRequestTaken", takenData);
 
       // Emit patient notification
-      io.emit("patientNotification", {
+      const notifData = {
         patientId: patient._id,
         message: `🚑 Ambulance crew ${ambulance.firstName} ${ambulance.lastName} accepted your pickup request and is on the way!`,
         type: 'ambulance_accepted',
         ambulanceId: ambulance._id,
         ambulanceName: `${ambulance.firstName} ${ambulance.lastName}`
-      });
+      };
+      console.log('📢 [Socket] Emitting patientNotification:', notifData);
+      io.emit("patientNotification", notifData);
+    } else {
+      console.warn('⚠️ Socket.IO instance not available for ambulance acceptance events');
     }
 
     res.status(200).json({
@@ -489,7 +511,7 @@ export const createAmbulanceRequest = async (req, res, next) => {
 
     // Broadcast to all available ambulances via socket
     if (io) {
-      io.emit('ambulancePickupRequest', {
+      const requestData = {
         requestId: populatedRequest._id,
         patientId: populatedRequest.patient._id,
         patientName: `${populatedRequest.patient.firstName} ${populatedRequest.patient.lastName}`,
@@ -503,14 +525,20 @@ export const createAmbulanceRequest = async (req, res, next) => {
         room: populatedRequest.icu?.room || 'N/A',
         urgency: populatedRequest.urgency,
         timestamp: populatedRequest.createdAt
-      });
+      };
+      console.log('🚑 [Socket] Emitting ambulancePickupRequest:', requestData);
+      io.emit('ambulancePickupRequest', requestData);
 
       // Notify patient
-      io.emit('patientNotification', {
+      const patientNotif = {
         patientId: populatedRequest.patient._id,
         message: '🚑 Your ambulance request has been sent to all available ambulance crews!',
         type: 'pickup_request_sent'
-      });
+      };
+      console.log('📢 [Socket] Emitting patientNotification:', patientNotif);
+      io.emit('patientNotification', patientNotif);
+    } else {
+      console.warn('⚠️ Socket.IO instance not available for ambulance pickup request events');
     }
 
     res.status(201).json({
@@ -723,11 +751,15 @@ export const cancelAmbulanceRequest = async (req, res, next) => {
 
         // Notify ambulance via socket
         if (io) {
-          io.emit('pickupRequestCancelled', {
+          const cancelData = {
             ambulanceId: ambulance._id,
             requestId: request._id,
             message: 'Patient cancelled the pickup request'
-          });
+          };
+          console.log('🚑 [Socket] Emitting pickupRequestCancelled (to ambulance):', cancelData);
+          io.emit('pickupRequestCancelled', cancelData);
+        } else {
+          console.warn('⚠️ Socket.IO instance not available for pickup cancellation');
         }
       }
     }
@@ -744,10 +776,14 @@ export const cancelAmbulanceRequest = async (req, res, next) => {
 
     // Broadcast cancellation
     if (io) {
-      io.emit('pickupRequestCancelled', {
+      const broadcastData = {
         requestId: request._id,
         patientId: patientId
-      });
+      };
+      console.log('📢 [Socket] Emitting pickupRequestCancelled (broadcast):', broadcastData);
+      io.emit('pickupRequestCancelled', broadcastData);
+    } else {
+      console.warn('⚠️ Socket.IO instance not available for pickup cancellation broadcast');
     }
 
     res.status(200).json({

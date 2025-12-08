@@ -33,6 +33,15 @@ const userLocationIcon = new L.Icon({
   shadowSize: [41, 41]
 });
 
+const ambulanceIcon = new L.Icon({
+  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-orange.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41]
+});
+
 // Component to handle "Go to My Location" button
 function RecenterButton({ latitude, longitude }) {
   const map = useMap();
@@ -83,7 +92,7 @@ function RecenterButton({ latitude, longitude }) {
   );
 }
 
-function Map({ icus, hospitals = [], latitude, longitude }) {
+function Map({ icus, hospitals = [], latitude, longitude, ambulances = [] }) {
   if (!icus) return <p>Loading...</p>;
 
   // Haversine formula to compute distance in meters between two lat/lon points
@@ -186,6 +195,31 @@ function Map({ icus, hospitals = [], latitude, longitude }) {
                   </Popup>
                 </Marker>
               </React.Fragment>
+            );
+          }
+          return null;
+        })}
+
+        {/* Ambulance markers */}
+        {ambulances && ambulances.length > 0 && ambulances.map((ambulance) => {
+          if (ambulance.currentLocation?.coordinates && 
+              Array.isArray(ambulance.currentLocation.coordinates) && 
+              ambulance.currentLocation.coordinates.length === 2) {
+            const [lng, lat] = ambulance.currentLocation.coordinates;
+            return (
+              <Marker
+                key={ambulance._id || ambulance.ambulanceId}
+                position={[lat, lng]}
+                icon={ambulanceIcon}
+              >
+                <Popup>
+                  <h3>🚑 Ambulance</h3>
+                  <p><strong>Driver:</strong> {ambulance.firstName || ambulance.ambulanceName || 'En Route'}</p>
+                  <p><strong>Status:</strong> {ambulance.status || 'EN_ROUTE'}</p>
+                  {ambulance.eta && <p><strong>ETA:</strong> {ambulance.eta}</p>}
+                  {ambulance.destination && <p><strong>To:</strong> {ambulance.destination}</p>}
+                </Popup>
+              </Marker>
             );
           }
           return null;

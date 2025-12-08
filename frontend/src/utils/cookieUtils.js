@@ -20,6 +20,7 @@ export const setToken = (token) => {
     expires: 7, // valid for 7 days
     secure: process.env.NODE_ENV === 'production', // only HTTPS in production
     sameSite: 'Strict', // prevent CSRF
+    path: '/', // accessible across all routes
   });
 };
 
@@ -31,7 +32,7 @@ export const getToken = () => Cookies.get(TOKEN_KEY);
 /**
  * Removes the authentication token.
  */
-export const removeToken = () => Cookies.remove(TOKEN_KEY);
+export const removeToken = () => Cookies.remove(TOKEN_KEY, { path: '/' });
 
 // ============================================================
 //    ROLE MANAGEMENT — stored in secure HTTP-only cookies
@@ -46,6 +47,7 @@ export const setRole = (role) => {
     expires: 7,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'Strict',
+    path: '/',
   });
 };
 
@@ -58,7 +60,7 @@ export const getRole = () => Cookies.get(ROLE_KEY);
  * Removes the stored user role.
  */
 export const removeRole = () => {
-  Cookies.remove(ROLE_KEY);
+  Cookies.remove(ROLE_KEY, { path: '/' });
 };
 
 // ============================================================
@@ -76,6 +78,7 @@ export const setUserName = (firstName, lastName) => {
     expires: 7,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'Strict',
+    path: '/',
   });
 };
 
@@ -88,7 +91,7 @@ export const getUserName = () => Cookies.get(USER_NAME_KEY);
  * Removes the stored user name.
  */
 export const removeUserName = () => {
-  Cookies.remove(USER_NAME_KEY);
+  Cookies.remove(USER_NAME_KEY, { path: '/' });
 };
 
 // ============================================================
@@ -105,6 +108,7 @@ export const setHospitalName = (hospitalName) => {
       expires: 7,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'Strict',
+      path: '/',
     });
   }
 };
@@ -118,7 +122,7 @@ export const getHospitalName = () => Cookies.get(HOSPITAL_NAME_KEY);
  * Removes the stored hospital name.
  */
 export const removeHospitalName = () => {
-  Cookies.remove(HOSPITAL_NAME_KEY);
+  Cookies.remove(HOSPITAL_NAME_KEY, { path: '/' });
 };
 
 // ============================================================
@@ -134,6 +138,7 @@ export const setUserId = (id) => {
     expires: 7,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'Strict',
+    path: '/',
   });
 };
 
@@ -160,7 +165,7 @@ export const getUserId = () => {
  * Removes the stored user ID.
  */
 export const removeUserId = () => {
-  Cookies.remove(USER_ID_KEY);
+  Cookies.remove(USER_ID_KEY, { path: '/' });
 };
 
 // ============================================================

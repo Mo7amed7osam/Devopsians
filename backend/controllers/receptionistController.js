@@ -44,8 +44,12 @@ export const reserveICU = async (req, res, next) => {
 
         // Emit socket event
         if (io) {
-            io.emit('icuUpdated', await ICU.find({ status: { $regex: '^available$', $options: 'i' } })
-                .populate('hospital', 'name address'));
+            const updatedICUs = await ICU.find({ status: { $regex: '^available$', $options: 'i' } })
+                .populate('hospital', 'name address');
+            console.log('🏥 [Socket] Emitting icuUpdated (after reservation):', { count: updatedICUs.length });
+            io.emit('icuUpdated', updatedICUs);
+        } else {
+            console.warn('⚠️ Socket.IO instance not available for icuUpdated');
         }
 
         res.status(201).json({
@@ -120,12 +124,16 @@ export const checkInPatient = async (req, res, next) => {
 
         // Emit socket event
         if (io) {
-            io.emit('patientCheckedIn', {
+            const checkinData = {
                 icuId: icu._id,
                 patientId,
                 hospitalName: icu.hospital?.name,
                 room: icu.room
-            });
+            };
+            console.log('🏥 [Socket] Emitting patientCheckedIn:', checkinData);
+            io.emit('patientCheckedIn', checkinData);
+        } else {
+            console.warn('⚠️ Socket.IO instance not available for patientCheckedIn');
         }
 
         res.status(200).json({
@@ -198,12 +206,16 @@ export const checkOutPatient = async (req, res, next) => {
 
         // Emit real-time socket event for ICU check-out
         if (io) {
-            io.emit('icuCheckOut', {
+            const eventData = {
                 icuId: icu._id,
                 patientId: patient._id,
                 status: 'Available',
                 timestamp: new Date()
-            });
+            };
+            console.log('🟢 [Socket] Emitting icuCheckOut event:', eventData);
+            io.emit('icuCheckOut', eventData);
+        } else {
+            console.warn('⚠️ Socket.IO instance not available for icuCheckOut event');
         }
 
         // Clear patient's reservation using findByIdAndUpdate
@@ -217,14 +229,20 @@ export const checkOutPatient = async (req, res, next) => {
 
         // Emit socket event for available ICUs
         if (io) {
-            io.emit('icuUpdated', await ICU.find({ status: { $regex: '^available$', $options: 'i' } })
-                .populate('hospital', 'name address'));
+            const updatedICUs = await ICU.find({ status: { $regex: '^available$', $options: 'i' } })
+                .populate('hospital', 'name address');
+            console.log('🏥 [Socket] Emitting icuUpdated (after checkout):', { count: updatedICUs.length });
+            io.emit('icuUpdated', updatedICUs);
 
-            io.emit('patientCheckedOut', {
+            const checkoutData = {
                 icuId: icu._id,
                 patientId: patient._id,
                 icuRoom: icu.room
-            });
+            };
+            console.log('🚪 [Socket] Emitting patientCheckedOut:', checkoutData);
+            io.emit('patientCheckedOut', checkoutData);
+        } else {
+            console.warn('⚠️ Socket.IO instance not available for checkout events');
         }
 
         res.status(200).json({

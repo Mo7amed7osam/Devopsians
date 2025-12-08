@@ -140,7 +140,7 @@ export const updateICU = async (req, res, next) => {
 
     // Emit real-time socket event for ICU status update
     if (io && updates.status) {
-      io.emit('icuStatusUpdate', {
+      const eventData = {
         icuId: icu._id,
         hospitalId: icu.hospital?._id,
         hospitalName: icu.hospital?.name,
@@ -148,7 +148,11 @@ export const updateICU = async (req, res, next) => {
         specialization: icu.specialization,
         room: icu.room,
         timestamp: new Date()
-      });
+      };
+      console.log('🟡 [Socket] Emitting icuStatusUpdate event:', eventData);
+      io.emit('icuStatusUpdate', eventData);
+    } else if (!io) {
+      console.warn('⚠️ Socket.IO instance not available for icuStatusUpdate event');
     }
 
     res.status(200).json({

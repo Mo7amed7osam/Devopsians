@@ -88,7 +88,7 @@ export const reserveICU = async (req, res, next) => {
         
         // Emit real-time socket event for ICU reservation
         if (io) {
-            io.emit('icuReserved', {
+            const eventData = {
                 icuId: updatedICU._id,
                 hospitalId: updatedICU.hospital._id,
                 hospitalName: updatedICU.hospital.name,
@@ -98,7 +98,11 @@ export const reserveICU = async (req, res, next) => {
                 room: updatedICU.room,
                 status: updatedICU.status,
                 timestamp: new Date()
-            });
+            };
+            console.log('🔴 [Socket] Emitting icuReserved event:', eventData);
+            io.emit('icuReserved', eventData);
+        } else {
+            console.warn('⚠️ Socket.IO instance not available for icuReserved event');
         }
         
         res.status(200).json({
@@ -207,12 +211,16 @@ export const cancelReservation = async (req, res, next) => {
         
         // Emit real-time socket event for ICU cancellation
         if (io) {
-            io.emit('icuReservationCancelled', {
+            const eventData = {
                 icuId: icu._id,
                 patientId: patient._id,
                 status: 'Available',
                 timestamp: new Date()
-            });
+            };
+            console.log('🔵 [Socket] Emitting icuReservationCancelled event:', eventData);
+            io.emit('icuReservationCancelled', eventData);
+        } else {
+            console.warn('⚠️ Socket.IO instance not available for icuReservationCancelled event');
         }
         
         res.status(200).json({
