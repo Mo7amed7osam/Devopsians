@@ -118,10 +118,18 @@ const Addicu = ({ hospitalId, onIcuRegistered }) => {
 
                 <div className={styles.formGroup}>
                     <label htmlFor="initialStatus">Initial Status</label>
-                    <SecureSelect id="initialStatus" name="initialStatus" value={formData.initialStatus} onChange={handleChange} disabled={loading} options={[
-                        { value: 'AVAILABLE', label: 'AVAILABLE' },
-                        <option value="MAINTENANCE">MAINTENANCE</option>
-                    </select>
+                    <SecureSelect 
+                        id="initialStatus" 
+                        name="initialStatus" 
+                        value={formData.initialStatus} 
+                        onChange={handleChange} 
+                        disabled={loading} 
+                        options={[
+                            { value: 'AVAILABLE', label: 'AVAILABLE' },
+                            { value: 'OCCUPIED', label: 'OCCUPIED' },
+                            { value: 'MAINTENANCE', label: 'MAINTENANCE' }
+                        ]} 
+                    />
                 </div>
 
                 <Button type="submit" variant="success" disabled={loading}>
