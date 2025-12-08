@@ -6,10 +6,11 @@ FROM node:20-alpine
 # Set working directory for backend
 WORKDIR /app/backend
 
-# Copy only backend package files and install production deps
+# Copy backend package.json
 COPY backend/package*.json ./
-# Prefer clean install if lockfile exists, otherwise regular install
-RUN if [ -f package-lock.json ]; then npm ci --omit=dev --legacy-peer-deps; else npm install --omit=dev --legacy-peer-deps; fi
+
+# Install dependencies directly (workspace setup doesn't have backend/package-lock.json)
+RUN npm install --omit=dev --legacy-peer-deps
 
 # Copy backend source code
 COPY backend/. .
