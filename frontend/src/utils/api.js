@@ -12,7 +12,8 @@ import { sanitizeInput, secureFormSubmit, apiRateLimiter } from './security';
 // Use Vite env variable when available (set during build/deploy).
 // If VITE_API_URL is '/' or empty, use empty string so axios doesn't double slashes
 const envURL = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL);
-const INTERNAL_API_BASE = (envURL && envURL !== '/' && envURL !== '') ? envURL : '';
+// Default to "/api" so calls go through nginx backend proxy when env var is missing/empty
+const INTERNAL_API_BASE = (envURL && envURL !== '/' && envURL !== '') ? envURL : '/api';
 
 const API = axios.create({
   baseURL: INTERNAL_API_BASE,
@@ -22,6 +23,7 @@ const API = axios.create({
     'X-Frame-Options': 'DENY',
     'X-XSS-Protection': '1; mode=block',
   },
+  withCredentials: true,
   timeout: 10000,
 });
 
@@ -173,12 +175,7 @@ export const getServiceCategories = async () => {
 // Hospital APIs
 // ============================================================
 export const addHospital = async (data) => {
-  // Try admin route first, then hospital route
-  try {
-    return await API.post('/admin/add-hospital', data);
-  } catch (err) {
-    return await API.post('/hospital/add-hospital', data);
-  }
+  return await API.post('/admin/add-hospital', data);
 };
 
 export const viewAllHospitals = async () => {

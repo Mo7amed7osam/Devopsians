@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import PropTypes from "prop-types";
-import axios from "axios";
 import { getUserData } from "../utils/cookieUtils";
 import { safeNavigate } from "../utils/security";
-import { API_BASE as API_URL } from "../utils/api";
+import API from "../utils/api";
 
 const PrivateRoute = ({ children, requiredRole }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -20,8 +19,8 @@ const PrivateRoute = ({ children, requiredRole }) => {
     }
 
     // ALWAYS verify token and role with backend - never trust client-side data
-    axios
-      .post(`${API_URL}/user/verify-token`, { token: userData.token })
+    API
+      .post('/user/verify-token', { token: userData.token })
       .then((response) => {
         if (response.status === 200) {
           const backendRole = response.data.role;

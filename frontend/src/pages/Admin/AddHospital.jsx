@@ -58,7 +58,14 @@ const AddHospital = ({ onHospitalAdded }) => {
 
         } catch (error) {
             console.error('Add Hospital Error:', error);
-            const errorMessage = error.response?.data?.message || 'Failed to add hospital. Server error.';
+            const status = error.response?.status;
+            let errorMessage = error.response?.data?.message || 'Failed to add hospital. Server error.';
+            if (status === 401) errorMessage = 'Session expired. Please log in again.';
+            if (status === 403) errorMessage = 'You must be an Admin to add hospitals.';
+            if (status === 405) errorMessage = 'Method not allowed. Check the API path and retry.';
+            if (status === 400 && error.response?.data?.errors) {
+                errorMessage = error.response.data.errors.map(e => e.msg || e).join(', ');
+            }
             // 5. Use toast for API errors
             toast.error(errorMessage);
         } finally {
