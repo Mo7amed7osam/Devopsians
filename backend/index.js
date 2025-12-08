@@ -5,6 +5,10 @@ import cors from "cors";
 import morgan from "morgan";
 import cookieParser from "cookie-parser";
 import fileUpload from "express-fileupload";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
+import mongoSanitize from "express-mongo-sanitize";
+import hpp from "hpp";
 import { Server } from "socket.io";
 import { createServer } from "http";
 import hospitalRoutes from "./routes/hospitalRoutes.js";
@@ -17,6 +21,7 @@ import ambulanceRoutes from "./routes/ambulanceRoutes.js";
 import icuRoutes from "./routes/icuRoutes.js";
 import metaRoutes from "./routes/metaRoutes.js";
 import { errorHandler } from "./utils/errorHandler.js";
+import { sanitizeRequest } from "./utils/sanitize.js";
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 
@@ -41,6 +46,54 @@ const mongoUrl = process.env.MONGO_URL;
   }
 })();
 
+// Security Middleware - Must be applied BEFORE routes
+// 1. Helmet - Set security HTTP headers
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'"],
+      imgSrc: ["'self'", "data:", "https:"],
+    },
+  },
+  crossOriginEmbedderPolicy: false,
+}));
+
+// 2. Rate limiting - Prevent DOS attacks
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per windowMs
+  message: "Too many requests from this IP, please try again later.",
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Stricter rate limit for authentication endpoints
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // Limit each IP to 5 login attempts per windowMs
+  message: "Too many login attempts, please try again after 15 minutes.",
+  skipSuccessfulRequests: true,
+});
+
+// Apply rate limiters
+app.use("/user/login", authLimiter);
+app.use("/user/register", authLimiter);
+app.use("/admin/login", authLimiter);
+app.use(limiter); // Apply general rate limiter to all other routes
+
+// 3. NoSQL Injection Prevention - Sanitize data
+app.use(mongoSanitize({
+  replaceWith: '_', // Replace prohibited characters with underscore
+  onSanitize: ({ req, key }) => {
+    console.warn(`Sanitized key detected: ${key}`);
+  },
+}));
+
+// 4. Prevent HTTP Parameter Pollution
+app.use(hpp());
+
 // Middleware
 // Allow configuring CORS via env vars. For quick testing set CORS_ALLOW_ALL=true
 const corsAllowAll = process.env.CORS_ALLOW_ALL === 'true';
@@ -60,16 +113,24 @@ app.use(
     credentials: true,
   })
 );
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+
+// 5. Body parser with size limits to prevent DOS
+app.use(express.json({ limit: '10kb' })); // Limit body size to 10kb
+app.use(express.urlencoded({ extended: true, limit: '10kb' }));
+
 app.use(morgan("dev"));
 app.use(cookieParser());
 app.use(
   fileUpload({
     useTempFiles: true,
     tempFileDir: "./temp/",
+    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max file size
+    abortOnLimit: true,
   })
 );
+
+// 6. Sanitize all incoming requests
+app.use(sanitizeRequest);
 
 // Health Check Endpoint
 app.get("/health", (req, res) => {
