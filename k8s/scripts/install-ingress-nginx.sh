@@ -68,8 +68,8 @@ else
   echo "   Role: $NODE_ROLE"
   echo "   This might cause LoadBalancer provisioning to fail"
   
-  # Check if running in CI/CD mode
-  if [ -n "$CI" ]; then
+  # Check if running in CI/CD mode (GitHub Actions sets GITHUB_ACTIONS=true)
+  if [ -n "$CI" ] || [ -n "$GITHUB_ACTIONS" ]; then
     echo "   Running in CI/CD mode - continuing anyway"
   else
     echo ""
