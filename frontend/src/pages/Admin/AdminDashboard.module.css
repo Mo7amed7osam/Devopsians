@@ -117,6 +117,166 @@
   background-color: var(--color-primary-dark, #0056b3);
 }
 
+/* Create User Form - Rectangular Modern Design */
+.createUserForm {
+  max-width: 800px;
+  max-height: 85vh;
+  margin: 0 auto;
+  padding: 0;
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.formHeader {
+  background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+  padding: 20px 28px;
+  text-align: center;
+  color: white;
+  border-bottom: 3px solid #0056b3;
+  flex-shrink: 0;
+}
+
+.formHeader h3 {
+  margin: 0 0 4px 0;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.formHeader p {
+  margin: 0;
+  font-size: 14px;
+  opacity: 0.95;
+  font-weight: 400;
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 18px;
+  padding: 24px 28px;
+  background-color: #f8f9fa;
+  overflow-y: auto;
+  max-height: calc(85vh - 180px);
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+}
+
+.formGroupFull {
+  display: flex;
+  flex-direction: column;
+  grid-column: 1 / -1;
+}
+
+.formGroup label,
+.formGroupFull label {
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: #2c3e50;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.required {
+  color: #e74c3c;
+  margin-left: 2px;
+}
+
+.formGroup input,
+.formGroup select,
+.formGroupFull select {
+  width: 100%;
+  padding: 10px 14px;
+  border: 2px solid #dee2e6;
+  border-radius: 6px;
+  font-size: 14px;
+  background-color: white;
+  transition: all 0.3s ease;
+  font-family: inherit;
+}
+
+.formGroup input:focus,
+.formGroup select:focus,
+.formGroupFull select:focus {
+  border-color: #007bff;
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(0, 123, 255, 0.1);
+  background-color: #fff;
+}
+
+.formGroup input::placeholder {
+  color: #adb5bd;
+  font-size: 14px;
+}
+
+.formGroup select,
+.formGroupFull select {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23333' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 36px;
+}
+
+.formActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 18px 28px;
+  background-color: white;
+  border-top: 2px solid #e9ecef;
+  flex-shrink: 0;
+}
+
+.formActions button {
+  min-width: 110px;
+  padding: 10px 20px;
+  font-weight: 600;
+  font-size: 14px;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+}
+
+/* Responsive Design for Create User Form */
+@media (max-width: 768px) {
+  .createUserForm {
+    max-width: 100%;
+    border-radius: 0;
+  }
+  
+  .formGrid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+    padding: 24px;
+  }
+  
+  .formHeader {
+    padding: 24px;
+  }
+  
+  .formHeader h3 {
+    font-size: 24px;
+  }
+  
+  .formActions {
+    flex-direction: column-reverse;
+    padding: 20px 24px;
+  }
+  
+  .formActions button {
+    width: 100%;
+  }
+}
+
 /* Employee Management Grid */
 .employeeMgmtGrid {
   display: grid;
