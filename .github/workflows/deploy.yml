@@ -143,7 +143,7 @@ jobs:
 
   # -----------------------------------------------
   # 4. TERRAFORM (After Docker Push)
-  # -----------------------------------------------
+  # ----------------------------------------------
   # terraform:
   #   name: Terraform Infrastructure
   #   runs-on: ubuntu-latest
