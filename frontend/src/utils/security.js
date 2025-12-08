@@ -116,14 +116,6 @@ export const renderSafeHtml = (html) => {
 };
 
 /**
- * Validate email format (client-side)
- */
-export const isValidEmail = (email) => {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
-};
-
-/**
  * Validate that input doesn't contain NoSQL injection patterns
  */
 export const hasNoSQLInjection = (input) => {
