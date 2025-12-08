@@ -196,6 +196,16 @@ export const checkOutPatient = async (req, res, next) => {
             checkedInAt: null
         });
 
+        // Emit real-time socket event for ICU check-out
+        if (io) {
+            io.emit('icuCheckOut', {
+                icuId: icu._id,
+                patientId: patient._id,
+                status: 'Available',
+                timestamp: new Date()
+            });
+        }
+
         // Clear patient's reservation using findByIdAndUpdate
         await User.findByIdAndUpdate(patientId, {
             reservedICU: null,

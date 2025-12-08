@@ -29,6 +29,7 @@ const ICUMgmt = ({ hospitalId, refresh = 0 }) => {
 
         loadIcus();
 
+        // Real-time ICU updates
         socket.on('icuStatusUpdate', (update) => {
             setIcus(prev => prev.map(icu => {
                 const uid = icu._id || icu.id;
@@ -36,8 +37,38 @@ const ICUMgmt = ({ hospitalId, refresh = 0 }) => {
             }));
         });
 
+        socket.on('icuReserved', (data) => {
+            // Update ICU status to Occupied in real-time
+            setIcus(prev => prev.map(icu => {
+                const uid = icu._id || icu.id;
+                return uid === data.icuId ? { ...icu, status: 'Occupied', isReserved: true } : icu;
+            }));
+            toast.info(`🏥 ICU ${data.room} reserved for patient`, {
+                autoClose: 3000
+            });
+        });
+
+        socket.on('icuReservationCancelled', (data) => {
+            // Update ICU status to Available in real-time
+            setIcus(prev => prev.map(icu => {
+                const uid = icu._id || icu.id;
+                return uid === data.icuId ? { ...icu, status: 'Available', isReserved: false } : icu;
+            }));
+        });
+
+        socket.on('icuCheckOut', (data) => {
+            // Update ICU status to Available in real-time
+            setIcus(prev => prev.map(icu => {
+                const uid = icu._id || icu.id;
+                return uid === data.icuId ? { ...icu, status: 'Available', isReserved: false } : icu;
+            }));
+        });
+
         return () => {
             socket.off('icuStatusUpdate');
+            socket.off('icuReserved');
+            socket.off('icuReservationCancelled');
+            socket.off('icuCheckOut');
         };
     }, [hospitalId, refresh]);
 

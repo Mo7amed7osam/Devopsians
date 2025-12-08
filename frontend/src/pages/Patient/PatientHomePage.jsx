@@ -127,6 +127,28 @@ const PatientHomePage = () => {
                     });
                 }
             });
+
+            // Listen for ICU check-out notification
+            socket.on('icuCheckOut', (data) => {
+                if (data.patientId === userId) {
+                    toast.success('✅ You have been checked out. Thank you for choosing our services!');
+                    // Reload patient data to update status
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 2000);
+                }
+            });
+
+            // Listen for ICU reservation cancellation
+            socket.on('icuReservationCancelled', (data) => {
+                if (data.patientId === userId) {
+                    toast.info('Your ICU reservation has been cancelled.');
+                    // Reload patient data to update status
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 2000);
+                }
+            });
         }
 
         // Cleanup socket listeners
@@ -136,6 +158,8 @@ const PatientHomePage = () => {
                 socket.off('ambulanceOnTheWay');
                 socket.off('patientNotification');
                 socket.off('ambulancePickupRequest');
+                socket.off('icuCheckOut');
+                socket.off('icuReservationCancelled');
             }
         };
     }, []);

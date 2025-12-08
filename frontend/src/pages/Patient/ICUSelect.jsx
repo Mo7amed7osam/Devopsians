@@ -93,7 +93,7 @@ const ICUSelect = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [userLocation]);
 
-    // Listen for socket events for ambulance assignment notifications
+    // Listen for socket events for ambulance assignment notifications and ICU updates
     useEffect(() => {
         const userId = getUserId();
         
@@ -118,14 +118,33 @@ const ICUSelect = () => {
                     }
                 }
             });
+
+            // Listen for real-time ICU updates
+            socket.on('icuReserved', (data) => {
+                // Remove reserved ICU from available list
+                setIcus(prev => prev.filter(icu => icu._id !== data.icuId));
+            });
+
+            socket.on('icuReservationCancelled', (data) => {
+                // Reload ICUs to show newly available ICU
+                loadICUs();
+            });
+
+            socket.on('icuCheckOut', (data) => {
+                // Reload ICUs to show newly available ICU
+                loadICUs();
+            });
         }
 
         return () => {
             if (socket) {
                 socket.off('patientNotification');
+                socket.off('icuReserved');
+                socket.off('icuReservationCancelled');
+                socket.off('icuCheckOut');
             }
         };
-    }, []);
+    }, [loadICUs]);
 
     // --- Handle ICU Reservation ---
     const handleReserve = async (icuId) => {
