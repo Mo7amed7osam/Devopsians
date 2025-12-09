@@ -1,6 +1,12 @@
-# Environment files
+# Environment files (contain secrets)
 .env
 .env.local
+.env.development
+.env.production
+.env.staging
+
+# Keep only the example
+!.env.example
 
 # Logs
 *.log

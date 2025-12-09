@@ -149,6 +149,36 @@ const PatientHomePage = () => {
                     }, 2000);
                 }
             });
+
+            // Listen for when an ambulance accepts the pickup
+            socket.on('ambulanceAccepted', (data) => {
+                console.log('🚑 Ambulance accepted event:', data);
+                if (data.patientId === userId) {
+                    toast.success(`🚑 An ambulance is on the way to pick you up!`, {
+                        autoClose: 8000,
+                        position: "top-center"
+                    });
+                    // Reload patient data to update status
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 2000);
+                }
+            });
+
+            // Listen for patient arrival at hospital
+            socket.on('patientArrived', (data) => {
+                console.log('🏥 Patient arrived event:', data);
+                if (data.patientId === userId) {
+                    toast.success(`🏥 You have arrived at the hospital! Please proceed to reception.`, {
+                        autoClose: 10000,
+                        position: "top-center"
+                    });
+                    // Reload patient data to update status
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 2000);
+                }
+            });
         }
 
         // Cleanup socket listeners
@@ -160,6 +190,8 @@ const PatientHomePage = () => {
                 socket.off('ambulancePickupRequest');
                 socket.off('icuCheckOut');
                 socket.off('icuReservationCancelled');
+                socket.off('ambulanceAccepted');
+                socket.off('patientArrived');
             }
         };
     }, []);

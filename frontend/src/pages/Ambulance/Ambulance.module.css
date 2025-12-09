@@ -121,8 +121,13 @@
     text-align: center;
     background-color: #f8f9fa;
     border: 1px dashed #ccc;
-    border-radius: 5px;
+    border-radius: 8px;
     color: #6c757d;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
 }
 
 /* GPS Tracking Section */
@@ -259,6 +264,28 @@
 .requestMeta {
     color: #555;
     font-size: 0.9em;
+}
+
+/* Empty state for sidebar */
+.emptyState {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    text-align: center;
+    color: #6c757d;
+}
+
+.emptyState .emptyIcon {
+    font-size: 3rem;
+    margin-bottom: 15px;
+    opacity: 0.5;
+}
+
+.emptyState p {
+    margin: 5px 0;
+    font-size: 0.95em;
 }
 
 @media (max-width: 900px) {

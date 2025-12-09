@@ -876,13 +876,25 @@ const AmbulancePanel = () => {
 
             {/* Requests Sidebar + Map Section */}
             <section className={styles.statusPanel}>
-                <h3>Pickup Requests</h3>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                    <h3 style={{ margin: 0 }}>Pickup Requests</h3>
+                    <Button variant="secondary" onClick={() => loadAmbulanceRequests()} style={{ padding: '6px 12px', fontSize: '0.9em' }}>
+                        🔄 Refresh
+                    </Button>
+                </div>
                 <div className={styles.requestsLayout}>
                     {/* Sidebar list */}
                     <aside className={styles.requestsSidebar}>
                         <div className={styles.requestsList}>
                             {pickupRequests.length === 0 ? (
-                                <div className={styles.placeholder}>No pending pickup requests</div>
+                                <div className={styles.emptyState}>
+                                    <div className={styles.emptyIcon}>🚑</div>
+                                    <p><strong>No pending pickup requests</strong></p>
+                                    <p>When patients request ambulance pickup, they will appear here.</p>
+                                    <p style={{ marginTop: '10px', fontSize: '0.85em' }}>
+                                        Status: <strong>{myAmbulance?.status?.replace('_', ' ') || 'Loading...'}</strong>
+                                    </p>
+                                </div>
                             ) : (
                                 pickupRequests.map((req) => (
                                     <div key={req.requestId} className={styles.requestItem}>

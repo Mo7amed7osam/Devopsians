@@ -23,6 +23,7 @@ const ReceptionistPanel = () => {
         // Listen for real-time ambulance updates
         if (socket) {
             socket.on('ambulanceStatusUpdate', (data) => {
+                console.log('🚑 [Socket] ambulanceStatusUpdate:', data);
                 setAmbulances(prev => 
                     prev.map(amb => 
                         amb._id === data.ambulanceId 
@@ -33,36 +34,65 @@ const ReceptionistPanel = () => {
             });
 
             socket.on('ambulanceAssigned', (data) => {
+                console.log('🚑 [Socket] ambulanceAssigned:', data);
                 toast.info(`🚑 Ambulance assigned to ${data.destination}`);
                 loadData(); // Reload to get new assignments
             });
 
+            // Listen for new pickup requests from patients
+            socket.on('ambulancePickupRequest', (data) => {
+                console.log('🚑 [Socket] ambulancePickupRequest:', data);
+                toast.info(`🆕 New ambulance pickup request from ${data.patientName || 'patient'}`, {
+                    autoClose: 5000
+                });
+                loadData(); // Reload to show new request
+            });
+
+            // Listen for when an ambulance accepts a pickup
+            socket.on('ambulanceAccepted', (data) => {
+                console.log('🚑 [Socket] ambulanceAccepted:', data);
+                toast.success(`🚑 Ambulance accepted pickup - heading to patient`);
+                loadData();
+            });
+
             // Listen for ambulance approvals
             socket.on('ambulanceApprovedPickup', (data) => {
+                console.log('🚑 [Socket] ambulanceApprovedPickup:', data);
                 toast.success(`✅ Ambulance crew approved pickup for ${data.patientName}!`);
                 loadData(); // Reload to show updated status
             });
 
             // Listen for pickup rejections
             socket.on('pickupRejectedNotification', (data) => {
+                console.log('🚑 [Socket] pickupRejectedNotification:', data);
                 toast.warn(`⚠️ Ambulance rejected pickup for ${data.patientName}. Reason: ${data.reason}`);
                 loadData();
             });
 
             // Listen for real-time ICU events
             socket.on('icuReserved', (data) => {
+                console.log('🏥 [Socket] icuReserved:', data);
                 toast.info(`🏥 New ICU reservation: ${data.hospitalName} - Room ${data.room}`);
                 loadData(); // Reload to show new reservation
             });
 
             socket.on('icuReservationCancelled', (data) => {
+                console.log('🏥 [Socket] icuReservationCancelled:', data);
                 toast.info('❌ ICU reservation cancelled');
                 loadData(); // Reload to update list
             });
 
             socket.on('icuCheckOut', (data) => {
+                console.log('🏥 [Socket] icuCheckOut:', data);
                 toast.success('✅ Patient checked out');
                 loadData(); // Reload to update list
+            });
+
+            // Listen for patient arrival
+            socket.on('patientArrived', (data) => {
+                console.log('🏥 [Socket] patientArrived:', data);
+                toast.success(`🏥 Patient ${data.patientName || ''} has arrived at the hospital!`);
+                loadData();
             });
         }
 
@@ -70,11 +100,14 @@ const ReceptionistPanel = () => {
             if (socket) {
                 socket.off('ambulanceStatusUpdate');
                 socket.off('ambulanceAssigned');
+                socket.off('ambulancePickupRequest');
+                socket.off('ambulanceAccepted');
                 socket.off('ambulanceApprovedPickup');
                 socket.off('pickupRejectedNotification');
                 socket.off('icuReserved');
                 socket.off('icuReservationCancelled');
                 socket.off('icuCheckOut');
+                socket.off('patientArrived');
             }
         };
     }, []);
