@@ -217,9 +217,18 @@ export const isValidUrl = (url) => {
 export const secureFormSubmit = (formData) => {
   const sanitized = {};
   
+  // Fields that should NOT be sanitized (passwords, tokens, etc.)
+  const noSanitizeFields = ['password', 'userPass', 'token', 'newPassword', 'confirmPassword'];
+  
   for (const [key, value] of Object.entries(formData)) {
     if (typeof value === 'string') {
-      // Check for injection attempts
+      // Skip sanitization for password fields - they need to be sent as-is
+      if (noSanitizeFields.includes(key)) {
+        sanitized[key] = value;
+        continue;
+      }
+      
+      // Check for injection attempts in non-password fields
       if (hasNoSQLInjection(value)) {
         console.warn(`Potential NoSQL injection detected in field: ${key}`);
         continue;

@@ -1,5 +1,6 @@
 import { ICU } from '../models/roomModel.js';
 import User from '../models/userModel.js';
+import { io } from '../index.js';
 
 // Get all ICUs with their hospital details
 export const getAllICUs = async (req, res, next) => {
@@ -84,6 +85,25 @@ export const reserveICU = async (req, res, next) => {
         
         // Populate hospital details before sending response
         const updatedICU = await ICU.findById(icuId).populate('hospital', 'name address contactNumber location');
+        
+        // Emit real-time socket event for ICU reservation
+        if (io) {
+            const eventData = {
+                icuId: updatedICU._id,
+                hospitalId: updatedICU.hospital._id,
+                hospitalName: updatedICU.hospital.name,
+                patientId: patient._id,
+                patientName: patient.userName,
+                specialization: updatedICU.specialization,
+                room: updatedICU.room,
+                status: updatedICU.status,
+                timestamp: new Date()
+            };
+            console.log('🔴 [Socket] Emitting icuReserved event:', eventData);
+            io.emit('icuReserved', eventData);
+        } else {
+            console.warn('⚠️ Socket.IO instance not available for icuReserved event');
+        }
         
         res.status(200).json({
             message: 'ICU reserved successfully',
@@ -188,6 +208,20 @@ export const cancelReservation = async (req, res, next) => {
         patient.needsPickup = false;
         patient.pickupLocation = null;
         await patient.save();
+        
+        // Emit real-time socket event for ICU cancellation
+        if (io) {
+            const eventData = {
+                icuId: icu._id,
+                patientId: patient._id,
+                status: 'Available',
+                timestamp: new Date()
+            };
+            console.log('🔵 [Socket] Emitting icuReservationCancelled event:', eventData);
+            io.emit('icuReservationCancelled', eventData);
+        } else {
+            console.warn('⚠️ Socket.IO instance not available for icuReservationCancelled event');
+        }
         
         res.status(200).json({
             success: true,

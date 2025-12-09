@@ -1,6 +1,7 @@
 // src/pages/LandingPage.jsx
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { safeNavigate } from '../../utils/security';
 import styles from './LandingPage.module.css'; //
 import Button from '../../components/common/Button'; //
 import { useAuth } from '../../contexts/AuthContext'; //
@@ -10,7 +11,7 @@ const LandingPage = () => {
     const { isDarkMode } = useAuth(); // Get dark mode state
 
     const handleFindIcuClick = () => {
-        navigate('/find-icu');
+        safeNavigate(navigate, '/find-icu');
     };
 
     // Construct class name for dark mode

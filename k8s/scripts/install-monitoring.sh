@@ -31,7 +31,7 @@ helm upgrade --install prometheus prometheus-community/kube-prometheus-stack \
   --namespace monitoring \
   --create-namespace \
   --values "$PROJECT_ROOT/k8s/monitoring/prometheus-values.yaml" \
-  --timeout 10m \
+  --timeout 6m \
   --wait
 
 echo ""
@@ -39,7 +39,7 @@ echo "3️⃣  Waiting for Grafana to be fully ready..."
 kubectl wait --for=condition=ready pod \
   --selector=app.kubernetes.io/name=grafana \
   --namespace monitoring \
-  --timeout=300s
+  --timeout=180s
 
 echo ""
 echo "4️⃣  Setting up TLS certificate for monitoring..."
@@ -63,6 +63,7 @@ else
   echo "⚠️  TLS certificate not found in devopsians namespace"
   echo "   Monitoring will use HTTP only until app is deployed"
   echo "   Run this script again after deploying the application"
+  echo "   Continuing without TLS for now..."
 fi
 
 echo ""
@@ -83,7 +84,7 @@ kubectl patch configmap prometheus-grafana -n monitoring --type merge -p "{
 
 # Restart Grafana to apply config
 kubectl rollout restart deployment prometheus-grafana -n monitoring >/dev/null 2>&1
-kubectl rollout status deployment prometheus-grafana -n monitoring --timeout=120s >/dev/null 2>&1
+kubectl rollout status deployment prometheus-grafana -n monitoring --timeout=90s >/dev/null 2>&1
 
 echo ""
 echo "7️⃣  Creating ServiceMonitors for application monitoring..."

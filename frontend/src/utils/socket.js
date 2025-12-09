@@ -15,14 +15,18 @@ const socket = io(url, {
 });
 
 let warned = false;
-socket.on("connect_error", () => {
+socket.on("connect_error", (error) => {
   if (!warned) {
-    console.warn("Socket connect error. Will retry...");
+    console.warn("Socket connect error. Will retry...", error.message);
     warned = true;
   }
 });
 socket.on("connect", () => {
+  console.log("✅ Socket.IO connected successfully:", socket.id);
   warned = false;
+});
+socket.on("disconnect", (reason) => {
+  console.log("❌ Socket.IO disconnected:", reason);
 });
 
 export default socket;

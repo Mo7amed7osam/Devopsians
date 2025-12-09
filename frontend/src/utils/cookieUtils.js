@@ -16,10 +16,13 @@ const HOSPITAL_NAME_KEY = 'hospital_name';
  * @param {string} token - JWT or mock token.
  */
 export const setToken = (token) => {
+  const isSecureContext = typeof window !== 'undefined' && window.location?.protocol === 'https:';
   Cookies.set(TOKEN_KEY, token, {
     expires: 7, // valid for 7 days
-    secure: process.env.NODE_ENV === 'production', // only HTTPS in production
+    // Use secure cookies only when actually on HTTPS to avoid browsers dropping the cookie in staging/http
+    secure: isSecureContext,
     sameSite: 'Strict', // prevent CSRF
+    path: '/', // accessible across all routes
   });
 };
 
@@ -31,10 +34,10 @@ export const getToken = () => Cookies.get(TOKEN_KEY);
 /**
  * Removes the authentication token.
  */
-export const removeToken = () => Cookies.remove(TOKEN_KEY);
+export const removeToken = () => Cookies.remove(TOKEN_KEY, { path: '/' });
 
 // ============================================================
-//    ROLE MANAGEMENT — stored in sessionStorage
+//    ROLE MANAGEMENT — stored in secure HTTP-only cookies
 // ============================================================
 
 /**
@@ -42,23 +45,29 @@ export const removeToken = () => Cookies.remove(TOKEN_KEY);
  * @param {string} role
  */
 export const setRole = (role) => {
-  sessionStorage.setItem(ROLE_KEY, role);
+  const isSecureContext = typeof window !== 'undefined' && window.location?.protocol === 'https:';
+  Cookies.set(ROLE_KEY, role, {
+    expires: 7,
+    secure: isSecureContext,
+    sameSite: 'Strict',
+    path: '/',
+  });
 };
 
 /**
  * Retrieves the user's stored role.
  */
-export const getRole = () => sessionStorage.getItem(ROLE_KEY);
+export const getRole = () => Cookies.get(ROLE_KEY);
 
 /**
  * Removes the stored user role.
  */
 export const removeRole = () => {
-  sessionStorage.removeItem(ROLE_KEY);
+  Cookies.remove(ROLE_KEY, { path: '/' });
 };
 
 // ============================================================
-//    USER NAME MANAGEMENT — stored in sessionStorage
+//    USER NAME MANAGEMENT — stored in secure cookies
 // ============================================================
 
 /**
@@ -67,24 +76,30 @@ export const removeRole = () => {
  * @param {string} lastName
  */
 export const setUserName = (firstName, lastName) => {
+  const isSecureContext = typeof window !== 'undefined' && window.location?.protocol === 'https:';
   const fullName = `${firstName} ${lastName}`.trim();
-  sessionStorage.setItem(USER_NAME_KEY, fullName);
+  Cookies.set(USER_NAME_KEY, fullName, {
+    expires: 7,
+    secure: isSecureContext,
+    sameSite: 'Strict',
+    path: '/',
+  });
 };
 
 /**
  * Retrieves the user's stored name.
  */
-export const getUserName = () => sessionStorage.getItem(USER_NAME_KEY);
+export const getUserName = () => Cookies.get(USER_NAME_KEY);
 
 /**
  * Removes the stored user name.
  */
 export const removeUserName = () => {
-  sessionStorage.removeItem(USER_NAME_KEY);
+  Cookies.remove(USER_NAME_KEY, { path: '/' });
 };
 
 // ============================================================
-//    HOSPITAL NAME MANAGEMENT — stored in sessionStorage
+//    HOSPITAL NAME MANAGEMENT — stored in secure cookies
 // ============================================================
 
 /**
@@ -92,25 +107,31 @@ export const removeUserName = () => {
  * @param {string} hospitalName
  */
 export const setHospitalName = (hospitalName) => {
+  const isSecureContext = typeof window !== 'undefined' && window.location?.protocol === 'https:';
   if (hospitalName) {
-    sessionStorage.setItem(HOSPITAL_NAME_KEY, hospitalName);
+    Cookies.set(HOSPITAL_NAME_KEY, hospitalName, {
+      expires: 7,
+      secure: isSecureContext,
+      sameSite: 'Strict',
+      path: '/',
+    });
   }
 };
 
 /**
  * Retrieves the stored hospital name.
  */
-export const getHospitalName = () => sessionStorage.getItem(HOSPITAL_NAME_KEY);
+export const getHospitalName = () => Cookies.get(HOSPITAL_NAME_KEY);
 
 /**
  * Removes the stored hospital name.
  */
 export const removeHospitalName = () => {
-  sessionStorage.removeItem(HOSPITAL_NAME_KEY);
+  Cookies.remove(HOSPITAL_NAME_KEY, { path: '/' });
 };
 
 // ============================================================
-//    USER ID MANAGEMENT — stored in sessionStorage
+//    USER ID MANAGEMENT — stored in secure cookies
 // ============================================================
 
 /**
@@ -118,14 +139,20 @@ export const removeHospitalName = () => {
  * @param {string} id
  */
 export const setUserId = (id) => {
-  sessionStorage.setItem(USER_ID_KEY, id);
+  const isSecureContext = typeof window !== 'undefined' && window.location?.protocol === 'https:';
+  Cookies.set(USER_ID_KEY, id, {
+    expires: 7,
+    secure: isSecureContext,
+    sameSite: 'Strict',
+    path: '/',
+  });
 };
 
 /**
  * Retrieves the user's stored ID.
  */
 export const getUserId = () => {
-  const stored = sessionStorage.getItem(USER_ID_KEY);
+  const stored = Cookies.get(USER_ID_KEY);
   if (stored) return stored;
   // Fallback: try to decode JWT to obtain user id
   try {
@@ -144,7 +171,7 @@ export const getUserId = () => {
  * Removes the stored user ID.
  */
 export const removeUserId = () => {
-  sessionStorage.removeItem(USER_ID_KEY);
+  Cookies.remove(USER_ID_KEY, { path: '/' });
 };
 
 // ============================================================

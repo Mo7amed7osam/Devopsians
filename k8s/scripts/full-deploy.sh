@@ -38,11 +38,24 @@ echo ""
 echo "6️⃣ Creating ingress with TLS..."
 k8s/scripts/update-ingress-tls.sh
 
-# 7. Wait for deployments
+# 7. Wait for deployments (parallel check)
 echo ""
 echo "7️⃣ Waiting for deployments to be ready..."
-kubectl rollout status deployment/backend -n devopsians --timeout=120s
-kubectl rollout status deployment/frontend -n devopsians --timeout=120s
+kubectl rollout status deployment/backend -n devopsians --timeout=90s &
+BACKEND_PID=$!
+kubectl rollout status deployment/frontend -n devopsians --timeout=90s &
+FRONTEND_PID=$!
+
+# Wait for both to complete
+wait $BACKEND_PID
+BACKEND_STATUS=$?
+wait $FRONTEND_PID
+FRONTEND_STATUS=$?
+
+if [ $BACKEND_STATUS -ne 0 ] || [ $FRONTEND_STATUS -ne 0 ]; then
+  echo "⚠️  Warning: Some deployments may not be ready yet"
+  echo "   Check status with: kubectl get pods -n devopsians"
+fi
 
 # 8. Show final status
 echo ""

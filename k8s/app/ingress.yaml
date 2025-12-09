@@ -17,8 +17,72 @@ spec:
                 port:
                   number: 80
 
-          # Backend HTTP API: /user/... -> backend
+          # Backend HTTP API Routes
           - path: /user
+            pathType: Prefix
+            backend:
+              service:
+                name: backend-service
+                port:
+                  number: 3030
+                  
+          - path: /admin
+            pathType: Prefix
+            backend:
+              service:
+                name: backend-service
+                port:
+                  number: 3030
+                  
+          - path: /manager
+            pathType: Prefix
+            backend:
+              service:
+                name: backend-service
+                port:
+                  number: 3030
+                  
+          - path: /receptionist
+            pathType: Prefix
+            backend:
+              service:
+                name: backend-service
+                port:
+                  number: 3030
+                  
+          - path: /patient
+            pathType: Prefix
+            backend:
+              service:
+                name: backend-service
+                port:
+                  number: 3030
+                  
+          - path: /ambulance
+            pathType: Prefix
+            backend:
+              service:
+                name: backend-service
+                port:
+                  number: 3030
+                  
+          - path: /icu
+            pathType: Prefix
+            backend:
+              service:
+                name: backend-service
+                port:
+                  number: 3030
+                  
+          - path: /hospital
+            pathType: Prefix
+            backend:
+              service:
+                name: backend-service
+                port:
+                  number: 3030
+                  
+          - path: /meta
             pathType: Prefix
             backend:
               service:
@@ -34,3 +98,4 @@ spec:
                 name: backend-service
                 port:
                   number: 3030
+

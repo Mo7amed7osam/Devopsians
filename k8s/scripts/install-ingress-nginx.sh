@@ -111,16 +111,16 @@ if kubectl get namespace ingress-nginx &>/dev/null; then
   # Try graceful deletion first
   kubectl delete namespace ingress-nginx --wait=false &>/dev/null || true
   
-  # Wait up to 60 seconds for deletion
+  # Wait up to 30 seconds for deletion
   echo "   Waiting for namespace to terminate..."
-  for i in {1..60}; do
+  for i in {1..30}; do
     if ! kubectl get namespace ingress-nginx &>/dev/null; then
       echo "✅ Namespace deleted"
       break
     fi
     
-    # If still terminating after 30 seconds, force remove finalizers
-    if [ $i -eq 30 ]; then
+    # If still terminating after 15 seconds, force remove finalizers
+    if [ $i -eq 15 ]; then
       echo "   ⚙️  Removing finalizers to force deletion..."
       kubectl get namespace ingress-nginx -o json | \
         jq '.spec.finalizers = []' | \
@@ -135,7 +135,7 @@ if kubectl get namespace ingress-nginx &>/dev/null; then
     echo "⚠️  Warning: Namespace still exists, will try to work with it"
   fi
   echo ""
-  sleep 5
+  sleep 2
 fi
 
 # Create namespace (idempotent)
@@ -149,7 +149,7 @@ echo "6️⃣ Installing ingress-nginx controller..."
 kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.8.1/deploy/static/provider/cloud/deploy.yaml
 
 # Wait for basic resources to be created
-sleep 10
+sleep 5
 
 # Delete the default service
 kubectl delete svc ingress-nginx-controller -n ingress-nginx --ignore-not-found=true
@@ -230,20 +230,24 @@ else
 fi
 
 echo ""
-echo "9️⃣ Waiting for controller pods to be ready..."
+echo "9️⃣ Scaling ingress controller to 1 replica for resource efficiency..."
+kubectl scale deployment ingress-nginx-controller -n ingress-nginx --replicas=1
+
+echo ""
+echo "🔟 Waiting for controller pod to be ready..."
 kubectl wait --namespace ingress-nginx \
   --for=condition=ready pod \
   --selector=app.kubernetes.io/component=controller \
-  --timeout=300s
+  --timeout=180s
 
 echo ""
-echo "🔟 Waiting for LoadBalancer to be assigned..."
+echo "1️⃣1️⃣ Waiting for LoadBalancer to be assigned..."
 echo "   This can take 2-3 minutes..."
 echo ""
 
 # Better wait logic - check for EITHER hostname OR IP
 FOUND_LB=false
-for i in {1..60}; do
+for i in {1..36}; do
   # Check for IP (NLB with EIP might populate this)
   LB_IP=$(kubectl get svc ingress-nginx-controller -n ingress-nginx -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || echo "")
   
@@ -275,9 +279,9 @@ for i in {1..60}; do
     fi
   fi
   
-  # Progress indicator every 10 seconds
-  if [ $((i % 10)) -eq 0 ]; then
-    echo "⏳ Still waiting... ($i/60)"
+  # Progress indicator every 6 iterations
+  if [ $((i % 6)) -eq 0 ]; then
+    echo "⏳ Still waiting... ($i/36)"
   fi
   
   sleep 5
@@ -290,8 +294,8 @@ if [ "$FOUND_LB" = false ]; then
 fi
 
 echo ""
-echo "1️⃣1️⃣ Waiting for target health checks (30 seconds)..."
-sleep 30
+echo "1️⃣2️⃣ Waiting for target health checks (15 seconds)..."
+sleep 15
 
 # Check target health
 echo ""

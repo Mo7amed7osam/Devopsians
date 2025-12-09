@@ -133,9 +133,26 @@ export const updateICU = async (req, res, next) => {
     const { icuId } = req.params;
     const updates = req.body;
 
-    const icu = await ICU.findByIdAndUpdate(icuId, updates, { new: true });
+    const icu = await ICU.findByIdAndUpdate(icuId, updates, { new: true }).populate('hospital', 'name');
     if (!icu) {
       return next(new ErrorHandler("ICU not found", 404));
+    }
+
+    // Emit real-time socket event for ICU status update
+    if (io && updates.status) {
+      const eventData = {
+        icuId: icu._id,
+        hospitalId: icu.hospital?._id,
+        hospitalName: icu.hospital?.name,
+        newStatus: updates.status,
+        specialization: icu.specialization,
+        room: icu.room,
+        timestamp: new Date()
+      };
+      console.log('🟡 [Socket] Emitting icuStatusUpdate event:', eventData);
+      io.emit('icuStatusUpdate', eventData);
+    } else if (!io) {
+      console.warn('⚠️ Socket.IO instance not available for icuStatusUpdate event');
     }
 
     res.status(200).json({

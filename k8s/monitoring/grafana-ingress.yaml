@@ -4,11 +4,13 @@ metadata:
   name: monitoring-ingress
   namespace: monitoring
   annotations:
-    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
 spec:
   ingressClassName: nginx
-  tls:
-    - secretName: monitoring-tls
+  # TLS section commented out - enable after TLS secret is created
+  # tls:
+  #   - secretName: monitoring-tls
   rules:
     - http:
         paths:

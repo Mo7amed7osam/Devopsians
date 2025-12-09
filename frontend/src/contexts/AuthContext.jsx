@@ -15,6 +15,30 @@ export const AuthProvider = ({ children }) => {
     // <-- NEW: Add dark mode state
     const [isDarkMode, setIsDarkMode] = useState(getInitialDarkMode());
 
+    // Sync auth state across tabs by checking cookies periodically
+    useEffect(() => {
+        const syncAuthState = () => {
+            const currentToken = getToken();
+            const currentRole = getRole();
+            
+            // Update state if cookies changed (e.g., login/logout in another tab)
+            if (currentToken !== user.token || currentRole !== user.role) {
+                setUser({ token: currentToken, role: currentRole });
+            }
+        };
+
+        // Check every 1 second for cookie changes
+        const interval = setInterval(syncAuthState, 1000);
+
+        // Also listen for storage events (though cookies don't trigger this)
+        window.addEventListener('storage', syncAuthState);
+
+        return () => {
+            clearInterval(interval);
+            window.removeEventListener('storage', syncAuthState);
+        };
+    }, [user.token, user.role]);
+
     // <-- NEW: Add toggle function
     const toggleDarkMode = () => {
         setIsDarkMode(prevMode => {

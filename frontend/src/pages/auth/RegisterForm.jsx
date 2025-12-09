@@ -66,8 +66,9 @@
 
 // src/pages/RegisterForm.jsx
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom'; // Import Link
+import { useNavigate } from 'react-router-dom';
 import { registerPatient } from '../../utils/api';
+import { safeNavigate } from '../../utils/security';
 import styles from './RegisterForm.module.css'; // <-- 1. Updated import
 import Button from '../../components/common/Button'; // <-- 2. Import Button
 import SecureInput from '../../components/common/SecureInput';
@@ -100,7 +101,7 @@ const RegisterForm = () => {
         try {
             await registerPatient(formData);
             setMessage('Registration successful! Please log in with your new credentials.');
-            setTimeout(() => navigate('/login'), 3000);
+            setTimeout(() => safeNavigate(navigate, '/login'), 3000);
         } catch (err) {
             setMessage(err.response?.data?.message || 'Registration failed. Please check input or contact support.');
         } finally {

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import DashBoardCard from '../../components/common/DashBoardCard.jsx';
 import AddHospital from './AddHospital.jsx';
@@ -8,6 +9,8 @@ import styles from './AdminDashboard.module.css';
 import Button from '../../components/common/Button';
 import SecureInput from '../../components/common/SecureInput';
 import SecureSelect from '../../components/common/SecureSelect';
+import { getRole, clearSession } from '../../utils/cookieUtils';
+import { safeNavigate } from '../../utils/security';
 // Employee management moved to Manager dashboard
 import { fetchSystemStats, viewAllHospitals, createManagerAccount, createUserAccount, viewAllManagers, viewAllAdmins, deleteUserById, blockUserById, unblockUserById, updateUserById } from '../../utils/api';
 
@@ -17,6 +20,7 @@ const iconTotalIcu = <i className="fas fa-procedures"></i>;
 const iconOccupiedIcu = <i className="fas fa-bed-pulse"></i>;
 
 const AdminDashboard = () => {
+    const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState('viewHospitals');
     const [hospitalUpdateKey, setHospitalUpdateKey] = useState(0);
     const [openHospitalId, setOpenHospitalId] = useState('');
@@ -39,6 +43,18 @@ const AdminDashboard = () => {
     });
     const [loadingStats, setLoadingStats] = useState(true);
 
+    // Verify Admin role on mount
+    useEffect(() => {
+        const userRole = getRole();
+        if (!userRole || userRole !== 'Admin') {
+            console.warn('Unauthorized access attempt to Admin dashboard');
+            toast.error('Access denied: Admin role required');
+            clearSession();
+            safeNavigate(navigate, '/login');
+            return;
+        }
+    }, [navigate]);
+
     useEffect(() => {
         const loadStats = async () => {
             setLoadingStats(true);
@@ -46,6 +62,12 @@ const AdminDashboard = () => {
                 // Fetch system stats, hospitals, and user lists to compute counts
                 const [statsRes, hospitalsRes, managersRes, adminsRes] = await Promise.all([
                     fetchSystemStats().catch(err => {
+                        if (err.response?.status === 401 || err.response?.status === 403) {
+                            console.error('Authentication failed - redirecting to login');
+                            clearSession();
+                            safeNavigate(navigate, '/login');
+                            throw err;
+                        }
                         console.warn('Failed to fetch system stats:', err.response?.status || err.message);
                         return { data: { totalIcus: 0, occupiedIcus: 0, availableIcus: 0 } };
                     }),

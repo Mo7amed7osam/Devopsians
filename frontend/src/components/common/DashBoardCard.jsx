@@ -1,11 +1,12 @@
 import { useNavigate } from "react-router-dom";
+import { safeNavigate } from "../../utils/security";
 import styles from "./DashBoardCard.module.css";
 
 function DashboardCard({ title, value, icon, color, route }) {
   const navigate = useNavigate();
 
   function handleNavigation() {
-    if (route) navigate(route);
+    if (route) safeNavigate(navigate, route);
   }
 
   return (

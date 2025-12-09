@@ -67,7 +67,12 @@ export const addHospital = async (req, res, next) => {
     await newHospital.save();
 
     //emit the new hospital
-    io.emit("hospitalAdded", newHospital);
+    if (io) {
+      console.log('🏥 [Socket] Emitting hospitalAdded:', { hospitalId: newHospital._id, name: newHospital.name });
+      io.emit("hospitalAdded", newHospital);
+    } else {
+      console.warn('⚠️ Socket.IO instance not available for hospitalAdded');
+    }
 
     // Send the response back to the client
     res.status(201).json({

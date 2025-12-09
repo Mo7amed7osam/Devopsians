@@ -48,6 +48,22 @@ const ReceptionistPanel = () => {
                 toast.warn(`⚠️ Ambulance rejected pickup for ${data.patientName}. Reason: ${data.reason}`);
                 loadData();
             });
+
+            // Listen for real-time ICU events
+            socket.on('icuReserved', (data) => {
+                toast.info(`🏥 New ICU reservation: ${data.hospitalName} - Room ${data.room}`);
+                loadData(); // Reload to show new reservation
+            });
+
+            socket.on('icuReservationCancelled', (data) => {
+                toast.info('❌ ICU reservation cancelled');
+                loadData(); // Reload to update list
+            });
+
+            socket.on('icuCheckOut', (data) => {
+                toast.success('✅ Patient checked out');
+                loadData(); // Reload to update list
+            });
         }
 
         return () => {
@@ -56,6 +72,9 @@ const ReceptionistPanel = () => {
                 socket.off('ambulanceAssigned');
                 socket.off('ambulanceApprovedPickup');
                 socket.off('pickupRejectedNotification');
+                socket.off('icuReserved');
+                socket.off('icuReservationCancelled');
+                socket.off('icuCheckOut');
             }
         };
     }, []);

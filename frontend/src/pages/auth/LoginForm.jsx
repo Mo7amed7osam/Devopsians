@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { loginUser } from '../../utils/api';
 import { saveSession } from '../../utils/cookieUtils';
+import { safeNavigate } from '../../utils/security';
 import { useAuth } from '../../contexts/AuthContext';
 import styles from './LoginForm.module.css';
 import Button from '../../components/common/Button';
@@ -43,7 +44,7 @@ const LoginForm = () => {
                 case 'ambulance': path = '/ambulance'; break;
                 default: path = '/';
             }
-            navigate(path, { replace: true });
+            safeNavigate(navigate, path, { replace: true });
         } catch (err) {
             setError(err.response?.data?.message || 'Login failed. Check your credentials.');
         } finally {

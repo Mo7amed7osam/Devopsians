@@ -189,7 +189,7 @@ const ManagerDashboard = () => {
                 <h1>{hospitalInfo.name} Manager Dashboard</h1>
                 <Button 
                     variant="primary" 
-                    onClick={() => navigate('/manager/receptionists')}
+                    onClick={() => safeNavigate(navigate, '/manager/receptionists')}
                 >
                     👥 Manage Receptionists
                 </Button>
