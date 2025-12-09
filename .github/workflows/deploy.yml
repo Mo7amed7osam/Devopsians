@@ -295,6 +295,20 @@ jobs:
           echo "🚀 Running full-deploy.sh..."
           k8s/scripts/full-deploy.sh
 
+      - name: Force pods to pull fresh images
+        run: |
+          echo "🔄 Forcing pods to pull fresh images..."
+          # Add annotation with timestamp to force pod recreation
+          kubectl patch deployment backend -n devopsians \
+            -p "{\"spec\":{\"template\":{\"metadata\":{\"annotations\":{\"deploy-timestamp\":\"$(date +%s)\"}}}}}"
+          kubectl patch deployment frontend -n devopsians \
+            -p "{\"spec\":{\"template\":{\"metadata\":{\"annotations\":{\"deploy-timestamp\":\"$(date +%s)\"}}}}}"
+          
+          echo "⏳ Waiting for rollout to complete..."
+          kubectl rollout status deployment/backend -n devopsians --timeout=120s
+          kubectl rollout status deployment/frontend -n devopsians --timeout=120s
+          echo "✅ Fresh images deployed"
+
       - name: Show final status
         run: |
           echo ""

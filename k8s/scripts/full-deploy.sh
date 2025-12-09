@@ -27,26 +27,31 @@ echo "4️⃣ Creating services..."
 kubectl apply -f k8s/app/backend-service.yaml
 kubectl apply -f k8s/app/frontend-service.yaml
 
-# 5. Apply deployments
+# 5. Delete old deployments to force fresh image pull
 echo ""
-echo "5️⃣ Creating deployments..."
+echo "5️⃣ Removing old deployments (to clear cached images)..."
+kubectl delete deployment backend frontend -n devopsians --ignore-not-found=true
+echo "   Waiting for pods to terminate..."
+sleep 5
+
+# 6. Apply fresh deployments
+echo ""
+echo "6️⃣ Creating fresh deployments..."
 kubectl apply -f k8s/app/backend-deployment.yaml
 kubectl apply -f k8s/app/frontend-deployment.yaml
 
-# 6. Apply ingress with TLS
+# 7. Apply ingress with TLS
 echo ""
-echo "6️⃣ Creating ingress with TLS..."
+echo "7️⃣ Creating ingress with TLS..."
 k8s/scripts/update-ingress-tls.sh
-echo ""
-echo "6️⃣ Creating ingress with TLS..."
 kubectl apply -f k8s/app/ingress.yaml
 
-# 7. Wait for deployments (parallel check)
+# 8. Wait for deployments (parallel check)
 echo ""
-echo "7️⃣ Waiting for deployments to be ready..."
-kubectl rollout status deployment/backend -n devopsians --timeout=90s &
+echo "8️⃣ Waiting for deployments to be ready..."
+kubectl rollout status deployment/backend -n devopsians --timeout=120s &
 BACKEND_PID=$!
-kubectl rollout status deployment/frontend -n devopsians --timeout=90s &
+kubectl rollout status deployment/frontend -n devopsians --timeout=120s &
 FRONTEND_PID=$!
 
 # Wait for both to complete

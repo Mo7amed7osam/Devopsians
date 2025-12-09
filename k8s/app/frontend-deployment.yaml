@@ -21,5 +21,3 @@ spec:
           imagePullPolicy: Always
           ports:
             - containerPort: 80
-          # Note: VITE_API_URL must be set during Docker build, not at runtime
-          # See Deploy/DEPLOYMENT_FIX.md for rebuild instructions
