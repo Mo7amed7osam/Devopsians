@@ -544,7 +544,7 @@ const ReceptionistPanel = () => {
                                                     <div style={{ fontSize: '0.85em', color: '#666' }}>
                                                         {feeInfo.daysStayed} day{feeInfo.daysStayed > 1 ? 's' : ''} × {feeInfo.dailyRate} EGP/day
                                                     </div>
-                                                    {feeInfo.feesPaid ? (
+                                                    {feeInfo.feesPaid === true ? (
                                                         <div style={{ 
                                                             marginTop: '5px',
                                                             padding: '5px 10px',

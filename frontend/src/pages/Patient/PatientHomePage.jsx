@@ -11,6 +11,8 @@ import SecureTextarea from '../../components/common/SecureTextarea';
 import ICUSelect from './ICUSelect';
 import { useNavigate } from 'react-router-dom';
 
+import { safeNavigate } from '../../utils/security';
+
 const PatientHomePage = () => {
     const [patientData, setPatientData] = useState(null);
     const [icuData, setIcuData] = useState(null);
@@ -377,7 +379,11 @@ const PatientHomePage = () => {
                 <div className={styles.card}>
                     <h3>Total Fees</h3>
                     <p className={styles.feeAmount}>EGP {(patientData.totalFees || 0).toFixed(2)}</p>
-                    <Button variant="secondary">Show Total Fees</Button>
+                    {patientData.reservedICU && patientData.patientStatus === 'CHECKED_IN' && (
+                        <p style={{color: patientData.feesPaid === true ? '#4caf50' : '#d32f2f', fontWeight: 'bold'}}>
+                            {patientData.feesPaid === true ? 'Fee Paid' : 'Fee Not Paid'}
+                        </p>
+                    )}
                 </div>
             </section>
             <section className={styles.reservationActions}>

@@ -623,7 +623,15 @@ const AmbulancePanel = () => {
     const FlyTo = ({ center }) => {
         const map = useMap();
         useEffect(() => {
-            if (center) map.flyTo([center.lat, center.lng], 13);
+            if (
+                center &&
+                typeof center.lat === 'number' &&
+                typeof center.lng === 'number' &&
+                !isNaN(center.lat) &&
+                !isNaN(center.lng)
+            ) {
+                map.flyTo([center.lat, center.lng], 13);
+            }
         }, [center]);
         return null;
     };
@@ -878,9 +886,6 @@ const AmbulancePanel = () => {
             <section className={styles.statusPanel}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
                     <h3 style={{ margin: 0 }}>Pickup Requests</h3>
-                    <Button variant="secondary" onClick={() => loadAmbulanceRequests()} style={{ padding: '6px 12px', fontSize: '0.9em' }}>
-                        🔄 Refresh
-                    </Button>
                 </div>
                 <div className={styles.requestsLayout}>
                     {/* Sidebar list */}
@@ -950,7 +955,11 @@ const AmbulancePanel = () => {
                         <FlyTo center={mapCenter} />
                         <MyLocationControl />
                         {/* Ambulance current location marker */}
-                        {currentLocation && (
+                        {currentLocation &&
+                          typeof currentLocation.lat === 'number' &&
+                          typeof currentLocation.lng === 'number' &&
+                          !isNaN(currentLocation.lat) &&
+                          !isNaN(currentLocation.lng) && (
                             <Marker position={[currentLocation.lat, currentLocation.lng]} icon={L.icon({
                                 iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
                                 shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
@@ -963,8 +972,13 @@ const AmbulancePanel = () => {
                             </Marker>
                         )}
                         {/* Pickup requests markers */}
-                        {pickupRequests.map((req) => 
-                            req.pickupCoords?.length === 2 && (
+                        {pickupRequests.map((req) => {
+                            const validCoords = req.pickupCoords?.length === 2 &&
+                                typeof req.pickupCoords[0] === 'number' &&
+                                typeof req.pickupCoords[1] === 'number' &&
+                                !isNaN(req.pickupCoords[0]) &&
+                                !isNaN(req.pickupCoords[1]);
+                            return validCoords ? (
                                 <Marker key={req.requestId}
                                     position={[req.pickupCoords[1], req.pickupCoords[0]]}
                                     icon={L.icon({
@@ -981,33 +995,17 @@ const AmbulancePanel = () => {
                                     eventHandlers={{
                                         click: () => {
                                             setSelectedRequest(req);
-                                            setMapCenter({ lat: req.pickupCoords[1], lng: req.pickupCoords[0] });
                                         }
                                     }}
                                 >
                                     <Popup>
-                                        <div style={{ minWidth: 200 }}>
-                                            <strong>{req.patientName}</strong>
-                                            <div>📍 {req.pickupLocation}</div>
-                                            <div>🏥 {req.hospitalName}</div>
-                                            {(() => {
-                                                const hasServerDist = req.distance !== undefined && req.distance !== null;
-                                                const hasCoords = currentLocation && Array.isArray(req.pickupCoords) && req.pickupCoords.length === 2;
-                                                const computed = hasCoords ? distanceKm(currentLocation.lat, currentLocation.lng, req.pickupCoords[1], req.pickupCoords[0]) : null;
-                                                const shown = hasServerDist ? Number(req.distance) : computed;
-                                                return shown != null ? (
-                                                    <div>📏 {Number(shown).toFixed(1)} km away</div>
-                                                ) : null;
-                                            })()}
-                                            <div style={{ marginTop: 8, display: 'flex', gap: 8 }}>
-                                                <Button variant="success" onClick={() => handleAcceptPickupRequest(req.requestId)}>Accept</Button>
-                                                <Button variant="secondary" onClick={() => setSelectedRequest(req)}>Route</Button>
-                                            </div>
-                                        </div>
+                                        <strong>Pickup Request</strong><br />
+                                        {req.patientName}<br />
+                                        {req.pickupLocation}
                                     </Popup>
                                 </Marker>
-                            )
-                        )}
+                            ) : null;
+                        })}
                         {/* Lines from ambulance to each request showing distance */}
                         {currentLocation && pickupRequests.map((req) => (
                             Array.isArray(req.pickupCoords) && req.pickupCoords.length === 2 ? (

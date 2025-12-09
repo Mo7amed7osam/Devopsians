@@ -288,18 +288,20 @@ const RequestAmbulance = () => {
               <strong>Requested:</strong> {new Date(activeRequest.createdAt).toLocaleString()}
             </div>
 
-            {ambulanceTracking && (
-              <div className={styles.ambulanceInfo}>
-                <h3>🚑 Ambulance En Route</h3>
-                <div className={styles.detailRow}>
-                  <strong>Crew:</strong> {ambulanceTracking.ambulanceName}
-                </div>
-                {ambulanceTracking.eta && (
+            {ambulanceTracking &&
+              (activeRequest.status === 'accepted' || activeRequest.status === 'in_transit') &&
+              activeRequest.acceptedBy && (
+                <div className={styles.ambulanceInfo}>
+                  <h3>🚑 Ambulance En Route</h3>
                   <div className={styles.detailRow}>
-                    <strong>ETA:</strong> {ambulanceTracking.eta} minutes
+                    <strong>Crew:</strong> {ambulanceTracking.ambulanceName}
                   </div>
-                )}
-              </div>
+                  {ambulanceTracking.eta && (
+                    <div className={styles.detailRow}>
+                      <strong>ETA:</strong> {ambulanceTracking.eta} minutes
+                    </div>
+                  )}
+                </div>
             )}
 
             {activeRequest.status === 'pending' && (
