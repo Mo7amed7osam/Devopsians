@@ -4,49 +4,45 @@ metadata:
   name: devopsians-ingress
   namespace: devopsians
   annotations:
-    nginx.ingress.kubernetes.io/ssl-redirect: "true"
-    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
-    nginx.ingress.kubernetes.io/configuration-snippet: |
-      rewrite ^/api/(.*)$ /$1 break;
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    nginx.ingress.kubernetes.io/websocket-services: backend-service
 spec:
   ingressClassName: nginx
-  rules:
-  - http:
-      paths:
-      # Backend API routes (rewrite happens via configuration-snippet)
-      - path: /api
-        pathType: Prefix
-        backend:
-          service:
-            name: backend-service
-            port:
-              number: 3030
-      
-      # Backend user routes
-      - path: /user
-        pathType: Prefix
-        backend:
-          service:
-            name: backend-service
-            port:
-              number: 3030
-      
-      # Socket.IO
-      - path: /socket.io
-        pathType: Prefix
-        backend:
-          service:
-            name: backend-service
-            port:
-              number: 3030
-      
-      # Frontend (includes /assets/)
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: frontend-service
-            port:
-              number: 80
   tls:
-  - secretName: devopsians-tls
+    - hosts:
+        - 34.228.5.183
+      secretName: devopsians-tls
+  rules:
+    - host: 34.228.5.183
+      http:
+        paths:
+          # Backend API (rewrite /api/... -> /...)
+          - path: /api(/|$)(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: backend-service
+                port:
+                  number: 3030
+
+          # Socket.IO with websocket support
+          - path: /socket.io(/|$)(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: backend-service
+                port:
+                  number: 3030
+
+          # Frontend SPA + assets
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend-service
+                port:
+                  number: 80
