@@ -61,9 +61,10 @@ app.use(helmet({
 }));
 
 // 2. Rate limiting - Prevent DOS attacks
+const isDev = process.env.NODE_ENV !== 'production';
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per windowMs
+  max: isDev ? 1000 : 100, // Higher limit in dev, 100 in production
   message: "Too many requests from this IP, please try again later.",
   standardHeaders: true,
   legacyHeaders: false,
@@ -72,7 +73,7 @@ const limiter = rateLimit({
 // Stricter rate limit for authentication endpoints
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // Limit each IP to 5 login attempts per windowMs
+  max: isDev ? 100 : 10, // Higher limit in dev, 10 in production
   message: "Too many login attempts, please try again after 15 minutes.",
   skipSuccessfulRequests: true,
 });

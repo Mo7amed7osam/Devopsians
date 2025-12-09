@@ -10,6 +10,7 @@ import socket from '../../utils/socket';
 import styles from './ICUSelect.module.css'; 
 import Button from '../../components/common/Button';
 import Modal from '../../components/common/Modal';
+import { safeNavigate } from '../../utils/security';
 
 const ICUSelect = () => {
     const navigate = useNavigate();

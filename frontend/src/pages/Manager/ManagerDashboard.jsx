@@ -8,6 +8,7 @@ import styles from './ManagerDashboard.module.css';
 import DashboardNav from '../../components/common/DashboardNav';
 import { toast } from 'react-toastify';
 import Button from '../../components/common/Button';
+import { safeNavigate } from '../../utils/security';
 
 import { getServiceCategories } from '../../utils/api';
 
