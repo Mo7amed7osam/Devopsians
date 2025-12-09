@@ -44,13 +44,21 @@ kubectl wait --for=condition=ready pod \
 echo ""
 echo "4️⃣  Setting up TLS certificate for monitoring..."
 
+echo "4️⃣  Setting up TLS certificate for monitoring..."
+
 # Copy TLS secret from devopsians namespace if it exists
 if kubectl get secret devopsians-tls -n devopsians &>/dev/null; then
   kubectl get secret devopsians-tls -n devopsians -o yaml | \
     sed 's/namespace: devopsians/namespace: monitoring/' | \
     sed 's/name: devopsians-tls/name: monitoring-tls/' | \
-    kubectl apply -f - >/dev/null 2>&1
-  echo "✅ TLS certificate copied"
+    kubectl apply -f - >/dev/null 2>&1 || true
+  
+  # Check if it succeeded
+  if kubectl get secret monitoring-tls -n monitoring &>/dev/null; then
+    echo "✅ TLS certificate copied"
+  else
+    echo "⚠️  TLS certificate copy failed, but continuing..."
+  fi
 else
   echo "⚠️  TLS certificate not found in devopsians namespace"
   echo "   Monitoring will use HTTP only until app is deployed"
