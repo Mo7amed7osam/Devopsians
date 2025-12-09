@@ -122,7 +122,7 @@ jobs:
             -t "${{ secrets.DOCKERHUB_USERNAME }}/devopsians-frontend:${{ steps.vars.outputs.IMAGE_TAG }}" \
             -t "${{ secrets.DOCKERHUB_USERNAME }}/devopsians-frontend:latest" \
             -f frontend/Dockerfile \
-            --build-arg VITE_API_URL=/ \            .
+            --build-arg VITE_API_URL=/api \
             .
           
           echo "📦 Pushing frontend images..."
