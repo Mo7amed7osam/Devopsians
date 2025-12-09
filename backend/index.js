@@ -63,8 +63,8 @@ app.use(helmet({
 // 2. Rate limiting - Prevent DOS attacks
 const isDev = process.env.NODE_ENV !== 'production';
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: isDev ? 1000 : 100, // Higher limit in dev, 100 in production
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: isDev ? 10000 : 1000, // Much higher limit
   message: "Too many requests from this IP, please try again later.",
   standardHeaders: true,
   legacyHeaders: false,
@@ -142,8 +142,8 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 // 5. Body parser with size limits to prevent DOS
-app.use(express.json({ limit: '10kb' })); // Limit body size to 10kb
-app.use(express.urlencoded({ extended: true, limit: '10kb' }));
+app.use(express.json({ limit: '100mb' })); // Increased body size limit to 100mb
+app.use(express.urlencoded({ extended: true, limit: '100mb' }));
 
 app.use(morgan("dev"));
 app.use(cookieParser());
@@ -197,6 +197,8 @@ const io = new Server(httpServer, {
     methods: ["GET", "POST","PUT","DELETE"],
     credentials: true,
   },
+  pingTimeout: 120000, // 2 minutes
+  maxHttpBufferSize: 1e8 // 100 MB
 });
 
 io.on("connection", (socket) => {
