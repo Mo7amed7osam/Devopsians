@@ -106,13 +106,39 @@ let allowedOrigins = [
 // remove falsy entries
 allowedOrigins = allowedOrigins.filter(Boolean);
 
-app.use(
-  cors({
-    origin: corsAllowAll ? true : allowedOrigins,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    credentials: true,
-  })
-);
+console.log('CORS Configuration:', {
+  corsAllowAll,
+  allowedOrigins,
+  frontendUrl: process.env.FRONTEND_URL
+});
+
+// CORS configuration with dynamic origin checking
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps, curl, Postman)
+    if (!origin) return callback(null, true);
+    
+    // If CORS_ALLOW_ALL is true, allow all origins
+    if (corsAllowAll) {
+      console.log(`CORS: Allowing origin ${origin} (CORS_ALLOW_ALL=true)`);
+      return callback(null, true);
+    }
+    
+    // Check if origin is in allowed list
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      console.log(`CORS: Allowing origin ${origin} (in allowedOrigins)`);
+      return callback(null, true);
+    }
+    
+    console.warn(`CORS: Blocking origin ${origin}`);
+    callback(new Error('Not allowed by CORS'));
+  },
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  credentials: true,
+  optionsSuccessStatus: 200
+};
+
+app.use(cors(corsOptions));
 
 // 5. Body parser with size limits to prevent DOS
 app.use(express.json({ limit: '10kb' })); // Limit body size to 10kb
