@@ -137,19 +137,20 @@ const AmbulancePanel = () => {
                 setMyAmbulance(myAmb);
                 
                 // If ambulance has location, reload requests sorted by distance
-                if (myAmb.currentLocation?.coordinates) {
+                if (isValidCoordinatePair(myAmb.currentLocation?.coordinates)) {
+                    const [lng, lat] = myAmb.currentLocation.coordinates;
                     loadAmbulanceRequests({
-                        latitude: myAmb.currentLocation.coordinates[1],
-                        longitude: myAmb.currentLocation.coordinates[0]
+                        latitude: lat,
+                        longitude: lng
                     });
                     // Initialize currentLocation marker and center to fix disappearing pin
                     setCurrentLocation({
-                        lat: myAmb.currentLocation.coordinates[1],
-                        lng: myAmb.currentLocation.coordinates[0]
+                        lat,
+                        lng
                     });
                     setMapCenter({
-                        lat: myAmb.currentLocation.coordinates[1],
-                        lng: myAmb.currentLocation.coordinates[0]
+                        lat,
+                        lng
                     });
                 }
 
@@ -172,7 +173,7 @@ const AmbulancePanel = () => {
     const loadAmbulanceRequests = async (location = null) => {
         try {
             // If we have ambulance location, use it for distance sorting
-            const loc = location || (myAmbulance?.currentLocation?.coordinates 
+            const loc = location || (isValidCoordinatePair(myAmbulance?.currentLocation?.coordinates) 
                 ? { 
                     latitude: myAmbulance.currentLocation.coordinates[1], 
                     longitude: myAmbulance.currentLocation.coordinates[0] 
@@ -211,7 +212,7 @@ const AmbulancePanel = () => {
             const response = await getMyAcceptedRequest();
             const request = response.data?.data;
             
-            if (request && request.pickupCoordinates?.coordinates) {
+            if (request && isValidCoordinatePair(request.pickupCoordinates?.coordinates)) {
                 setActivePickup({
                     patientName: request.patient ? `${request.patient.firstName} ${request.patient.lastName}` : 'Patient',
                     pickupLocation: request.pickupLocation,
@@ -294,7 +295,8 @@ const AmbulancePanel = () => {
                 
                 // Find the accepted request to get pickup coordinates
                 const acceptedReq = pickupRequests.find(req => req.requestId === requestId);
-                if (acceptedReq && acceptedReq.pickupCoords) {
+                if (acceptedReq && isValidCoordinatePair(acceptedReq.pickupCoords)) {
+                    const [lng, lat] = acceptedReq.pickupCoords;
                     setActivePickup({
                         patientName: acceptedReq.patientName,
                         pickupLocation: acceptedReq.pickupLocation,
@@ -302,7 +304,7 @@ const AmbulancePanel = () => {
                         hospitalName: acceptedReq.hospitalName
                     });
                     // Center map on patient location
-                    setMapCenter({ lat: acceptedReq.pickupCoords[1], lng: acceptedReq.pickupCoords[0] });
+                    setMapCenter({ lat, lng });
                 }
                 
                 // Remove this request from the list
@@ -584,13 +586,16 @@ const AmbulancePanel = () => {
     };
 
     const calculateDistanceAndETA = (currentLoc) => {
+        if (!currentLoc || typeof currentLoc.lat !== 'number' || typeof currentLoc.lng !== 'number' || isNaN(currentLoc.lat) || isNaN(currentLoc.lng)) {
+            return;
+        }
         // Prefer selected request's pickup as destination for routing visualization
         let destinationLat = 30.0444;
         let destinationLng = 31.2357;
-        if (selectedRequest?.pickupCoords && selectedRequest.pickupCoords.length === 2) {
+        if (isValidCoordinatePair(selectedRequest?.pickupCoords)) {
             destinationLng = selectedRequest.pickupCoords[0];
             destinationLat = selectedRequest.pickupCoords[1];
-        } else if (myAmbulance?.assignedHospital?.location?.coordinates?.length === 2) {
+        } else if (isValidCoordinatePair(myAmbulance?.assignedHospital?.location?.coordinates)) {
             destinationLng = myAmbulance.assignedHospital.location.coordinates[0];
             destinationLat = myAmbulance.assignedHospital.location.coordinates[1];
         }
@@ -723,6 +728,17 @@ const AmbulancePanel = () => {
         const index = Math.round(bearing / 45) % 8;
         return directions[index];
     };
+
+    const isValidCoordinatePair = (coords) => Array.isArray(coords) && coords.length === 2 &&
+        typeof coords[0] === 'number' && typeof coords[1] === 'number' &&
+        !isNaN(coords[0]) && !isNaN(coords[1]);
+
+    const hasValidCurrentLocation = () =>
+        currentLocation &&
+        typeof currentLocation.lat === 'number' &&
+        typeof currentLocation.lng === 'number' &&
+        !isNaN(currentLocation.lat) &&
+        !isNaN(currentLocation.lng);
 
     return (
         <div className={styles.dashboard}>
@@ -920,7 +936,7 @@ const AmbulancePanel = () => {
                                             <div>🏥 {req.hospitalName}</div>
                                             {(() => {
                                                 const hasServerDist = req.distance !== undefined && req.distance !== null;
-                                                const hasCoords = currentLocation && Array.isArray(req.pickupCoords) && req.pickupCoords.length === 2;
+                                                const hasCoords = hasValidCurrentLocation() && isValidCoordinatePair(req.pickupCoords);
                                                 const computed = hasCoords ? distanceKm(currentLocation.lat, currentLocation.lng, req.pickupCoords[1], req.pickupCoords[0]) : null;
                                                 const shown = hasServerDist ? Number(req.distance) : computed;
                                                 return shown != null ? (
@@ -932,7 +948,12 @@ const AmbulancePanel = () => {
                                         <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
                                             <Button
                                                 variant="secondary"
-                                                onClick={() => { setSelectedRequest(req); req.pickupCoords && setMapCenter({ lat: req.pickupCoords[1], lng: req.pickupCoords[0] }); }}
+                                                onClick={() => {
+                                                    setSelectedRequest(req);
+                                                    if (isValidCoordinatePair(req.pickupCoords)) {
+                                                        setMapCenter({ lat: req.pickupCoords[1], lng: req.pickupCoords[0] });
+                                                    }
+                                                }}
                                             >
                                                 View on map
                                             </Button>
@@ -955,11 +976,7 @@ const AmbulancePanel = () => {
                         <FlyTo center={mapCenter} />
                         <MyLocationControl />
                         {/* Ambulance current location marker */}
-                        {currentLocation &&
-                          typeof currentLocation.lat === 'number' &&
-                          typeof currentLocation.lng === 'number' &&
-                          !isNaN(currentLocation.lat) &&
-                          !isNaN(currentLocation.lng) && (
+                        {hasValidCurrentLocation() && (
                             <Marker position={[currentLocation.lat, currentLocation.lng]} icon={L.icon({
                                 iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
                                 shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
@@ -973,11 +990,7 @@ const AmbulancePanel = () => {
                         )}
                         {/* Pickup requests markers */}
                         {pickupRequests.map((req) => {
-                            const validCoords = req.pickupCoords?.length === 2 &&
-                                typeof req.pickupCoords[0] === 'number' &&
-                                typeof req.pickupCoords[1] === 'number' &&
-                                !isNaN(req.pickupCoords[0]) &&
-                                !isNaN(req.pickupCoords[1]);
+                            const validCoords = isValidCoordinatePair(req.pickupCoords);
                             return validCoords ? (
                                 <Marker key={req.requestId}
                                     position={[req.pickupCoords[1], req.pickupCoords[0]]}
@@ -1007,8 +1020,8 @@ const AmbulancePanel = () => {
                             ) : null;
                         })}
                         {/* Lines from ambulance to each request showing distance */}
-                        {currentLocation && pickupRequests.map((req) => (
-                            Array.isArray(req.pickupCoords) && req.pickupCoords.length === 2 ? (
+                        {hasValidCurrentLocation() && pickupRequests.map((req) => (
+                            isValidCoordinatePair(req.pickupCoords) ? (
                                 <Polyline
                                     key={`line-${req.requestId}`}
                                     positions={[[currentLocation.lat, currentLocation.lng], [req.pickupCoords[1], req.pickupCoords[0]]]}
@@ -1024,14 +1037,14 @@ const AmbulancePanel = () => {
                             ) : null
                         ))}
                         {/* Simple route polyline from ambulance to selected pickup */}
-                        {currentLocation && selectedRequest?.pickupCoords?.length === 2 && (
+                        {hasValidCurrentLocation() && isValidCoordinatePair(selectedRequest?.pickupCoords) && (
                             <Polyline
                                 positions={[[currentLocation.lat, currentLocation.lng], [selectedRequest.pickupCoords[1], selectedRequest.pickupCoords[0]]]}
                                 pathOptions={{ color: '#007bff', weight: 4, opacity: 0.8 }}
                             />
                         )}
                         {/* Active Pickup - Patient location marker and route line */}
-                        {activePickup && activePickup.coordinates?.length === 2 && (
+                        {activePickup && isValidCoordinatePair(activePickup.coordinates) && (
                             <>
                                 {/* Patient marker at pickup location */}
                                 <Marker
@@ -1049,7 +1062,7 @@ const AmbulancePanel = () => {
                                             <div><strong>Patient:</strong> {activePickup.patientName}</div>
                                             <div><strong>Location:</strong> {activePickup.pickupLocation}</div>
                                             <div><strong>Destination:</strong> {activePickup.hospitalName}</div>
-                                            {currentLocation && (() => {
+                                            {hasValidCurrentLocation() && (() => {
                                                 const dist = distanceKm(
                                                     currentLocation.lat,
                                                     currentLocation.lng,
@@ -1062,7 +1075,7 @@ const AmbulancePanel = () => {
                                     </Popup>
                                 </Marker>
                                 {/* Distance line from ambulance to patient */}
-                                {currentLocation && (
+                                {hasValidCurrentLocation() && (
                                     <Polyline
                                         positions={[
                                             [currentLocation.lat, currentLocation.lng],
@@ -1092,7 +1105,7 @@ const AmbulancePanel = () => {
                         )}
 
                         {/* After pickup: route from ambulance to hospital */}
-                        {currentLocation && hasPickedUp && myAmbulance?.assignedHospital?.location?.coordinates?.length === 2 && (
+                        {hasValidCurrentLocation() && hasPickedUp && isValidCoordinatePair(myAmbulance?.assignedHospital?.location?.coordinates) && (
                             <Polyline
                                 positions={[
                                     [currentLocation.lat, currentLocation.lng],
