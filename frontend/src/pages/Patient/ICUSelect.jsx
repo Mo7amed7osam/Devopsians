@@ -246,7 +246,7 @@ const ICUSelect = () => {
             
             const payload = {
                 icuId: selectedIcuId,
-                userId,
+                patientId: userId, // backend expects patientId
                 needsPickup,
                 pickupLocation: needsPickup ? pickupLocation : null,
                 pickupCoordinates: needsPickup ? pickupCoords : null

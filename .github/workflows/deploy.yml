@@ -64,8 +64,8 @@ jobs:
 
       - name: Build frontend
         run: |
-          echo "Building frontend with VITE_API_URL=/api"
-          export VITE_API_URL=/api
+          echo "Syncing frontend env for production"
+          node Deploy/sync-frontend-env.js production
           cd frontend
           npm run build
           echo "✅ Frontend build complete"

@@ -1,5 +1,6 @@
 // src/utils/api.js
 import axios from 'axios';
+import { API_BASE } from '../config/apiConfig';
 import { getToken, clearSession } from './cookieUtils';
 import { sanitizeInput, secureFormSubmit, apiRateLimiter } from './security';
 
@@ -9,11 +10,7 @@ import { sanitizeInput, secureFormSubmit, apiRateLimiter } from './security';
 // Backend server runs on port 3030
 // ============================================================
 
-// Use Vite env variable when available (set during build/deploy).
-// If VITE_API_URL is '/' or empty, use empty string so axios doesn't double slashes
-const envURL = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL);
-// Default to "/api" so calls go through nginx backend proxy when env var is missing/empty
-const INTERNAL_API_BASE = (envURL && envURL !== '/' && envURL !== '') ? envURL : '/api';
+const INTERNAL_API_BASE = API_BASE;
 
 const API = axios.create({
   baseURL: INTERNAL_API_BASE,
@@ -358,7 +355,11 @@ export const updateMedicalHistoryForPatient = async (historyPayload) => await AP
 export const rateHospitalByPatient = async (ratingPayload) => await API.post('/patient/rate-hospital', ratingPayload);
 export const getMedicineScheduleForUser = async (userId) => await API.get(`/patient/medicine-schedule/${userId}`);
 export const getTotalFeesForUser = async (userId) => await API.get(`/patient/total-fees/${userId}`);
-export const reserveICUForPatient = async (payload) => await API.post('/icu/reserve', payload);
+export const reserveICUForPatient = async (payload) => {
+  const { patientId, userId, ...rest } = payload || {};
+  const body = { ...rest, patientId: patientId || userId };
+  return API.post('/icu/reserve', body);
+};
 export const freeICUForPatient = async (payload) => await API.post('/patient/free-icu', payload);
 export const getAvailableICUsPatient = async () => await API.get('/patient/get-available-icus');
 export const reserveVisitorRoomPatient = async (payload) => await API.post('/patient/reserve-visitor-room', payload);
@@ -453,5 +454,5 @@ export const notifyPatientWaiting = async (ambulanceId, payload) =>
 //    EXPORTS
 // ============================================================
 
-export const API_BASE = INTERNAL_API_BASE; // Export base URL for other modules (read from env or fallback)
+export { API_BASE } from '../config/apiConfig';
 export default API;
