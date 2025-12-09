@@ -232,13 +232,44 @@ fi
 echo ""
 echo "9️⃣ Scaling ingress controller to 1 replica for resource efficiency..."
 kubectl scale deployment ingress-nginx-controller -n ingress-nginx --replicas=1
+sleep 3
 
 echo ""
 echo "🔟 Waiting for controller pod to be ready..."
-kubectl wait --namespace ingress-nginx \
-  --for=condition=ready pod \
-  --selector=app.kubernetes.io/component=controller \
-  --timeout=180s
+
+# Wait for at least 1 pod to be Ready (not all pods, since some may be in pending/cleanup)
+READY_PODS=0
+WAIT_COUNTER=0
+while [ $READY_PODS -lt 1 ] && [ $WAIT_COUNTER -lt 180 ]; do
+  READY_PODS=$(kubectl get pods -n ingress-nginx -l app.kubernetes.io/component=controller -o jsonpath='{.items[?(@.status.conditions[?(@.type=="Ready")].status=="True")].metadata.name}' | wc -w)
+  if [ $READY_PODS -ge 1 ]; then
+    echo "✅ At least 1 controller pod is Ready"
+    break
+  fi
+  
+  # Show progress every 30 seconds
+  if [ $((WAIT_COUNTER % 30)) -eq 0 ] && [ $WAIT_COUNTER -gt 0 ]; then
+    echo "⏳ Still waiting for pod to be ready... ($WAIT_COUNTER/180s)"
+    kubectl get pods -n ingress-nginx -l app.kubernetes.io/component=controller -o wide
+  fi
+  
+  sleep 1
+  WAIT_COUNTER=$((WAIT_COUNTER + 1))
+done
+
+# Show final pod status
+echo ""
+echo "📊 Controller Pod Status:"
+kubectl get pods -n ingress-nginx -l app.kubernetes.io/component=controller -o wide
+echo ""
+
+# Check for issues
+POD_STATUS=$(kubectl get pods -n ingress-nginx -l app.kubernetes.io/component=controller -o jsonpath='{.items[0].status.phase}' 2>/dev/null || echo "Unknown")
+if [ "$POD_STATUS" != "Running" ]; then
+  echo "⚠️  Pod status: $POD_STATUS"
+  echo "   Showing pod events:"
+  kubectl describe pods -n ingress-nginx -l app.kubernetes.io/component=controller | grep -A 10 "Events:" || true
+fi
 
 echo ""
 echo "1️⃣1️⃣ Waiting for LoadBalancer to be assigned..."
