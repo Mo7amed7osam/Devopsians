@@ -218,13 +218,14 @@ export const checkOutPatient = async (req, res, next) => {
             console.warn('⚠️ Socket.IO instance not available for icuCheckOut event');
         }
 
-        // Clear patient's reservation using findByIdAndUpdate
+        // Clear patient's reservation and reset fees using findByIdAndUpdate
         await User.findByIdAndUpdate(patientId, {
             reservedICU: null,
             patientStatus: null,
             assignedAmbulance: null,
             needsPickup: false,
-            pickupLocation: null
+            pickupLocation: null,
+            totalFees: 0
         });
 
         // Emit socket event for available ICUs
