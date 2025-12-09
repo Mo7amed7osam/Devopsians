@@ -46,4 +46,3 @@ spec:
                 name: frontend-service
                 port:
                   number: 80
-
