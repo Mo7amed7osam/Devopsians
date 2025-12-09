@@ -69,10 +69,21 @@ echo ""
 echo "📝 Submit this URL for DEPI: https://$STATIC_IP"
 echo ""
 echo "📊 Pod Status:"
-kubectl get pods -n devopsians
+kubectl get pods -n devopsians -o wide
 echo ""
+
+# Check if any pods are not running
+NOT_RUNNING=$(kubectl get pods -n devopsians -o jsonpath='{.items[?(@.status.phase!="Running")].metadata.name}' | wc -w)
+if [ "$NOT_RUNNING" -gt 0 ]; then
+  echo "⚠️  WARNING: Some pods are not in Running state!"
+  echo "   Run 'kubectl describe pod -n devopsians' for details"
+  echo "   Or run k8s/scripts/diagnose.sh for full diagnostics"
+fi
+echo ""
+
 echo "🔍 Ingress Status:"
 kubectl get ingress -n devopsians
 echo ""
+
 echo "🌐 LoadBalancer Status:"
 kubectl get svc -n ingress-nginx ingress-nginx-controller

@@ -21,6 +21,27 @@ spec:
           imagePullPolicy: Always
           ports:
             - containerPort: 3030
+              name: http
           envFrom:
             - secretRef:
                 name: backend-secret
+          env:
+            - name: PORT
+              value: "3030"
+          # Health check endpoint
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3030
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3030
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 2
