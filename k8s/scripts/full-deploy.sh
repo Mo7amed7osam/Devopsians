@@ -37,6 +37,9 @@ kubectl apply -f k8s/app/frontend-deployment.yaml
 echo ""
 echo "6️⃣ Creating ingress with TLS..."
 k8s/scripts/update-ingress-tls.sh
+echo ""
+echo "6️⃣ Creating ingress with TLS..."
+kubectl apply -f k8s/app/ingress.yaml
 
 # 7. Wait for deployments (parallel check)
 echo ""
