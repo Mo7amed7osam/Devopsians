@@ -64,8 +64,8 @@ jobs:
 
       - name: Build frontend
         run: |
-          echo "Syncing frontend env for production"
-          node Deploy/sync-frontend-env.js production
+          echo "Building frontend with VITE_API_URL=/api"
+          export VITE_API_URL=/api
           cd frontend
           npm run build
           echo "✅ Frontend build complete"
@@ -122,7 +122,7 @@ jobs:
             -t "${{ secrets.DOCKERHUB_USERNAME }}/devopsians-frontend:${{ steps.vars.outputs.IMAGE_TAG }}" \
             -t "${{ secrets.DOCKERHUB_USERNAME }}/devopsians-frontend:latest" \
             -f frontend/Dockerfile \
-            --build-arg VITE_API_URL=/api \
+            --build-arg VITE_API_URL=/ \            .
             .
           
           echo "📦 Pushing frontend images..."
