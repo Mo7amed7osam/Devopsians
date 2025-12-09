@@ -21,8 +21,9 @@ spec:
       http:
         paths:
           # Backend API (rewrite /api/... -> /...)
+          # Use ImplementationSpecific so the regex path works; Prefix would skip the regex
           - path: /api(/|$)(.*)
-            pathType: Prefix
+            pathType: ImplementationSpecific
             backend:
               service:
                 name: backend-service
@@ -31,7 +32,7 @@ spec:
 
           # Socket.IO with websocket support
           - path: /socket.io(/|$)(.*)
-            pathType: Prefix
+            pathType: ImplementationSpecific
             backend:
               service:
                 name: backend-service
