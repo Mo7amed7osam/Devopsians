@@ -3,7 +3,8 @@ import { API_BASE as SOCKET_URL } from "../utils/api";
 
 // If VITE_API_URL is relative (/ or empty), use undefined so Socket.IO auto-detects
 const envURL = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL);
-const url = (envURL && envURL !== '/' && envURL !== '') ? envURL : undefined;
+// If the URL is relative ("/" or "/api"), let Socket.IO auto-detect same-origin
+const url = (envURL && !envURL.startsWith('/')) ? envURL : undefined;
 
 const socket = io(url, {
   transports: ["websocket", "polling"],
