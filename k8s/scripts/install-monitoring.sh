@@ -44,8 +44,6 @@ kubectl wait --for=condition=ready pod \
 echo ""
 echo "4️⃣  Setting up TLS certificate for monitoring..."
 
-echo "4️⃣  Setting up TLS certificate for monitoring..."
-
 # Copy TLS secret from devopsians namespace if it exists
 if kubectl get secret devopsians-tls -n devopsians &>/dev/null; then
   kubectl get secret devopsians-tls -n devopsians -o yaml | \
@@ -76,16 +74,20 @@ ELB=$(kubectl get svc -n ingress-nginx ingress-nginx-controller -o jsonpath='{.s
 # Update Grafana config with proper domain
 echo ""
 echo "6️⃣  Configuring Grafana for external access..."
+
 kubectl patch configmap prometheus-grafana -n monitoring --type merge -p "{
   \"data\": {
     \"grafana.ini\": \"[analytics]\\ncheck_for_updates = true\\n[grafana_net]\\nurl = https://grafana.net\\n[log]\\nmode = console\\n[paths]\\ndata = /var/lib/grafana/\\nlogs = /var/log/grafana\\nplugins = /var/lib/grafana/plugins\\nprovisioning = /etc/grafana/provisioning\\n[server]\\ndomain = $ELB\\nroot_url = https://$ELB/grafana/\\nserve_from_sub_path = true\\n\"
   }
-}" >/dev/null 2>&1
+}" >/dev/null 2>&1 || true
 
 # Restart Grafana to apply config
-kubectl rollout restart deployment prometheus-grafana -n monitoring >/dev/null 2>&1
-kubectl rollout status deployment prometheus-grafana -n monitoring --timeout=90s >/dev/null 2>&1
-
+if kubectl rollout restart deployment prometheus-grafana -n monitoring >/dev/null 2>&1; then
+  echo "   Grafana restarting..."
+  kubectl rollout status deployment prometheus-grafana -n monitoring --timeout=90s >/dev/null 2>&1 || echo "⚠️  Restart taking longer than expected, but continuing..."
+else
+  echo "⚠️  Could not restart Grafana, continuing anyway..."
+fi
 echo ""
 echo "7️⃣  Creating ServiceMonitors for application monitoring..."
 kubectl apply -f "$PROJECT_ROOT/k8s/monitoring/servicemonitors.yaml"
