@@ -254,10 +254,17 @@ export const fetchSystemStats = async () => {
     const total = icuArray.length;
     const occupied = icuArray.filter(i => (i.status || '').toString().toLowerCase() === 'occupied').length;
     const available = icuArray.filter(i => (i.status || '').toString().toLowerCase() === 'available').length;
-    return { data: { totalIcus: total, occupiedIcus: occupied, availableIcus: available } };
+    const icuByHospital = icuArray.reduce((acc, icu) => {
+      const hospitalId = icu?.hospital?._id || icu?.hospital?.id || icu?.hospitalId || icu?.hospital;
+      if (!hospitalId) return acc;
+      const key = String(hospitalId);
+      acc[key] = (acc[key] || 0) + 1;
+      return acc;
+    }, {});
+    return { data: { totalIcus: total, occupiedIcus: occupied, availableIcus: available, icuByHospital } };
   } catch (err) {
     // Fallback: return zeros if backend is unavailable or unauthorized
-    return { data: { totalIcus: 0, occupiedIcus: 0, availableIcus: 0 } };
+    return { data: { totalIcus: 0, occupiedIcus: 0, availableIcus: 0, icuByHospital: {} } };
   }
 };
 export const fetchSystemLogs = async () => {
@@ -267,7 +274,7 @@ export const fetchSystemLogs = async () => {
   return res;
 };
 // ============================================================
-// 🔧 TEMP MOCK PLACEHOLDERS for UI testing (not implemented yet)
+// TEMP MOCK PLACEHOLDERS for UI testing (not implemented yet)
 // ============================================================
 
 export const createAndAssignManager = async (managerData) => {

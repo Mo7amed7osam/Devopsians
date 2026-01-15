@@ -1,40 +1,42 @@
 /* src/components/DashboardNav.module.css */
 .navContainer {
-    display: flex;
-    justify-content: center;
-    gap: 15px;
-    padding: 15px 0;
-    margin-bottom: 30px;
-    background-color: #f0f4f7;
-    border-radius: 8px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  display: flex;
+  justify-content: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  margin-bottom: var(--space-6);
+  background: var(--color-surface);
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-xs);
+  flex-wrap: wrap;
 }
 
 .navButton {
-    background: none;
-    border: none;
-    padding: 10px 20px;
-    font-size: 16px;
-    font-weight: 600;
-    color: #6c757d;
-    cursor: pointer;
-    border-radius: 4px;
-    transition: background-color 0.2s, color 0.2s;
-    width: auto; /* Override default button width */
+  background: transparent;
+  border: 1px solid transparent;
+  padding: 8px 18px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-ink-muted);
+  cursor: pointer;
+  border-radius: var(--radius-pill);
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+  width: auto;
 }
 
 .navButton:hover {
-    background-color: #e9ecef;
-    color: #333;
+  background-color: rgba(37, 99, 235, 0.08);
+  color: var(--color-primary);
 }
 
-.navButton.active {
-    background-color: var(--color-primary, #007bff);
-    color: white;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+.active {
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-strong) 100%);
+  color: #fff;
+  box-shadow: var(--shadow-sm);
 }
 
-.navButton.active:hover {
-    background-color: var(--color-primary-dark, #0056b3);
-    color: white;
+.active:hover {
+  color: #fff;
 }

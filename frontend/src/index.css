@@ -1,237 +1,258 @@
-/* src/index.css */
+@import "./styles/tokens.css";
+@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap");
 
-/* --- 1. CSS Variables (Color Palette) --- */
-:root {
-  --color-primary: #007bff;
-  --color-primary-dark: #0056b3;
-  --color-primary-light: #e0f7fa;
-  --color-success: #28a745;
-  --color-success-light: #d4edda;
-  --color-warning: #ffc107;
-  --color-danger: #dc3545;
-  --color-background-light: #f8f9fa;
-  --color-background-white: #ffffff;
-  --color-border: #dee2e6;
-  --color-text-dark: #343a40;
-  --color-text-muted: #6c757d;
-}
-
-/* --- 2. Base Reset & Typography --- */
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
+html, body, #root {
+  min-height: 100%;
+}
+
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  background-color: var(--color-background-light); /* Default light background */
-  color: var(--color-text-dark);
-  line-height: 1.6;
+  font-family: var(--font-body);
+  background: var(--color-page);
+  color: var(--color-ink);
+  line-height: var(--lh-normal);
 }
 
-h1, h2, h3 {
-  color: var(--color-primary-dark);
-  margin-top: 1.2em;
-  margin-bottom: 0.5em;
-  font-weight: 600;
+#app-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
-/* --- 3. Global Reusable Element Styles --- */
-
-/* Global button reset */
-button, input[type="submit"] {
-  cursor: pointer;
-  border: none;
-  transition: background-color 0.2s, box-shadow 0.2s;
-}
-
-/* Global input styling */
-input[type="text"],
-input[type="email"],
-input[type="password"],
-input[type="number"],
-input[type="tel"],
-textarea,
-select {
-  padding: 10px;
-  border: 1px solid var(--color-border);
-  border-radius: 4px;
+.app-shell {
+  display: grid;
+  grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
+  gap: var(--space-6);
   width: 100%;
-  box-sizing: border-box;
+  max-width: var(--container-max);
+  margin: 0 auto;
+  padding: var(--space-6);
 }
 
-input:focus, textarea:focus, select:focus {
+.app-shell--single {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+main {
+  min-height: calc(100vh - var(--nav-height));
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
+  color: var(--color-ink);
+}
+
+h1 { font-size: var(--text-3xl); line-height: var(--lh-tight); }
+h2 { font-size: var(--text-2xl); line-height: var(--lh-tight); }
+h3 { font-size: var(--text-xl); }
+
+p {
+  color: var(--color-ink-muted);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--color-primary);
+}
+
+button,
+input[type="submit"] {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.3);
+  outline-offset: 2px;
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font-size: var(--text-sm);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--color-ink-subtle);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
   outline: none;
 }
 
-/* Global Table Styles */
-.data-table {
+input:disabled,
+select:disabled,
+textarea:disabled {
+  background: var(--color-surface-3);
+  color: var(--color-ink-subtle);
+  cursor: not-allowed;
+}
+
+label {
+  display: inline-flex;
+  gap: var(--space-2);
+  align-items: center;
+  font-weight: 600;
+  font-size: var(--text-sm);
+  color: var(--color-ink);
+}
+
+.surface-card {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-border);
+}
+
+.section-title {
+  font-size: var(--text-xl);
+  margin-bottom: var(--space-4);
+}
+
+.data-table,
+table[class*="Table"] {
   width: 100%;
   border-collapse: collapse;
-  margin-top: 15px;
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-xs);
 }
-.data-table th, .data-table td {
-  padding: 12px 15px;
-  border: 1px solid #e0e0e0;
+
+.data-table th,
+.data-table td,
+table[class*="Table"] th,
+table[class*="Table"] td {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--color-border);
   text-align: left;
+  font-size: var(--text-sm);
 }
-.data-table th {
-  background-color: #f0f4f7;
+
+.data-table thead th,
+table[class*="Table"] thead th,
+.data-table th,
+table[class*="Table"] th {
+  background: var(--color-surface-2);
+  color: var(--color-ink);
   font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 12px;
+  position: sticky;
+  top: 0;
+  z-index: 1;
 }
 
-/* --- 4. Dark Mode Theme --- */
-body.dark-mode {
-  /* Define dark mode variable values */
-  --color-primary: #007bff;
-  --color-primary-dark: #0069d9;
-  --color-primary-light: #333; /* Darker background for light primary elements */
-
-  --color-background-light: #121212; /* Main dark background for the body */
-  --color-background-white: #1e1e1e; /* Dark background for cards/containers */
-  --color-border: #444; /* Darker borders */
-
-  --color-text-dark: #e0e0e0;   /* Light text for dark backgrounds */
-  --color-text-muted: #888; /* Muted light text */
+.data-table tbody tr:nth-child(odd),
+table[class*="Table"] tbody tr:nth-child(odd) {
+  background: rgba(37, 99, 235, 0.03);
 }
 
-/* Apply dark background to body when dark mode is active */
-body.dark-mode {
-  background-color: var(--color-background-light);
-  color: var(--color-text-dark);
+.data-table tbody tr:hover,
+table[class*="Table"] tbody tr:hover {
+  background: rgba(37, 99, 235, 0.08);
 }
 
-/* General Dark Mode Adjustments */
-body.dark-mode h1,
-body.dark-mode h2,
-body.dark-mode h3 {
-   color: var(--color-text-dark); /* Make headings light */
+.table-empty {
+  padding: var(--space-6);
+  text-align: center;
+  color: var(--color-ink-subtle);
 }
 
-/* Make modals dark */
-body.dark-mode .ReactModal__Content {
-  background-color: var(--color-background-white) !important;
-  color: var(--color-text-dark) !important;
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.badge.success { background: var(--color-success-soft); color: var(--color-success); }
+.badge.warning { background: var(--color-accent-soft); color: #b45309; }
+.badge.danger { background: var(--color-danger-soft); color: var(--color-danger); }
+.badge.info { background: rgba(14, 165, 233, 0.16); color: var(--color-info); }
+.badge.neutral { background: var(--color-surface-3); color: var(--color-ink-muted); }
+
+.Toastify__toast {
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  font-family: var(--font-body);
+  color: var(--color-ink);
+}
+
+.Toastify__toast--success {
+  background: #e7f8ef;
+  color: #0f5132;
+}
+
+.Toastify__toast--error {
+  background: #fde8e8;
+  color: #7f1d1d;
+}
+
+.Toastify__toast--warning {
+  background: #fff4db;
+  color: #7a4b00;
+}
+
+.Toastify__toast--info {
+  background: #e6f6fe;
+  color: #075985;
+}
+
+@media (max-width: 1100px) {
+  .app-shell {
+    grid-template-columns: minmax(0, 1fr);
+    padding: var(--space-5);
+  }
+}
+
+@media (max-width: 720px) {
+  .app-shell {
+    padding: var(--space-4);
+  }
+}
+
+body.dark-mode [class*="formCard"],
+body.dark-mode [class*="card"],
+body.dark-mode [class*="panel"],
+body.dark-mode [class*="container"],
+body.dark-mode [class*="contentArea"] {
+  background: var(--color-surface) !important;
+  color: var(--color-ink) !important;
   border-color: var(--color-border) !important;
 }
 
-/* Make tables dark */
-body.dark-mode .data-table th,
-body.dark-mode .logTable th, /* Added from AdminPage.module.css */
-body.dark-mode .icuTable th, /* Added from ICUMgmt.module.css */
-body.dark-mode .hospitalTable th, /* Added for ViewAllHospital */
-body.dark-mode .scheduleTable th /* Added for DoctorPage */
-{
-  background-color: #2a2a2a;
-  color: var(--color-text-dark); /* Ensure header text is light */
+body.dark-mode [class*="title"],
+body.dark-mode h1,
+body.dark-mode h2,
+body.dark-mode h3 {
+  color: var(--color-ink) !important;
 }
-
-body.dark-mode .data-table td,
-body.dark-mode .logTable td,
-body.dark-mode .icuTable td,
-body.dark-mode .hospitalTable td,
-body.dark-mode .scheduleTable td
-{
-   border-color: var(--color-border); /* Darker border for table cells */
-}
-
-/* Make form inputs dark */
-body.dark-mode input[type="text"],
-body.dark-mode input[type="email"],
-body.dark-mode input[type="password"],
-body.dark-mode input[type="number"],
-body.dark-mode input[type="tel"],
-body.dark-mode input[type="date"], /* Added */
-body.dark-mode input[type="time"], /* Added */
-body.dark-mode textarea,
-body.dark-mode select {
-    background-color: #333;
-    color: var(--color-text-dark);
-    border-color: var(--color-border);
-}
-
-body.dark-mode input:focus,
-body.dark-mode textarea:focus,
-body.dark-mode select:focus {
-    border-color: var(--color-primary);
-    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.4); /* Slightly adjust shadow */
-}
-
-/* --- Specific Overrides for Page Containers in Dark Mode --- */
-
-/* Target specific container elements when dark mode is active */
-body.dark-mode #root #app-container > main > div:has(form[class*="LoginForm_formCard"]),
-body.dark-mode #root #app-container > main > div:has(form[class*="RegisterForm_formCard"]),
-body.dark-mode #root #app-container > main > div[class*="Homepage_loadingContainer"] {
-    background-color: var(--color-background-light) !important; /* Force override */
-}
-
-/* Target the form cards themselves on Login/Register pages */
-body.dark-mode form[class*="LoginForm_formCard"],
-body.dark-mode form[class*="RegisterForm_formCard"] {
-    background-color: var(--color-background-white) !important; /* Force override */
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5) !important;
-}
-
-
-/* General card styling override using attribute selectors for CSS Modules */
-body.dark-mode [class*="_formCard"],
-body.dark-mode [class*="_card"],
-body.dark-mode [class*="_welcomeCard"],
-body.dark-mode [class*="_cardContainer"],
-body.dark-mode [class*="_actionGroup"], /* PatientHomePage */
-body.dark-mode [class*="_patientList"], /* DoctorPage */
-body.dark-mode [class*="_detailsPanel"], /* DoctorPage */
-body.dark-mode [class*="_vacationSection"], /* Doctor/Employee */
-body.dark-mode [class*="_appointmentsSection"], /* Doctor */
-body.dark-mode [class*="_taskSection"], /* Employee */
-body.dark-mode [class*="_statusSection"], /* Employee */
-body.dark-mode [class*="_statusPanel"], /* Receptionist */
-body.dark-mode [class*="_listContainer"], /* ViewAllHospital */
-body.dark-mode [class*="_logsContainer"] /* SystemLogs */
-{
-    background-color: var(--color-background-white) !important;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4) !important;
-    color: var(--color-text-dark); /* Ensure text inside cards is light */
-}
-
-/* Ensure headings inside dark cards are also light */
-body.dark-mode [class*="_formCard"] h2, body.dark-mode [class*="_formCard"] h3,
-body.dark-mode [class*="_welcomeCard"] h1,
-body.dark-mode [class*="_card"] h3, body.dark-mode [class*="_card"] h4,
-body.dark-mode [class*="_cardContainer"] h3, body.dark-mode [class*="_cardContainer"] h4,
-body.dark-mode [class*="_actionGroup"] h3,
-body.dark-mode [class*="_patientList"] h3,
-body.dark-mode [class*="_detailsPanel"] h2, body.dark-mode [class*="_detailsPanel"] h3, body.dark-mode [class*="_detailsPanel"] h4,
-body.dark-mode [class*="_vacationSection"] h2,
-body.dark-mode [class*="_appointmentsSection"] h2,
-body.dark-mode [class*="_taskSection"] h2,
-body.dark-mode [class*="_statusSection"] h2,
-body.dark-mode [class*="_statusPanel"] h3, /* Receptionist */
-body.dark-mode [class*="_title"] /* General title classes */
- {
-   color: var(--color-text-dark) !important; /* Important needed sometimes */
-}
-
-/* Adjust labels */
-body.dark-mode [class*="_label"], /* General labels */
-body.dark-mode label /* Standard labels */
-{
-  color: var(--color-text-muted) !important;
-}
-
-/* Adjust links within specific dark contexts if needed */
-body.dark-mode [class*="LoginForm_linksContainer"] a,
-body.dark-mode [class*="RegisterForm_loginPrompt"] a {
-  color: var(--color-primary); /* Keep links blue */
-}
-body.dark-mode [class*="LoginForm_linksContainer"] a:hover,
-body.dark-mode [class*="RegisterForm_loginPrompt"] a:hover {
-  color: var(--color-primary-dark);
-}
-
-
-/* --- End of Specific Overrides --- */

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import styles from './ReceptionistDashboard.module.css';
 import Button from '../../components/common/Button';
-import { getICURequests, getCheckedInPatients, fetchActiveAmbulances, checkInPatient, checkOutPatient, calculateFeeReceptionist, markFeesPaid } from '../../utils/api';
+import { getICURequests, getCheckedInPatients, fetchActiveAmbulances, checkInPatient, checkOutPatient, calculateFeeReceptionist, markFeesPaid, showUserDetails } from '../../utils/api';
 import useLiveLocations from '../../utils/useLiveLocations';
 import socket from '../../utils/socket';
 import { getUserData } from '../../utils/cookieUtils';
@@ -14,16 +14,22 @@ const ReceptionistPanel = () => {
     const [loading, setLoading] = useState(true);
     const [actionLoading, setActionLoading] = useState(null);
     const [patientFees, setPatientFees] = useState({});
+    const [assignedHospitalId, setAssignedHospitalId] = useState(null);
+    const [assignedHospitalName, setAssignedHospitalName] = useState(null);
     // Live polling of all user locations (including ambulances) every 5s
     const { locations: liveLocations } = useLiveLocations(true, 5000);
 
     useEffect(() => {
-        loadData();
+        const init = async () => {
+            const { hospitalId, hospitalName } = await loadAssignedHospital();
+            await loadData(hospitalId, hospitalName);
+        };
+        init();
 
-        // Listen for real-time ambulance updates
-        if (socket) {
+            // Listen for real-time ambulance updates
+            if (socket) {
             socket.on('ambulanceStatusUpdate', (data) => {
-                console.log('🚑 [Socket] ambulanceStatusUpdate:', data);
+                console.log('[Socket] ambulanceStatusUpdate:', data);
                 setAmbulances(prev => 
                     prev.map(amb => 
                         amb._id === data.ambulanceId 
@@ -34,15 +40,15 @@ const ReceptionistPanel = () => {
             });
 
             socket.on('ambulanceAssigned', (data) => {
-                console.log('🚑 [Socket] ambulanceAssigned:', data);
-                toast.info(`🚑 Ambulance assigned to ${data.destination}`);
+                console.log('[Socket] ambulanceAssigned:', data);
+                toast.info(`Ambulance assigned to ${data.destination}`);
                 loadData(); // Reload to get new assignments
             });
 
             // Listen for new pickup requests from patients
             socket.on('ambulancePickupRequest', (data) => {
-                console.log('🚑 [Socket] ambulancePickupRequest:', data);
-                toast.info(`🆕 New ambulance pickup request from ${data.patientName || 'patient'}`, {
+                console.log('[Socket] ambulancePickupRequest:', data);
+                toast.info(`New ambulance pickup request from ${data.patientName || 'patient'}`, {
                     autoClose: 5000
                 });
                 loadData(); // Reload to show new request
@@ -50,48 +56,48 @@ const ReceptionistPanel = () => {
 
             // Listen for when an ambulance accepts a pickup
             socket.on('ambulanceAccepted', (data) => {
-                console.log('🚑 [Socket] ambulanceAccepted:', data);
-                toast.success(`🚑 Ambulance accepted pickup - heading to patient`);
+                console.log('[Socket] ambulanceAccepted:', data);
+                toast.success(`Ambulance accepted pickup - heading to patient`);
                 loadData();
             });
 
             // Listen for ambulance approvals
             socket.on('ambulanceApprovedPickup', (data) => {
-                console.log('🚑 [Socket] ambulanceApprovedPickup:', data);
-                toast.success(`✅ Ambulance crew approved pickup for ${data.patientName}!`);
+                console.log('[Socket] ambulanceApprovedPickup:', data);
+                toast.success(`Ambulance crew approved pickup for ${data.patientName}.`);
                 loadData(); // Reload to show updated status
             });
 
             // Listen for pickup rejections
             socket.on('pickupRejectedNotification', (data) => {
-                console.log('🚑 [Socket] pickupRejectedNotification:', data);
-                toast.warn(`⚠️ Ambulance rejected pickup for ${data.patientName}. Reason: ${data.reason}`);
+                console.log('[Socket] pickupRejectedNotification:', data);
+                toast.warn(`Ambulance rejected pickup for ${data.patientName}. Reason: ${data.reason}`);
                 loadData();
             });
 
             // Listen for real-time ICU events
             socket.on('icuReserved', (data) => {
-                console.log('🏥 [Socket] icuReserved:', data);
-                toast.info(`🏥 New ICU reservation: ${data.hospitalName} - Room ${data.room}`);
+                console.log('[Socket] icuReserved:', data);
+                toast.info(`New ICU reservation: ${data.hospitalName} - Room ${data.room}`);
                 loadData(); // Reload to show new reservation
             });
 
             socket.on('icuReservationCancelled', (data) => {
-                console.log('🏥 [Socket] icuReservationCancelled:', data);
-                toast.info('❌ ICU reservation cancelled');
+                console.log('[Socket] icuReservationCancelled:', data);
+                toast.info('ICU reservation cancelled');
                 loadData(); // Reload to update list
             });
 
             socket.on('icuCheckOut', (data) => {
-                console.log('🏥 [Socket] icuCheckOut:', data);
-                toast.success('✅ Patient checked out');
+                console.log('[Socket] icuCheckOut:', data);
+                toast.success('Patient checked out');
                 loadData(); // Reload to update list
             });
 
             // Listen for patient arrival
             socket.on('patientArrived', (data) => {
-                console.log('🏥 [Socket] patientArrived:', data);
-                toast.success(`🏥 Patient ${data.patientName || ''} has arrived at the hospital!`);
+                console.log('[Socket] patientArrived:', data);
+                toast.success(`Patient ${data.patientName || ''} has arrived at the hospital.`);
                 loadData();
             });
         }
@@ -112,7 +118,48 @@ const ReceptionistPanel = () => {
         };
     }, []);
 
-    const loadData = async () => {
+    const loadAssignedHospital = async () => {
+        let hospitalId = null;
+        let hospitalName = null;
+        try {
+            const userData = getUserData();
+            if (userData?.hospitalName) {
+                hospitalName = userData.hospitalName;
+                setAssignedHospitalName(userData.hospitalName);
+            }
+            if (!userData?.id) {
+                return { hospitalId, hospitalName };
+            }
+            const response = await showUserDetails(userData.id);
+            const hospital = response?.data?.user?.assignedHospital;
+            if (hospital) {
+                hospitalId = hospital._id || hospital.id || hospital;
+                setAssignedHospitalId(hospitalId);
+            }
+        } catch (err) {
+            console.warn('Failed to load assigned hospital for receptionist.', err);
+        }
+        return { hospitalId, hospitalName };
+    };
+
+    const filterByAssignedHospital = (items = [], hospitalIdOverride, hospitalNameOverride) => {
+        const effectiveHospitalId = hospitalIdOverride ?? assignedHospitalId;
+        const effectiveHospitalName = hospitalNameOverride ?? assignedHospitalName;
+        if (!effectiveHospitalId && !effectiveHospitalName) return items;
+        return items.filter((item) => {
+            const hospital = item?.hospital;
+            const hospitalId = hospital?._id || hospital?.id || hospital;
+            if (effectiveHospitalId && hospitalId) {
+                return String(hospitalId) === String(effectiveHospitalId);
+            }
+            if (effectiveHospitalName && hospital?.name) {
+                return hospital.name.toLowerCase() === effectiveHospitalName.toLowerCase();
+            }
+            return false;
+        });
+    };
+
+    const loadData = async (hospitalIdOverride, hospitalNameOverride) => {
         setLoading(true);
         try {
             const [resResponse, checkedInResponse, ambResponse] = await Promise.all([
@@ -123,11 +170,11 @@ const ReceptionistPanel = () => {
             
             // Handle ICU requests data
             const icuRequests = resResponse.data?.requests || resResponse.data?.data || [];
-            setReservations(icuRequests);
+            setReservations(filterByAssignedHospital(icuRequests, hospitalIdOverride, hospitalNameOverride));
             
             // Handle checked-in patients data
             const checkedIn = checkedInResponse.data?.patients || checkedInResponse.data?.data || [];
-            setCheckedInPatients(checkedIn);
+            setCheckedInPatients(filterByAssignedHospital(checkedIn, hospitalIdOverride, hospitalNameOverride));
             
             // Handle ambulance data - filter for en route ambulances
             const ambulanceData = ambResponse.data?.ambulances || ambResponse.data?.data || [];
@@ -179,7 +226,7 @@ const ReceptionistPanel = () => {
     const handleCheckIn = async (icuId, patientId, icuRoom) => {
         try {
             setActionLoading(icuId);
-            console.log('🔵 Check-in attempt:', { icuId, patientId, icuRoom });
+            console.log('Check-in attempt:', { icuId, patientId, icuRoom });
             await checkInPatient({ icuId, patientId });
             toast.success(`Patient checked in to ICU Room ${icuRoom}`);
             setReservations(prev => prev.filter(res => res._id !== icuId));
@@ -209,7 +256,7 @@ const ReceptionistPanel = () => {
         try {
             setActionLoading(`pay-${patientId}`);
             await markFeesPaid({ patientId });
-            toast.success('✅ Payment confirmed');
+            toast.success('Payment confirmed');
             
             // Update local state
             setPatientFees(prev => ({
@@ -241,7 +288,7 @@ const ReceptionistPanel = () => {
         
         // Check payment status
         if (feeInfo && !feeInfo.feesPaid) {
-            toast.error('❌ Cannot check out: Fees have not been paid. Please process payment first.');
+            toast.error('Cannot check out: Fees have not been paid. Please process payment first.');
             return;
         }
 
@@ -254,7 +301,7 @@ const ReceptionistPanel = () => {
             
             const response = await checkOutPatient({ icuId, patientId });
             
-            toast.success(`✅ Patient discharged successfully`);
+            toast.success(`Patient discharged successfully`);
             
             // Remove from local state immediately
             setCheckedInPatients(prev => prev.filter(icu => icu._id !== icuId));
@@ -265,7 +312,7 @@ const ReceptionistPanel = () => {
             }, 500);
         } catch (err) {
             const errorMessage = err.response?.data?.message || 'Failed to check out patient';
-            toast.error(`❌ ${errorMessage}`);
+            toast.error(`${errorMessage}`);
         } finally {
             setActionLoading(null);
         }
@@ -276,24 +323,24 @@ const ReceptionistPanel = () => {
             <header className={styles.header}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '20px' }}>
                     <div>
-                        <h1>🏥 Receptionist Dashboard</h1>
+                        <h1>Receptionist Dashboard</h1>
                         <p>Manage patient arrivals, departures, and real-time ambulance coordination.</p>
                     </div>
                     <div style={{ 
                         padding: '15px 25px', 
-                        backgroundColor: '#f0f8ff', 
+                        backgroundColor: 'var(--color-surface-2)', 
                         borderRadius: '10px',
-                        border: '2px solid #667eea',
-                        boxShadow: '0 4px 12px rgba(102, 126, 234, 0.15)'
+                        border: '2px solid var(--color-primary)',
+                        boxShadow: 'var(--shadow-sm)'
                     }}>
-                        <div style={{ fontSize: '0.9em', color: '#555', fontWeight: '500' }}>
-                            📍 {getUserData()?.hospitalName || 'Loading...'}
+                        <div style={{ fontSize: '0.9em', color: 'var(--color-ink-muted)', fontWeight: '500' }}>
+                            {getUserData()?.hospitalName || 'Loading...'}
                         </div>
                     </div>
                 </div>
             </header>
             <section className={styles.statusPanel}>
-                <h3>🚑 Live Ambulance Tracking ({ambulances.length} En Route)</h3>
+                <h3>Live Ambulance Tracking ({ambulances.length} En Route)</h3>
                 {loading ? (
                     <div className={styles.placeholder}>Loading...</div>
                 ) : (
@@ -306,7 +353,7 @@ const ReceptionistPanel = () => {
                                 return (
                                     <div key={amb._id} className={styles.ambulanceItem}>
                                         <span className={`${styles.statusBadge} ${styles.statusEnRoute}`}>
-                                            🚨 EN ROUTE
+                                            EN ROUTE
                                         </span>
                                         <div className={styles.ambulanceInfo}>
                                             <strong>{amb.firstName} {amb.lastName}</strong> ({amb.userName})
@@ -320,17 +367,17 @@ const ReceptionistPanel = () => {
                                         </div>
                                         <div className={styles.ambulanceEta}>
                                             {amb.destination && (
-                                                <div><strong>📍 {amb.destination}</strong></div>
+                                                <div><strong>{amb.destination}</strong></div>
                                             )}
                                             {amb.eta ? (
-                                                <div style={{ color: '#ff6b6b', fontWeight: 'bold' }}>
+                                                <div style={{ color: 'var(--color-danger)', fontWeight: 'bold' }}>
                                                     ⏱️ ETA: {amb.eta} min
                                                 </div>
                                             ) : (
                                                 <div>⏱️ ETA: Calculating...</div>
                                             )}
                                             {hasLocation && (
-                                                <div style={{ fontSize: '0.85em', color: '#4caf50' }}>
+                                                <div style={{ fontSize: '0.85em', color: 'var(--color-success)' }}>
                                                     � Location Active
                                                 </div>
                                             )}
@@ -368,48 +415,48 @@ const ReceptionistPanel = () => {
                                                     <span style={{ 
                                                         marginLeft: '10px', 
                                                         padding: '3px 8px', 
-                                                        backgroundColor: '#4caf50', 
+                                                        backgroundColor: 'var(--color-success)', 
                                                         color: 'white', 
                                                         borderRadius: '4px',
                                                         fontSize: '0.85em'
                                                     }}>
-                                                        🏥 ARRIVED
+                                                        ARRIVED
                                                     </span>
                                                 )}
                                                 {patientStatus === 'AWAITING_PICKUP' && (
                                                     <span style={{ 
                                                         marginLeft: '10px', 
                                                         padding: '3px 8px', 
-                                                        backgroundColor: '#ff9800', 
+                                                        backgroundColor: 'var(--color-accent)', 
                                                         color: 'white', 
                                                         borderRadius: '4px',
                                                         fontSize: '0.85em'
                                                     }}>
-                                                        🚑 AWAITING PICKUP
+                                                        AWAITING PICKUP
                                                     </span>
                                                 )}
                                                 {patientStatus === 'IN_TRANSIT' && (
                                                     <span style={{ 
                                                         marginLeft: '10px', 
                                                         padding: '3px 8px', 
-                                                        backgroundColor: '#2196f3', 
+                                                        backgroundColor: 'var(--color-info)', 
                                                         color: 'white', 
                                                         borderRadius: '4px',
                                                         fontSize: '0.85em'
                                                     }}>
-                                                        🚐 IN TRANSIT
+                                                        IN TRANSIT
                                                     </span>
                                                 )}
                                                 {patientStatus === 'RESERVED' && !patientInfo?.needsPickup && (
                                                     <span style={{ 
                                                         marginLeft: '10px', 
                                                         padding: '3px 8px', 
-                                                        backgroundColor: '#9c27b0', 
+                                                        backgroundColor: 'var(--color-primary)', 
                                                         color: 'white', 
                                                         borderRadius: '4px',
                                                         fontSize: '0.85em'
                                                     }}>
-                                                        🚶 COMING DIRECTLY
+                                                        COMING DIRECTLY
                                                     </span>
                                                 )}
                                             </span>
@@ -430,12 +477,12 @@ const ReceptionistPanel = () => {
                                                 </span>
                                             )}
                                             {patientInfo?.needsPickup && (
-                                                <span className={styles.pickupInfo} style={{ color: '#ff9800', fontWeight: 'bold' }}>
-                                                    🚑 Pickup Location: {patientInfo.pickupLocation || 'Not specified'}
+                                                <span className={styles.pickupInfo} style={{ color: 'var(--color-accent)', fontWeight: 'bold' }}>
+                                                    Pickup Location: {patientInfo.pickupLocation || 'Not specified'}
                                                 </span>
                                             )}
                                             {patientInfo?.assignedAmbulance && (
-                                                <span className={styles.ambulanceInfo} style={{ color: '#2196f3' }}>
+                                                <span className={styles.ambulanceInfo} style={{ color: 'var(--color-info)' }}>
                                                     Ambulance: {patientInfo.assignedAmbulance.firstName} {patientInfo.assignedAmbulance.lastName} ({patientInfo.assignedAmbulance.status})
                                                 </span>
                                             )}
@@ -452,13 +499,13 @@ const ReceptionistPanel = () => {
                                                     onClick={() => handleCheckIn(res._id, patientId, res.room)}
                                                     disabled={actionLoading === res._id}
                                                 >
-                                                    {actionLoading === res._id ? 'Checking in...' : '✅ Check-In Patient'}
+                                                    {actionLoading === res._id ? 'Checking in...' : 'Check-In Patient'}
                                                 </Button>
                                             )}
                                             {(patientStatus === 'AWAITING_PICKUP' || patientStatus === 'IN_TRANSIT') && patientInfo?.needsPickup && (
                                                 <div style={{ 
                                                     padding: '8px', 
-                                                    backgroundColor: '#fff3cd', 
+                                                    backgroundColor: 'var(--color-accent-soft)', 
                                                     borderRadius: '4px',
                                                     fontSize: '0.9em',
                                                     textAlign: 'center'
@@ -503,12 +550,12 @@ const ReceptionistPanel = () => {
                                                 <span style={{ 
                                                     marginLeft: '10px', 
                                                     padding: '3px 8px', 
-                                                    backgroundColor: '#4caf50', 
+                                                    backgroundColor: 'var(--color-success)', 
                                                     color: 'white', 
                                                     borderRadius: '4px',
                                                     fontSize: '0.85em'
                                                 }}>
-                                                    ✅ CHECKED IN
+                                                    CHECKED IN
                                                 </span>
                                             </span>
                                             <span className={styles.roomInfo}>
@@ -527,41 +574,41 @@ const ReceptionistPanel = () => {
                                                     Phone: {patientInfo.phone}
                                                 </span>
                                             )}
-                                            <span className={styles.checkedInTime} style={{ color: '#666', fontSize: '0.9em' }}>
+                                            <span className={styles.checkedInTime} style={{ color: 'var(--color-ink-subtle)', fontSize: '0.9em' }}>
                                                 Checked in: {checkedInDate}
                                             </span>
                                             {feeInfo && (
                                                 <div style={{ 
                                                     marginTop: '10px', 
                                                     padding: '10px', 
-                                                    backgroundColor: '#f0f8ff',
+                                                    backgroundColor: 'var(--color-surface-2)',
                                                     borderRadius: '6px',
-                                                    border: '1px solid #667eea'
+                                                    border: '1px solid var(--color-primary)'
                                                 }}>
-                                                    <div style={{ fontWeight: '600', color: '#667eea', marginBottom: '5px' }}>
-                                                        💰 Total Fees: {feeInfo.totalFee} EGP
+                                                    <div style={{ fontWeight: '600', color: 'var(--color-primary)', marginBottom: '5px' }}>
+                                                        Total Fees: {feeInfo.totalFee} EGP
                                                     </div>
-                                                    <div style={{ fontSize: '0.85em', color: '#666' }}>
+                                                    <div style={{ fontSize: '0.85em', color: 'var(--color-ink-subtle)' }}>
                                                         {feeInfo.daysStayed} day{feeInfo.daysStayed > 1 ? 's' : ''} × {feeInfo.dailyRate} EGP/day
                                                     </div>
                                                     {feeInfo.feesPaid === true ? (
                                                         <div style={{ 
                                                             marginTop: '5px',
                                                             padding: '5px 10px',
-                                                            backgroundColor: '#4caf50',
+                                                            backgroundColor: 'var(--color-success)',
                                                             color: 'white',
                                                             borderRadius: '4px',
                                                             display: 'inline-block',
                                                             fontSize: '0.85em',
                                                             fontWeight: '600'
                                                         }}>
-                                                            ✅ PAID
+                                                            PAID
                                                         </div>
                                                     ) : (
                                                         <div style={{ 
                                                             marginTop: '5px',
                                                             padding: '5px 10px',
-                                                            backgroundColor: '#ff9800',
+                                                            backgroundColor: 'var(--color-accent)',
                                                             color: 'white',
                                                             borderRadius: '4px',
                                                             display: 'inline-block',
@@ -582,7 +629,7 @@ const ReceptionistPanel = () => {
                                                     onClick={() => handleMarkPaid(patientId)}
                                                     disabled={actionLoading === `pay-${patientId}`}
                                                 >
-                                                    {actionLoading === `pay-${patientId}` ? 'Processing...' : '💳 Mark as Paid'}
+                                                    {actionLoading === `pay-${patientId}` ? 'Processing...' : 'Mark as Paid'}
                                                 </Button>
                                             )}
                                             <Button 
@@ -591,7 +638,7 @@ const ReceptionistPanel = () => {
                                                 onClick={() => handleCheckOut(icu._id, patientId)}
                                                 disabled={actionLoading === icu._id || (feeInfo && !feeInfo.feesPaid)}
                                             >
-                                                {actionLoading === icu._id ? 'Checking out...' : '🚪 Check-Out Patient'}
+                                                {actionLoading === icu._id ? 'Checking out...' : 'Check-Out Patient'}
                                             </Button>
                                         </div>
                                     </div>

@@ -63,16 +63,16 @@ const AmbulancePanel = () => {
             // Listen for assignment events
             socket.on('ambulanceAssigned', (data) => {
                 if (data.ambulanceId === myAmbulanceId) {
-                    toast.info(`📍 New assignment: ${data.destination}`);
+                    toast.info(`New assignment: ${data.destination}`);
                     loadData(); // Reload to get updated assignment
                 }
             });
 
             // Listen for pickup requests from patients
             socket.on('ambulancePickupRequest', (data) => {
-                console.log('🔔 Received pickup request:', data);
+                console.log('Received pickup request:', data);
                 
-                toast.info(`🚑 New pickup request from ${data.patientName || 'patient'} - tap to refresh list`, {
+                toast.info(`New pickup request from ${data.patientName || 'patient'} - tap to refresh list`, {
                     autoClose: 8000,
                     position: "top-right",
                     onClick: () => loadAmbulanceRequests()
@@ -97,7 +97,7 @@ const AmbulancePanel = () => {
             // Listen for successful acceptance
             socket.on('ambulanceAccepted', (data) => {
                 if (data.ambulanceId === myAmbulanceId) {
-                    toast.success(`✅ Pickup accepted! You're now en route to pick up the patient.`, {
+                    toast.success(`Pickup accepted. You are now en route to pick up the patient.`, {
                         autoClose: 8000,
                         position: "top-center"
                     });
@@ -291,7 +291,7 @@ const AmbulancePanel = () => {
             const response = await acceptAmbulanceRequest(requestId);
             
             if (response.data?.success) {
-                toast.success('✅ Pickup request accepted! You are now en route.');
+                toast.success('Pickup request accepted. You are now en route.');
                 
                 // Find the accepted request to get pickup coordinates
                 const acceptedReq = pickupRequests.find(req => req.requestId === requestId);
@@ -335,7 +335,7 @@ const AmbulancePanel = () => {
         }
         setActivePickup(null);
         setHasPickedUp(true);
-        toast.success('✅ Patient picked up. Routing to hospital.');
+        toast.success('Patient picked up. Routing to hospital.');
     };
 
     const handleNotifyPatientWaiting = async () => {
@@ -350,7 +350,7 @@ const AmbulancePanel = () => {
 
         try {
             await notifyPatientWaiting(myAmbulanceId, { patientId });
-            toast.success('📣 Patient notified that you are waiting at pickup.');
+            toast.success('Patient notified that you are waiting at pickup.');
         } catch (err) {
             console.error('Notify patient waiting error:', err);
             toast.error(err.response?.data?.message || 'Failed to notify patient');
@@ -388,7 +388,7 @@ const AmbulancePanel = () => {
                 throw new Error(data.message || 'Failed to approve pickup');
             }
 
-            toast.success('✅ Pickup approved! Waiting for receptionist confirmation.');
+            toast.success('Pickup approved. Waiting for receptionist confirmation.');
             await loadData();
         } catch (err) {
             console.error('Approve pickup error:', err);
@@ -469,7 +469,7 @@ const AmbulancePanel = () => {
                 throw new Error(data.message || 'Failed to mark arrival');
             }
 
-            toast.success('🏥 Patient arrived! Receptionist can now check them in.');
+            toast.success('Patient arrived. Receptionist can now check them in.');
             
             // Update status to arrived
             await handleStatusUpdate('ARRIVED_HOSPITAL');
@@ -743,23 +743,23 @@ const AmbulancePanel = () => {
     return (
         <div className={styles.dashboard}>
             <header className={styles.header}>
-                <h1>🚑 Ambulance Crew Dashboard</h1>
+                <h1>Ambulance Crew Dashboard</h1>
                 <p>Real-time location tracking and live coordination</p>
             </header>
 
             {/* Available Pickup Requests - Broadcast to all ambulances */}
             {pickupRequests.length > 0 && myAmbulance?.status === 'AVAILABLE' && !myAmbulance?.assignedPatient && (
-                <section className={styles.formCard} style={{ marginBottom: '30px', backgroundColor: '#fff3e0', borderLeft: '4px solid #ff9800' }}>
-                    <h3>🚨 Available Pickup Requests ({pickupRequests.length})</h3>
-                    <p style={{ marginBottom: '15px', color: '#555' }}>Choose a patient to pick up. First come, first served!</p>
+                <section className={styles.formCard} style={{ marginBottom: '30px', backgroundColor: 'var(--color-accent-soft)', borderLeft: '4px solid var(--color-accent)' }}>
+                    <h3>Available Pickup Requests ({pickupRequests.length})</h3>
+                    <p style={{ marginBottom: '15px', color: 'var(--color-ink-muted)' }}>Choose a patient to pick up. First come, first served!</p>
                     
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
                         {pickupRequests.map((request) => (
                             <div key={request.requestId || request.patientId} style={{
                                 padding: '15px',
-                                backgroundColor: 'white',
-                                border: request.urgency === 'critical' ? '3px solid #dc3545' : 
-                                        request.urgency === 'urgent' ? '2px solid #ffc107' : '2px solid #ff9800',
+                                backgroundColor: 'var(--color-surface)',
+                                border: request.urgency === 'critical' ? '3px solid var(--color-danger)' : 
+                                        request.urgency === 'urgent' ? '2px solid var(--color-accent)' : '2px solid rgba(245, 158, 11, 0.6)',
                                 borderRadius: '8px',
                                 display: 'flex',
                                 justifyContent: 'space-between',
@@ -767,8 +767,8 @@ const AmbulancePanel = () => {
                             }}>
                                 <div>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-                                        <h4 style={{ margin: 0, color: '#0d47a1' }}>
-                                            👤 {request.patientName}
+                                        <h4 style={{ margin: 0, color: 'var(--color-primary-strong)' }}>
+                                            {request.patientName}
                                         </h4>
                                         {request.urgency && (
                                             <span style={{
@@ -777,8 +777,8 @@ const AmbulancePanel = () => {
                                                 fontSize: '0.75em',
                                                 fontWeight: 'bold',
                                                 textTransform: 'uppercase',
-                                                backgroundColor: request.urgency === 'critical' ? '#dc3545' : 
-                                                                request.urgency === 'urgent' ? '#ffc107' : '#6c757d',
+                                                backgroundColor: request.urgency === 'critical' ? 'var(--color-danger)' : 
+                                                                request.urgency === 'urgent' ? 'var(--color-accent)' : 'var(--color-ink-subtle)',
                                                 color: request.urgency === 'urgent' ? '#000' : '#fff'
                                             }}>
                                                 {request.urgency}
@@ -790,29 +790,29 @@ const AmbulancePanel = () => {
                                                 borderRadius: '12px',
                                                 fontSize: '0.75em',
                                                 fontWeight: 'bold',
-                                                backgroundColor: '#007bff',
+                                                backgroundColor: 'var(--color-primary)',
                                                 color: '#fff'
                                             }}>
-                                                📏 {Number(request.distance).toFixed(1)} km away
+                                                Distance: {Number(request.distance).toFixed(1)} km
                                             </span>
                                         )}
                                     </div>
                                     <p style={{ margin: '4px 0', fontSize: '0.95em' }}>
-                                        <strong>📍 Pickup Location:</strong> {request.pickupLocation}
+                                        <strong>Pickup Location:</strong> {request.pickupLocation}
                                     </p>
                                     <p style={{ margin: '4px 0', fontSize: '0.95em' }}>
-                                        <strong>🏥 Destination:</strong> {request.hospitalName}
+                                        <strong>Destination:</strong> {request.hospitalName}
                                     </p>
                                     <p style={{ margin: '4px 0', fontSize: '0.95em' }}>
-                                        <strong>🛏️ ICU:</strong> {request.specialization} - Room {request.room}
+                                        <strong>ICU:</strong> {request.specialization} - Room {request.room}
                                     </p>
                                     {request.patientPhone && (
                                         <p style={{ margin: '4px 0', fontSize: '0.95em' }}>
-                                            <strong>📞 Contact:</strong> {request.patientPhone}
+                                            <strong>Contact:</strong> {request.patientPhone}
                                         </p>
                                     )}
-                                    <p style={{ margin: '8px 0 0 0', fontSize: '0.85em', color: '#666' }}>
-                                        ⏰ Requested: {new Date(request.timestamp).toLocaleTimeString()}
+                                    <p style={{ margin: '8px 0 0 0', fontSize: '0.85em', color: 'var(--color-ink-subtle)' }}>
+                                        Requested: {new Date(request.timestamp).toLocaleTimeString()}
                                     </p>
                                 </div>
                                 <Button 
@@ -820,7 +820,7 @@ const AmbulancePanel = () => {
                                     onClick={() => handleAcceptPickupRequest(request.requestId)}
                                     style={{ minWidth: '120px' }}
                                 >
-                                    ✅ Accept Pickup
+                                    Accept Pickup
                                 </Button>
                             </div>
                         ))}
@@ -857,11 +857,11 @@ const AmbulancePanel = () => {
                     <div style={{ 
                         marginTop: '20px', 
                         padding: '15px', 
-                        backgroundColor: '#fff3cd', 
-                        border: '2px solid #ffc107',
+                        backgroundColor: 'var(--color-accent-soft)', 
+                        border: '2px solid var(--color-accent)',
                         borderRadius: '8px'
                     }}>
-                        <h4 style={{ color: '#856404', marginBottom: '10px' }}>🚨 Active Transport</h4>
+                        <h4 style={{ color: '#92400e', marginBottom: '10px' }}>Active Transport</h4>
                         <p><strong>Patient:</strong> {
                             typeof myAmbulance.assignedPatient === 'object' 
                                 ? `${myAmbulance.assignedPatient.firstName} ${myAmbulance.assignedPatient.lastName}`
@@ -876,19 +876,19 @@ const AmbulancePanel = () => {
                                 variant="primary"
                                 onClick={handleMarkArrived}
                             >
-                                🏥 Mark Patient Arrived
+                                Mark Patient Arrived
                             </Button>
                             <Button
                                 variant="secondary"
                                 onClick={handleNotifyPatientWaiting}
                             >
-                                📣 Notify Patient I'm Waiting
+                                Notify Patient I'm Waiting
                             </Button>
                             <Button
                                 variant="success"
                                 onClick={handleAcceptPickup}
                             >
-                                ✅ Patient Picked Up
+                                Patient Picked Up
                             </Button>
                         </div>
                     </div>
@@ -909,7 +909,6 @@ const AmbulancePanel = () => {
                         <div className={styles.requestsList}>
                             {pickupRequests.length === 0 ? (
                                 <div className={styles.emptyState}>
-                                    <div className={styles.emptyIcon}>🚑</div>
                                     <p><strong>No pending pickup requests</strong></p>
                                     <p>When patients request ambulance pickup, they will appear here.</p>
                                     <p style={{ marginTop: '10px', fontSize: '0.85em' }}>
@@ -920,11 +919,11 @@ const AmbulancePanel = () => {
                                 pickupRequests.map((req) => (
                                     <div key={req.requestId} className={styles.requestItem}>
                                         <div className={styles.requestHeader}>
-                                            <strong>👤 {req.patientName}</strong>
+                                            <strong>{req.patientName}</strong>
                                             {req.urgency && (
                                                 <span style={{
                                                     padding: '2px 8px', borderRadius: '12px', fontSize: '0.75em', fontWeight: 'bold',
-                                                    backgroundColor: req.urgency === 'critical' ? '#dc3545' : req.urgency === 'urgent' ? '#ffc107' : '#6c757d',
+                                                    backgroundColor: req.urgency === 'critical' ? 'var(--color-danger)' : req.urgency === 'urgent' ? 'var(--color-accent)' : 'var(--color-ink-subtle)',
                                                     color: req.urgency === 'urgent' ? '#000' : '#fff'
                                                 }}>
                                                     {req.urgency}
@@ -932,18 +931,18 @@ const AmbulancePanel = () => {
                                             )}
                                         </div>
                                         <div className={styles.requestMeta}>
-                                            <div>📍 {req.pickupLocation}</div>
-                                            <div>🏥 {req.hospitalName}</div>
+                                            <div>{req.pickupLocation}</div>
+                                            <div>{req.hospitalName}</div>
                                             {(() => {
                                                 const hasServerDist = req.distance !== undefined && req.distance !== null;
                                                 const hasCoords = hasValidCurrentLocation() && isValidCoordinatePair(req.pickupCoords);
                                                 const computed = hasCoords ? distanceKm(currentLocation.lat, currentLocation.lng, req.pickupCoords[1], req.pickupCoords[0]) : null;
                                                 const shown = hasServerDist ? Number(req.distance) : computed;
                                                 return shown != null ? (
-                                                    <div>📏 {Number(shown).toFixed(1)} km away</div>
+                                                    <div>Distance: {Number(shown).toFixed(1)} km</div>
                                                 ) : null;
                                             })()}
-                                            <div>🕒 {new Date(req.timestamp).toLocaleTimeString()}</div>
+                                            <div>{new Date(req.timestamp).toLocaleTimeString()}</div>
                                         </div>
                                         <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
                                             <Button
@@ -970,7 +969,24 @@ const AmbulancePanel = () => {
                         </div>
                     </aside>
                     {/* Map */}
-                    <div style={{ height: 450, width: '100%', borderRadius: 8, overflow: 'hidden' }}>
+                    <div className={styles.mapPanel}>
+                        <div className={styles.mapToolbar}>
+                            <div>
+                                <h4 className={styles.mapTitle}>Live Map</h4>
+                                <div className={styles.mapMeta}>
+                                    {hasValidCurrentLocation()
+                                        ? `Current: ${currentLocation.lat.toFixed(4)}, ${currentLocation.lng.toFixed(4)}`
+                                        : 'Enable tracking to show your live location.'}
+                                </div>
+                            </div>
+                            <Button
+                                variant={gpsTracking ? 'secondary' : 'primary'}
+                                onClick={() => (gpsTracking ? stopGPSTracking() : startGPSTracking())}
+                            >
+                                {gpsTracking ? 'Stop Tracking' : 'Start Tracking'}
+                            </Button>
+                        </div>
+                        <div className={styles.mapBox}>
                     <MapContainer center={[mapCenter.lat, mapCenter.lng]} zoom={12} style={{ height: '100%', width: '100%' }}>
                         <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution='&copy; OpenStreetMap contributors' />
                         <FlyTo center={mapCenter} />
@@ -1025,12 +1041,12 @@ const AmbulancePanel = () => {
                                 <Polyline
                                     key={`line-${req.requestId}`}
                                     positions={[[currentLocation.lat, currentLocation.lng], [req.pickupCoords[1], req.pickupCoords[0]]]}
-                                    pathOptions={{ color: '#6c757d', weight: 2, opacity: 0.6, dashArray: '6 6' }}
+                                    pathOptions={{ color: 'var(--color-ink-subtle)', weight: 2, opacity: 0.6, dashArray: '6 6' }}
                                 >
                                     <Popup>
                                         {(() => {
                                             const dist = distanceKm(currentLocation.lat, currentLocation.lng, req.pickupCoords[1], req.pickupCoords[0]);
-                                            return <div>📏 {dist.toFixed(2)} km</div>;
+                                            return <div>Distance: {dist.toFixed(2)} km</div>;
                                         })()}
                                     </Popup>
                                 </Polyline>
@@ -1040,7 +1056,7 @@ const AmbulancePanel = () => {
                         {hasValidCurrentLocation() && isValidCoordinatePair(selectedRequest?.pickupCoords) && (
                             <Polyline
                                 positions={[[currentLocation.lat, currentLocation.lng], [selectedRequest.pickupCoords[1], selectedRequest.pickupCoords[0]]]}
-                                pathOptions={{ color: '#007bff', weight: 4, opacity: 0.8 }}
+                                pathOptions={{ color: 'var(--color-primary)', weight: 4, opacity: 0.8 }}
                             />
                         )}
                         {/* Active Pickup - Patient location marker and route line */}
@@ -1058,7 +1074,7 @@ const AmbulancePanel = () => {
                                 >
                                     <Popup>
                                         <div style={{ minWidth: 200 }}>
-                                            <strong>📍 Patient Pickup Location</strong>
+                                            <strong>Patient Pickup Location</strong>
                                             <div><strong>Patient:</strong> {activePickup.patientName}</div>
                                             <div><strong>Location:</strong> {activePickup.pickupLocation}</div>
                                             <div><strong>Destination:</strong> {activePickup.hospitalName}</div>
@@ -1081,7 +1097,7 @@ const AmbulancePanel = () => {
                                             [currentLocation.lat, currentLocation.lng],
                                             [activePickup.coordinates[1], activePickup.coordinates[0]]
                                         ]}
-                                        pathOptions={{ color: '#28a745', weight: 4, opacity: 0.8 }}
+                                        pathOptions={{ color: 'var(--color-success)', weight: 4, opacity: 0.8 }}
                                     >
                                         <Popup>
                                             {(() => {
@@ -1093,8 +1109,8 @@ const AmbulancePanel = () => {
                                                 );
                                                 return (
                                                     <div>
-                                                        <strong>🚑 En Route to Patient</strong>
-                                                        <div>📏 Distance: {dist.toFixed(2)} km</div>
+                                                        <strong>En Route to Patient</strong>
+                                                        <div>Distance: {dist.toFixed(2)} km</div>
                                                     </div>
                                                 );
                                             })()}
@@ -1111,17 +1127,18 @@ const AmbulancePanel = () => {
                                     [currentLocation.lat, currentLocation.lng],
                                     [myAmbulance.assignedHospital.location.coordinates[1], myAmbulance.assignedHospital.location.coordinates[0]]
                                 ]}
-                                pathOptions={{ color: '#ff5722', weight: 4, opacity: 0.85 }}
+                                pathOptions={{ color: 'var(--color-accent)', weight: 4, opacity: 0.85 }}
                             >
                                 <Popup>
                                     <div>
-                                        <strong>🏥 En Route to Hospital</strong>
+                                        <strong>En Route to Hospital</strong>
                                         <div>{myAmbulance.assignedHospital.name}</div>
                                     </div>
                                 </Popup>
                             </Polyline>
                         )}
                     </MapContainer>
+                        </div>
                     </div>
                 </div>
             </section>

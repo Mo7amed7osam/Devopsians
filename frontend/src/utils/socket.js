@@ -18,11 +18,11 @@ socket.on("connect_error", (error) => {
   }
 });
 socket.on("connect", () => {
-  console.log("✅ Socket.IO connected successfully:", socket.id);
+  console.log("Socket.IO connected successfully:", socket.id);
   warned = false;
 });
 socket.on("disconnect", (reason) => {
-  console.log("❌ Socket.IO disconnected:", reason);
+  console.log("Socket.IO disconnected:", reason);
 });
 
 export default socket;

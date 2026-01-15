@@ -5,6 +5,8 @@ import { viewAllHospitals, blockHospital, unblockHospital, deleteHospitalById, v
 import styles from './ViewAllHospital.module.css';
 import Button from '../../components/common/Button';
 import Modal from '../../components/common/Modal'; // 1. Import the Modal component
+import Badge from '../../components/common/Badge';
+import Table from '../../components/common/Table';
 
 const mockHospitals = [
     { id: 'h1', name: 'Al-Salam Hospital', rating: 4.8, isBlocked: false, manager: 'Mngr 1', icuCount: 15 },
@@ -12,7 +14,7 @@ const mockHospitals = [
     { id: 'h3', name: 'General City Clinic', rating: 4.1, isBlocked: false, manager: 'Mngr 3', icuCount: 22 },
 ];
 
-const ViewAllHospital = ({ newHospitalAdded, openHospitalId, onAssignManager }) => {
+const ViewAllHospital = ({ newHospitalAdded, openHospitalId, onAssignManager, hospitalIcuCounts = {} }) => {
     const [hospitals, setHospitals] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [loading, setLoading] = useState(false);
@@ -137,6 +139,22 @@ const ViewAllHospital = ({ newHospitalAdded, openHospitalId, onAssignManager }) 
         );
     });
 
+    const getHospitalIcuCount = (hospital) => {
+        if (!hospital) return 0;
+        const directValue = hospital.icuCount ?? hospital.totalIcus ?? hospital.totalICUs;
+        if (typeof directValue === 'number') return directValue;
+        if (typeof directValue === 'string' && directValue.trim() !== '' && !Number.isNaN(Number(directValue))) {
+            return Number(directValue);
+        }
+        if (Array.isArray(hospital.icus)) return hospital.icus.length;
+        if (Array.isArray(hospital.icuRooms)) return hospital.icuRooms.length;
+        if (Array.isArray(hospital.icuIds)) return hospital.icuIds.length;
+        if (Array.isArray(hospital.rooms)) return hospital.rooms.length;
+        const hospitalId = hospital._id || hospital.id;
+        const fallback = hospitalId ? hospitalIcuCounts[String(hospitalId)] : undefined;
+        return typeof fallback === 'number' ? fallback : 0;
+    };
+
     return (
         <div className={styles.listContainer}>
             <h3 className={styles.title}>All Registered Hospitals ({hospitals.length})</h3>
@@ -154,7 +172,7 @@ const ViewAllHospital = ({ newHospitalAdded, openHospitalId, onAssignManager }) 
             {loading ? (
                 <div className={styles.loading}>Loading hospital data...</div>
             ) : (
-                <table className={styles.hospitalTable}>
+                <Table className={styles.hospitalTableWrap} tableClassName={styles.hospitalTable}>
                     <thead>
                         <tr>
                             <th>Hospital Name</th>
@@ -165,27 +183,35 @@ const ViewAllHospital = ({ newHospitalAdded, openHospitalId, onAssignManager }) 
                         </tr>
                     </thead>
                     <tbody>
-                        {filteredHospitals.map((hospital, idx) => (
-                            <tr key={hospital._id || hospital.id || idx}>
-                                <td>
-                                    {/* Make the name clickable to open the modal */}
-                                    <a href="#" className={styles.hospitalLink} onClick={(e) => { e.preventDefault(); openHospitalDetails(hospital); }}>
-                                        {hospital.name || 'Unnamed Hospital'}
-                                    </a>
+                        {filteredHospitals.length === 0 ? (
+                            <tr>
+                                <td colSpan={5} className={styles.tableEmpty}>
+                                    No hospitals match your search.
                                 </td>
-                                <td>{typeof hospital.rating === 'number' ? hospital.rating.toFixed(1) : 'N/A'} <span className={styles.star}>★</span></td>
-                                <td>{hospital.icuCount}</td>
-                                <td>{hospital.assignedManager ? `${hospital.assignedManager.firstName} ${hospital.assignedManager.lastName}` : (hospital.manager || '—')}</td>
-                                <td>
-                                    <span className={hospital.isBlocked ? styles.statusBlocked : styles.statusActive}>
-                                        {hospital.isBlocked ? 'BLOCKED' : 'ACTIVE'}
-                                    </span>
-                                </td>
-                                {/* Action column removed per request */}
                             </tr>
-                        ))}
+                        ) : (
+                            filteredHospitals.map((hospital, idx) => (
+                                <tr key={hospital._id || hospital.id || idx}>
+                                    <td>
+                                        {/* Make the name clickable to open the modal */}
+                                        <a href="#" className={styles.hospitalLink} onClick={(e) => { e.preventDefault(); openHospitalDetails(hospital); }}>
+                                            {hospital.name || 'Unnamed Hospital'}
+                                        </a>
+                                    </td>
+                                <td>{typeof hospital.rating === 'number' ? hospital.rating.toFixed(1) : 'N/A'}</td>
+                                    <td>{getHospitalIcuCount(hospital)}</td>
+                                    <td>{hospital.assignedManager ? `${hospital.assignedManager.firstName} ${hospital.assignedManager.lastName}` : (hospital.manager || '—')}</td>
+                                    <td>
+                                        <Badge variant={hospital.isBlocked ? 'danger' : 'success'}>
+                                            {hospital.isBlocked ? 'Blocked' : 'Active'}
+                                        </Badge>
+                                    </td>
+                                    {/* Action column removed per request */}
+                                </tr>
+                            ))
+                        )}
                     </tbody>
-                </table>
+                </Table>
             )}
 
             {/* --- HOSPITAL DETAILS MODAL --- */}
@@ -210,8 +236,8 @@ const ViewAllHospital = ({ newHospitalAdded, openHospitalId, onAssignManager }) 
                                 (selectedHospital.manager || 'N/A')
                             )}
                         </p>
-                        <p><strong>Rating:</strong> {typeof selectedHospital.rating === 'number' ? selectedHospital.rating.toFixed(1) : 'N/A'} ★</p>
-                        <p><strong>ICU Capacity:</strong> {selectedHospital.icuCount}</p>
+                        <p><strong>Rating:</strong> {typeof selectedHospital.rating === 'number' ? selectedHospital.rating.toFixed(1) : 'N/A'}</p>
+                        <p><strong>ICU Capacity:</strong> {getHospitalIcuCount(selectedHospital)}</p>
                         <p><strong>Current Status:</strong> {selectedHospital.isBlocked ? 'Blocked' : 'Active'}</p>
                     </div>
                     <div className={styles.modalActions}>

@@ -12,19 +12,34 @@ import styles from './Button.module.css';
  * @param {boolean} [props.disabled=false] - Whether the button is disabled.
  * @param {string} [props.className] - Additional classes to apply.
  */
-const Button = ({ children, onClick, variant = 'primary', type = 'button', disabled = false, className = '', size = 'normal' }) => {
-  // Combine the base button style, the variant style, size and any extra classes
-  const sizeClass = size === 'small' ? styles.small : '';
-  const buttonClasses = `${styles.btn} ${styles[variant]} ${sizeClass} ${className}`;
+const Button = ({
+  children,
+  onClick,
+  variant = 'primary',
+  type = 'button',
+  disabled = false,
+  className = '',
+  size = 'md',
+  loading = false,
+  ...rest
+}) => {
+  const sizeClass =
+    size === 'small' || size === 'sm' ? styles.small : size === 'lg' || size === 'large' ? styles.large : '';
+  const buttonClasses = `${styles.btn} ${styles[variant] || ''} ${sizeClass} ${className}`;
+  const isDisabled = disabled || loading;
 
   return (
     <button
       type={type}
       onClick={onClick}
-      disabled={disabled}
+      disabled={isDisabled}
       className={buttonClasses}
+      data-loading={loading ? 'true' : undefined}
+      aria-busy={loading ? true : undefined}
+      {...rest}
     >
-      {children}
+      <span className={styles.label}>{children}</span>
+      {loading && <span className={styles.spinner} aria-hidden="true" />}
     </button>
   );
 };

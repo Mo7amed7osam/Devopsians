@@ -9,6 +9,7 @@ import DashboardNav from '../../components/common/DashboardNav';
 import { toast } from 'react-toastify';
 import Button from '../../components/common/Button';
 import { safeNavigate } from '../../utils/security';
+import Skeleton from '../../components/common/Skeleton';
 
 import { getServiceCategories } from '../../utils/api';
 
@@ -145,7 +146,7 @@ const ManagerDashboard = () => {
         if (!hospitalInfo || !hospitalInfo.id) {
             return (
                 <div className={styles.noHospitalContainer}>
-                    <p>⚠️ No hospital assigned. Please contact administrator.</p>
+                    <p>No hospital assigned. Please contact administrator.</p>
                 </div>
             );
         }
@@ -164,7 +165,18 @@ const ManagerDashboard = () => {
         return (
             <div className={styles.managerDashboard}>
                 <div className={styles.loadingContainer}>
-                    <p>Loading hospital information...</p>
+                    <Skeleton variant="title" />
+                    <Skeleton count={3} />
+                    <div className={styles.loadingGrid}>
+                        <div className={styles.loadingCard}>
+                            <Skeleton variant="title" />
+                            <Skeleton count={2} />
+                        </div>
+                        <div className={styles.loadingCard}>
+                            <Skeleton variant="title" />
+                            <Skeleton count={2} />
+                        </div>
+                    </div>
                 </div>
             </div>
         );
@@ -177,7 +189,7 @@ const ManagerDashboard = () => {
                     <h1>Manager Dashboard</h1>
                 </header>
                 <div className={styles.noHospitalContainer}>
-                    <p>⚠️ No hospital has been assigned to you yet.</p>
+                    <p>No hospital has been assigned to you yet.</p>
                     <p>Please contact your administrator to assign you to a hospital.</p>
                 </div>
             </div>
@@ -192,7 +204,7 @@ const ManagerDashboard = () => {
                     variant="primary" 
                     onClick={() => safeNavigate(navigate, '/manager/receptionists')}
                 >
-                    👥 Manage Receptionists
+                    Manage Receptionists
                 </Button>
             </header>
             <section className={styles.statsGrid}>
@@ -200,13 +212,13 @@ const ManagerDashboard = () => {
                     title="Available ICUs"
                     value={dashboardStats.availableICUs}
                     icon={iconICU}
-                    color="#28a745"
+                    color="var(--color-success)"
                 />
                  <DashBoardCard
                     title="Total ICUs"
                     value={dashboardStats.totalICUs}
                     icon={iconICU}
-                    color="#007bff"
+                    color="var(--color-primary)"
                 />
             </section>
             <DashboardNav

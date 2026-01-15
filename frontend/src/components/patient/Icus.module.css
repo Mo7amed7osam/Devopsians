@@ -13,31 +13,31 @@
 }
 
 .icuItem {
-  background: white;
-  border-radius: 16px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  background: var(--color-surface);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
   padding: 24px;
-  transition: all 0.3s ease;
-  border: 1px solid #e8e8e8;
+  transition: transform var(--transition-base), box-shadow var(--transition-base);
+  border: 1px solid var(--color-border);
 }
 
 .icuItem:hover {
   transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-  border-color: #3498db;
+  box-shadow: var(--shadow-md);
+  border-color: rgba(37, 99, 235, 0.4);
 }
 
 .hospitalName {
-  color: #2c3e50;
+  color: var(--color-ink);
   margin: 0 0 16px 0;
   font-size: 1.5rem;
   font-weight: 600;
-  border-bottom: 3px solid #3498db;
+  border-bottom: 2px solid rgba(37, 99, 235, 0.3);
   padding-bottom: 12px;
 }
 
 .icuItem p {
-  color: #555;
+  color: var(--color-ink-muted);
   margin: 8px 0;
   font-size: 0.95rem;
   line-height: 1.5;
@@ -45,16 +45,21 @@
 
 .specialization {
   font-weight: 500;
-  color: #2c3e50;
+  color: var(--color-ink);
+}
+
+.availableCount {
+  font-weight: 600;
+  color: var(--color-ink);
 }
 
 .distance {
-  color: #7f8c8d;
+  color: var(--color-ink-subtle);
   font-size: 0.9rem;
 }
 
 .fees {
-  color: #27ae60;
+  color: var(--color-success);
   font-weight: 600;
   font-size: 1.1rem;
 }
@@ -64,7 +69,7 @@
 }
 
 .available {
-  color: #27ae60;
+  color: var(--color-success);
   font-weight: 600;
   text-transform: capitalize;
 }
@@ -72,27 +77,26 @@
 .reserveButton {
   width: 100%;
   padding: 14px 20px;
-  background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+  background: var(--gradient-primary);
   color: white;
   border: none;
-  border-radius: 10px;
+  border-radius: var(--radius-pill);
   cursor: pointer;
   font-weight: 600;
   font-size: 1rem;
   text-align: center;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+  box-shadow: var(--shadow-sm);
   margin-top: 8px;
 }
 
 .reserveButton:hover:not(:disabled) {
-  background: linear-gradient(135deg, #2980b9 0%, #21618c 100%);
-  box-shadow: 0 6px 16px rgba(52, 152, 219, 0.4);
+  box-shadow: var(--shadow-md);
   transform: translateY(-2px);
 }
 
 .reserveButton:disabled {
-  background: #bdc3c7;
+  background: var(--color-surface-3);
   cursor: not-allowed;
   box-shadow: none;
   transform: none;
@@ -102,19 +106,33 @@
   text-align: center;
   padding: 40px;
   font-size: 1.2rem;
-  color: #3498db;
+  color: var(--color-ink-subtle);
+}
+
+.skeletonList {
+  display: grid;
+  gap: 20px;
+}
+
+.skeletonCard {
+  background: var(--color-surface);
+  border-radius: var(--radius-xl);
+  padding: 24px;
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
 }
 
 .noIcus {
   text-align: center;
   padding: 40px;
-  background: white;
-  border-radius: 16px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  background: var(--color-surface);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
+  border: 1px dashed rgba(37, 99, 235, 0.2);
 }
 
 .noIcus p {
-  color: #7f8c8d;
+  color: var(--color-ink-muted);
   font-size: 1.1rem;
   margin: 0;
 }

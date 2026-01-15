@@ -1,23 +1,23 @@
 /* src/pages/ReceptionistDashboard.module.css */
 .dashboard {
-    padding: 30px;
-    max-width: 1600px;
+    padding: var(--space-6);
+    max-width: 1400px;
     margin: 0 auto;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    min-height: 100vh;
+    background: transparent;
 }
 
 .header {
     text-align: center;
     margin-bottom: 30px;
-    background: white;
-    border-radius: 12px;
+    background: var(--color-surface);
+    border-radius: var(--radius-lg);
     padding: 25px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--color-border);
 }
 
 .header h1 {
-    color: #667eea;
+    color: var(--color-ink);
     margin-top: 0;
     font-size: 2.2em;
     font-weight: 700;
@@ -25,7 +25,7 @@
 
 .header p {
     font-size: 1.1em;
-    color: #6c757d;
+    color: var(--color-ink-muted);
     margin: 10px 0 0 0;
 }
 
@@ -43,11 +43,12 @@
 }
 
 .formCard {
-    background: white;
+    background: var(--color-surface);
     padding: 30px;
-    border-radius: 12px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--color-border);
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .formCard:hover {
@@ -58,23 +59,23 @@
 .formCard h3 {
     margin-top: 0;
     margin-bottom: 20px;
-    color: #667eea;
+    color: var(--color-ink);
     font-size: 1.4em;
     font-weight: 600;
     display: flex;
     align-items: center;
     gap: 10px;
     padding-bottom: 15px;
-    border-bottom: 3px solid #f0f0f0;
+    border-bottom: 1px solid var(--color-border);
 }
 
 .placeholder {
     padding: 60px 20px;
     text-align: center;
-    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-    border: 2px dashed #667eea;
-    border-radius: 12px;
-    color: #6c757d;
+    background: var(--color-surface-2);
+    border: 2px dashed rgba(37, 99, 235, 0.3);
+    border-radius: var(--radius-lg);
+    color: var(--color-ink-muted);
     font-size: 1.1em;
     font-weight: 500;
 }
@@ -89,14 +90,15 @@
 }
 
 .statusPanel {
-    background: white;
+    background: var(--color-surface);
     padding: 30px;
-    border-radius: 12px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
     margin-bottom: 25px;
-    border-left: 6px solid #667eea;
+    border-left: 6px solid var(--color-primary);
     position: relative;
     overflow: hidden;
+    border: 1px solid var(--color-border);
 }
 
 .statusPanel::before {
@@ -106,12 +108,12 @@
     left: 0;
     right: 0;
     height: 4px;
-    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    background: var(--gradient-primary);
 }
 
 .statusPanel h3 {
     margin-top: 0;
-    color: #667eea;
+    color: var(--color-ink);
     font-size: 1.5em;
     font-weight: 600;
     display: flex;
@@ -132,25 +134,25 @@
     align-items: center;
     gap: 20px;
     padding: 18px;
-    border-radius: 10px;
-    background: linear-gradient(135deg, #fff5e6 0%, #ffe4cc 100%);
-    border: 2px solid #ff9800;
-    box-shadow: 0 4px 12px rgba(255, 152, 0, 0.15);
-    transition: all 0.2s ease;
+    border-radius: var(--radius-lg);
+    background: var(--color-surface-2);
+    border: 1px solid rgba(245, 158, 11, 0.4);
+    box-shadow: var(--shadow-xs);
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .ambulanceItem:hover {
-    transform: translateX(5px);
-    box-shadow: 0 6px 16px rgba(255, 152, 0, 0.25);
+    transform: translateX(4px);
+    box-shadow: var(--shadow-sm);
 }
 
 .ambulanceInfo {
     font-size: 1.05em;
-    color: #333;
+    color: var(--color-ink);
 }
 
 .ambulanceInfo strong {
-    color: #ff6f00;
+    color: #b45309;
     font-weight: 600;
 }
 
@@ -161,7 +163,7 @@
 }
 
 .noAmbulance {
-    color: #6c757d;
+    color: var(--color-ink-muted);
     font-style: italic;
 }
 
@@ -172,11 +174,11 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    box-shadow: var(--shadow-xs);
 }
 
 .statusEnRoute {
-    background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
     color: #fff;
     animation: pulse 2s ease-in-out infinite;
 }
@@ -199,18 +201,18 @@
     align-items: center;
     gap: 20px;
     padding: 20px;
-    border-radius: 10px;
-    background: white;
-    border: 2px solid #e8eaf6;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    transition: all 0.3s ease;
+    border-radius: var(--radius-lg);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    box-shadow: var(--shadow-xs);
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .reservationItem:hover {
-    background: linear-gradient(135deg, #f5f7ff 0%, #e8eaf6 100%);
-    border-color: #667eea;
+    background: var(--gradient-soft);
+    border-color: rgba(37, 99, 235, 0.3);
     transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.2);
+    box-shadow: var(--shadow-sm);
 }
 
 .patientInfo {
@@ -223,7 +225,7 @@
 .patientName {
     font-size: 1.15em;
     font-weight: 700;
-    color: #2d3748;
+    color: var(--color-ink);
     display: flex;
     align-items: center;
     gap: 10px;
@@ -231,46 +233,46 @@
 
 .roomInfo {
     font-size: 0.95em;
-    color: #4a5568;
+    color: var(--color-ink-muted);
     font-weight: 500;
 }
 
 .hospitalInfo {
     font-size: 0.9em;
-    color: #718096;
+    color: var(--color-ink-subtle);
 }
 
 .patientEmail {
     font-size: 0.85em;
-    color: #667eea;
+    color: var(--color-primary);
     font-weight: 500;
 }
 
 .patientPhone {
     font-size: 0.85em;
-    color: #48bb78;
+    color: var(--color-success);
     font-weight: 500;
 }
 
 .checkedInTime {
     font-size: 0.85em;
-    color: #718096;
+    color: var(--color-ink-subtle);
     font-style: italic;
 }
 
 .pickupInfo {
     font-size: 0.9em;
     padding: 5px 10px;
-    background: #fff3cd;
-    border-radius: 5px;
+    background: var(--color-accent-soft);
+    border-radius: var(--radius-sm);
     display: inline-block;
 }
 
 .ambulanceInfo {
     font-size: 0.9em;
     padding: 5px 10px;
-    background: #d1ecf1;
-    border-radius: 5px;
+    background: rgba(14, 165, 233, 0.16);
+    border-radius: var(--radius-sm);
     display: inline-block;
 }
 
@@ -280,9 +282,9 @@
     font-weight: 600;
     font-size: 0.95em;
     padding: 12px 24px;
-    border-radius: 8px;
-    transition: all 0.2s ease;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border-radius: var(--radius-pill);
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+    box-shadow: var(--shadow-xs);
 }
 
 .actionBtn:hover {

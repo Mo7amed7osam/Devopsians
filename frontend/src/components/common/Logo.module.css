@@ -16,7 +16,7 @@
 .logoText {
   font-size: 22px;
   font-weight: 700;
-  color: var(--color-primary-dark, #007bff);
+  color: var(--color-primary);
   text-transform: uppercase;
   letter-spacing: 1px;
   line-height: 1;

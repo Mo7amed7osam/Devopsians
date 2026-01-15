@@ -1,15 +1,16 @@
 /* src/pages/adminPages/AddHospital.module.css */
 .cardContainer {
-  background-color: white;
+  background-color: var(--color-surface);
   padding: 30px;
-  border-radius: 10px;
-  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-border);
   max-width: 600px;
   margin: 20px auto;
 }
 
 .title {
-  color: var(--color-primary-dark, #0056b3);
+  color: var(--color-ink);
   margin-top: 0;
   margin-bottom: 25px;
   text-align: center;
@@ -18,10 +19,10 @@
 
 .subtitle {
     font-size: 16px;
-    color: #6c757d;
+    color: var(--color-ink-muted);
     margin-top: 20px;
     margin-bottom: 10px;
-    border-bottom: 1px dashed #e0e0e0;
+    border-bottom: 1px dashed var(--color-border);
     padding-bottom: 5px;
 }
 
@@ -33,21 +34,21 @@
   display: block;
   margin-bottom: 5px;
   font-weight: 600;
-  color: #333;
+  color: var(--color-ink);
 }
 
 .formGroup input,
 .formGroup textarea {
   width: 100%;
   padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
   box-sizing: border-box;
   transition: border-color 0.3s;
 }
 
 .formGroup input:focus {
-  border-color: var(--color-primary, #007bff);
+  border-color: var(--color-primary);
   outline: none;
 }
 
@@ -59,4 +60,3 @@
 .coordinatesGroup .formGroup {
     flex: 1;
 }
-

@@ -401,7 +401,20 @@ export const markPatientArrived = async (req, res, next) => {
 
     // Update patient status to ARRIVED
     patient.patientStatus = 'ARRIVED';
+    patient.needsPickup = false;
+    patient.assignedAmbulance = null;
     await patient.save();
+
+    // Mark the active request as arrived so patient can request again
+    const activeRequest = await AmbulanceRequest.findOne({
+      patient: patientId,
+      acceptedBy: ambulanceId,
+      status: { $in: ['accepted', 'in_transit'] }
+    });
+    if (activeRequest) {
+      activeRequest.status = 'arrived';
+      await activeRequest.save();
+    }
 
     // Update ambulance status to AVAILABLE and clear assignment
     ambulance.status = 'AVAILABLE';

@@ -6,6 +6,7 @@ import 'react-toastify/dist/ReactToastify.css';
 
 // --- Global Components ---
 import Navigation from './components/common/Navigation.jsx';
+import Sidebar from './components/common/Sidebar.jsx';
 // import Footer from './components/Footer.jsx';
 
 // --- Utilities & Security ---
@@ -37,7 +38,7 @@ import AmbulancePanel from './pages/Ambulance/AmbulancePanel.jsx';
 
 
 const App = () => {
-    const { isDarkMode } = useAuth();
+    const { isDarkMode, isAuthenticated } = useAuth();
 
     useEffect(() => {
         if (!socket.connected) {
@@ -75,8 +76,10 @@ const App = () => {
             />
 
             <Navigation />
-            <main>
-                <Routes>
+            <div className={`app-shell ${isAuthenticated ? '' : 'app-shell--single'}`}>
+                {isAuthenticated && <Sidebar />}
+                <main>
+                    <Routes>
                     {/* --- PUBLIC ROUTES --- */}
                     <Route path="/" element={<LandingPage />} />
                     <Route path="/find-icu" element={<ICUSelect />} />
@@ -153,8 +156,9 @@ const App = () => {
 
                     {/* --- CATCH-ALL ROUTE (MUST BE LAST) --- */}
                     <Route path="*" element={<PageNotFound />} />
-                </Routes>
-            </main>
+                    </Routes>
+                </main>
+            </div>
         </div>
     );
 };

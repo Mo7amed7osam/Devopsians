@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
-import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Polyline, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import styles from './RequestAmbulance.module.css';
@@ -12,6 +12,7 @@ import { getUserId, getToken } from '../../utils/cookieUtils';
 import { showUserDetails } from '../../utils/api';
 import socket from '../../utils/socket';
 import { API_BASE } from '../../utils/api';
+import useOsrmRoute from '../../hooks/useOsrmRoute';
 
 // Fix Leaflet default marker icon issue
 delete L.Icon.Default.prototype._getIconUrl;
@@ -42,6 +43,22 @@ const RequestAmbulance = () => {
   const [hasActiveRequest, setHasActiveRequest] = useState(false);
   const [activeRequest, setActiveRequest] = useState(null);
   const [ambulanceTracking, setAmbulanceTracking] = useState(null);
+
+  const ambulanceCoords =
+    ambulanceTracking?.currentLocation?.coordinates &&
+    Array.isArray(ambulanceTracking.currentLocation.coordinates) &&
+    ambulanceTracking.currentLocation.coordinates.length === 2
+      ? {
+          lat: ambulanceTracking.currentLocation.coordinates[1],
+          lng: ambulanceTracking.currentLocation.coordinates[0],
+        }
+      : null;
+
+  const { routeCoords, distanceKm, etaMinutes } = useOsrmRoute({
+    from: ambulanceCoords,
+    to: pickupCoords,
+    enabled: Boolean(ambulanceCoords && pickupCoords),
+  });
 
   useEffect(() => {
     loadPatientData();
@@ -77,7 +94,7 @@ const RequestAmbulance = () => {
       socket.on('ambulanceAccepted', (data) => {
         const userId = getUserId();
         if (data.patientId === userId) {
-          toast.success(`🚑 ${data.message}`, {
+          toast.success(`${data.message}`, {
             autoClose: 8000,
             position: 'top-center'
           });
@@ -97,6 +114,16 @@ const RequestAmbulance = () => {
         }
       });
 
+      socket.on('patientArrived', (data) => {
+        const userId = getUserId();
+        if (data.patientId === userId) {
+          setHasActiveRequest(false);
+          setActiveRequest(null);
+          setAmbulanceTracking(null);
+          toast.success('You have arrived. You can request an ambulance again if needed.');
+        }
+      });
+
       socket.on('pickupRequestCancelled', (data) => {
         const userId = getUserId();
         if (data.patientId === userId) {
@@ -111,6 +138,7 @@ const RequestAmbulance = () => {
       if (socket) {
         socket.off('ambulanceAccepted');
         socket.off('ambulanceStatusUpdate');
+        socket.off('patientArrived');
         socket.off('pickupRequestCancelled');
       }
     };
@@ -202,7 +230,7 @@ const RequestAmbulance = () => {
         throw new Error(data.message || 'Failed to create ambulance request');
       }
 
-      toast.success('🚑 Ambulance request sent! Waiting for a crew to accept...');
+      toast.success('Ambulance request sent. Waiting for a crew to accept...');
       setHasActiveRequest(true);
       setActiveRequest(data.data);
       
@@ -262,7 +290,7 @@ const RequestAmbulance = () => {
   return (
     <div className={styles.container}>
       <header className={styles.header}>
-        <h1>🚑 Request Ambulance Pickup</h1>
+        <h1>Request Ambulance Pickup</h1>
         <p>Select your pickup location and request an ambulance</p>
       </header>
 
@@ -292,13 +320,23 @@ const RequestAmbulance = () => {
               (activeRequest.status === 'accepted' || activeRequest.status === 'in_transit') &&
               activeRequest.acceptedBy && (
                 <div className={styles.ambulanceInfo}>
-                  <h3>🚑 Ambulance En Route</h3>
+                  <h3>Ambulance En Route</h3>
                   <div className={styles.detailRow}>
                     <strong>Crew:</strong> {ambulanceTracking.ambulanceName}
                   </div>
                   {ambulanceTracking.eta && (
                     <div className={styles.detailRow}>
                       <strong>ETA:</strong> {ambulanceTracking.eta} minutes
+                    </div>
+                  )}
+                  {distanceKm != null && (
+                    <div className={styles.detailRow}>
+                      <strong>Distance:</strong> I'm {distanceKm.toFixed(1)} km away
+                    </div>
+                  )}
+                  {etaMinutes != null && (
+                    <div className={styles.detailRow}>
+                      <strong>ETA (route):</strong> {Math.max(1, Math.round(etaMinutes))} minutes
                     </div>
                   )}
                 </div>
@@ -324,6 +362,13 @@ const RequestAmbulance = () => {
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                   attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                 />
+
+                {routeCoords.length > 0 && (
+                  <Polyline
+                    positions={routeCoords}
+                    pathOptions={{ color: '#2563eb', weight: 4, opacity: 0.75 }}
+                  />
+                )}
                 
                 {/* Patient pickup location */}
                 <Marker position={[pickupCoords.lat, pickupCoords.lng]}>
@@ -347,7 +392,7 @@ const RequestAmbulance = () => {
                     })}
                   >
                     <Popup>
-                      <strong>🚑 {ambulanceTracking.ambulanceName}</strong>
+                      <strong>{ambulanceTracking.ambulanceName}</strong>
                       <br />
                       En route to you
                     </Popup>
@@ -441,12 +486,12 @@ const RequestAmbulance = () => {
               disabled={loading || !pickupCoords || !patientData?.reservedICU}
               style={{ width: '100%', marginTop: '20px' }}
             >
-              {loading ? 'Sending Request...' : '🚑 Request Ambulance'}
+              {loading ? 'Sending Request...' : 'Request Ambulance'}
             </Button>
 
             {!patientData?.reservedICU && (
               <p className={styles.warning}>
-                ⚠️ You must have an ICU reservation before requesting an ambulance
+                You must have an ICU reservation before requesting an ambulance.
               </p>
             )}
           </form>

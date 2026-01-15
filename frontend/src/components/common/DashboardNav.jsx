@@ -9,6 +9,7 @@ const DashboardNav = ({ tabs, activeTab, setActiveTab }) => {
       {tabs.map((tab) => (
         <Button
           key={tab.id}
+          variant="ghost"
           className={`${styles.navButton} ${activeTab === tab.id ? styles.active : ''}`}
           onClick={() => setActiveTab(tab.id)}
         >

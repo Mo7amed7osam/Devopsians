@@ -11,6 +11,7 @@ import styles from './ICUSelect.module.css';
 import Button from '../../components/common/Button';
 import Modal from '../../components/common/Modal';
 import { safeNavigate } from '../../utils/security';
+import Skeleton from '../../components/common/Skeleton';
 
 const ICUSelect = () => {
     const navigate = useNavigate();
@@ -104,17 +105,17 @@ const ICUSelect = () => {
                 socket.on('patientNotification', (data) => {
                     if (data.patientId === userId) {
                         if (data.type === 'ambulance_assigned') {
-                            toast.success(`🚑 ${data.message}`, {
+                            toast.success(`${data.message}`, {
                                 autoClose: 8000,
                                 position: "top-center"
                             });
                         } else if (data.type === 'pickup_request_sent') {
-                            toast.info(`🚑 ${data.message}`, {
+                            toast.info(`${data.message}`, {
                                 autoClose: 8000,
                                 position: "top-center"
                             });
                         } else if (data.type === 'ambulance_accepted') {
-                            toast.success(`🚑 ${data.message}`, {
+                            toast.success(`${data.message}`, {
                                 autoClose: 8000,
                                 position: "top-center"
                             });
@@ -128,7 +129,7 @@ const ICUSelect = () => {
                 console.log('[ICUSelect] ICU reserved event received:', data);
                 // Remove reserved ICU from available list
                 setIcus(prev => prev.filter(icu => icu._id !== data.icuId));
-                toast.info(`🏥 ICU at ${data.hospitalName} was just reserved`, {
+                toast.info(`ICU at ${data.hospitalName} was just reserved`, {
                     autoClose: 3000
                 });
             });
@@ -137,7 +138,7 @@ const ICUSelect = () => {
                 console.log('[ICUSelect] ICU cancellation event received:', data);
                 // Reload ICUs to show newly available ICU
                 loadICUs();
-                toast.info('✨ New ICU became available!', {
+                toast.info('A new ICU became available.', {
                     autoClose: 3000
                 });
             });
@@ -146,7 +147,7 @@ const ICUSelect = () => {
                 console.log('[ICUSelect] ICU checkout event received:', data);
                 // Reload ICUs to show newly available ICU
                 loadICUs();
-                toast.info('✨ New ICU became available!', {
+                toast.info('A new ICU became available.', {
                     autoClose: 3000
                 });
             });
@@ -155,7 +156,7 @@ const ICUSelect = () => {
                 console.log('[ICUSelect] ICU status update event received:', data);
                 // Reload ICUs to reflect status changes
                 loadICUs();
-                toast.info(`🏥 ICU status updated at ${data.hospitalName}`, {
+                toast.info(`ICU status updated at ${data.hospitalName}`, {
                     autoClose: 3000
                 });
             });
@@ -258,11 +259,11 @@ const ICUSelect = () => {
             
             if (needsPickup) {
                 // Changed message to show PENDING status
-                toast.info('🚑 ICU reserved! Redirecting to your dashboard...', {
+                toast.info('ICU reserved. Redirecting to your dashboard...', {
                     autoClose: 2000
                 });
             } else {
-                toast.success('✅ ICU reserved! Redirecting to your dashboard...', {
+                toast.success('ICU reserved. Redirecting to your dashboard...', {
                     autoClose: 2000
                 });
             }
@@ -307,7 +308,47 @@ const ICUSelect = () => {
         return true;
     });
 
-    if (!userLocation) return <div className={styles.loadingState}>Finding your location...</div>;
+    const groupedHospitals = Object.values(
+        filteredIcus.reduce((acc, icu) => {
+            const hospital = icu?.hospital || {};
+            const hospitalId = hospital?._id || hospital?.id || icu?.hospitalId || icu?.hospital;
+            const fallbackKey = `${hospital?.name || 'unknown'}-${hospital?.address || ''}`;
+            const key = hospitalId ? String(hospitalId) : fallbackKey;
+
+            if (!acc[key]) {
+                acc[key] = {
+                    hospitalId: hospitalId || null,
+                    hospitalName: hospital?.name || 'Unknown Hospital',
+                    address: hospital?.address || 'Location unavailable',
+                    icus: [],
+                    specializations: new Set(),
+                };
+            }
+
+            acc[key].icus.push(icu);
+            if (icu?.specialization) {
+                acc[key].specializations.add(icu.specialization);
+            }
+            return acc;
+        }, {})
+    ).map((group) => ({
+        hospitalId: group.hospitalId,
+        hospitalName: group.hospitalName,
+        address: group.address,
+        availableCount: group.icus.length,
+        reserveIcuId: group.icus[0]?._id || group.icus[0]?.id || null,
+        specializations: Array.from(group.specializations),
+    }));
+
+    if (!userLocation) {
+        return (
+            <div className={styles.loadingState}>
+                <Skeleton variant="title" />
+                <Skeleton count={3} />
+                <Skeleton variant="block" />
+            </div>
+        );
+    }
     
     return (
         <div className={styles.finderPage}>
@@ -348,8 +389,8 @@ const ICUSelect = () => {
                 </div>
                 
                 <div className={styles.listArea}>
-                    <h3>{filteredIcus.length} Available ICUs</h3>
-                    <Icus icuList={filteredIcus} onReserve={handleReserve} loading={loading} />
+                    <h3>{groupedHospitals.length} Hospitals with Available ICUs</h3>
+                    <Icus icuList={groupedHospitals} onReserve={handleReserve} loading={loading} />
                 </div>
             </div>
 

@@ -4,6 +4,7 @@ import Button from '../../components/common/Button';
 import Modal from '../../components/common/Modal';
 import styles from './ManageReceptionists.module.css';
 import API from '../../utils/api';
+import Skeleton from '../../components/common/Skeleton';
 
 const ManageReceptionists = () => {
     const [receptionists, setReceptionists] = useState([]);
@@ -124,12 +125,15 @@ const ManageReceptionists = () => {
             <div className={styles.header}>
                 <h2>Manage Receptionists</h2>
                 <Button variant="primary" onClick={() => setShowCreateModal(true)}>
-                    ➕ Add Receptionist
+                    Add Receptionist
                 </Button>
             </div>
 
             {loading ? (
-                <div className={styles.loading}>Loading receptionists...</div>
+                <div className={styles.loading}>
+                    <Skeleton variant="title" />
+                    <Skeleton count={4} />
+                </div>
             ) : receptionists.length === 0 ? (
                 <div className={styles.empty}>
                     <p>No receptionists found. Add one to get started.</p>
@@ -160,13 +164,13 @@ const ManageReceptionists = () => {
                                             variant="secondary" 
                                             onClick={() => openEditModal(receptionist)}
                                         >
-                                            ✏️ Edit
+                                            Edit
                                         </Button>
                                         <Button 
                                             variant="danger" 
                                             onClick={() => handleDeleteReceptionist(receptionist._id)}
                                         >
-                                            🗑️ Delete
+                                            Delete
                                         </Button>
                                     </td>
                                 </tr>

@@ -100,21 +100,22 @@
     justify-content: center;
     align-items: center;
     min-height: calc(100vh - 70px); 
-    background-color: #f0f4f7;
-    padding: 20px;
+    background-color: transparent;
+    padding: 30px 20px;
 }
 
 .formCard {
-    background-color: white;
+    background-color: var(--color-surface);
     padding: 40px;
-    border-radius: 10px;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--color-border);
     width: 100%;
     max-width: 400px;
 }
 
 .title {
-    color: var(--color-primary-dark, #0056b3);
+    color: var(--color-ink);
     text-align: center;
     margin-bottom: 30px;
 }
@@ -123,7 +124,7 @@
     display: block;
     margin-bottom: 5px;
     font-weight: 600;
-    color: #333;
+    color: var(--color-ink);
     font-size: 15px;
 }
 
@@ -131,22 +132,22 @@
     width: 100%;
     padding: 12px;
     margin-bottom: 20px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
     box-sizing: border-box;
     transition: border-color 0.2s;
 }
 
 .inputField:focus {
-    border-color: var(--color-primary, #007bff);
+    border-color: var(--color-primary);
     outline: none;
 }
 
 .errorMessage {
-    background-color: #f8d7da;
-    color: #721c24;
+    background-color: var(--color-danger-soft);
+    color: var(--color-danger);
     padding: 10px;
-    border-radius: 5px;
+    border-radius: var(--radius-sm);
     margin-bottom: 15px;
     text-align: center;
 }
@@ -159,12 +160,12 @@
 }
 
 .registerLink, .forgotLink {
-    color: var(--color-primary, #007bff);
+    color: var(--color-primary);
     text-decoration: none;
     transition: color 0.2s;
 }
 
 .registerLink:hover, .forgotLink:hover {
-    color: var(--color-primary-dark, #0056b3);
+    color: var(--color-primary-strong);
     text-decoration: underline;
 }

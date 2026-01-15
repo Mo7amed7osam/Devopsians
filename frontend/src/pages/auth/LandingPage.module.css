@@ -26,7 +26,7 @@
     text-align: center;
     padding: 80px 20px;
     /* --- MODIFIED: Use a richer gradient instead of image --- */
-    background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
+    background: var(--gradient-primary);
     color: #ffffff; /* --- CHANGE: Default text is light on gradient --- */
     position: relative;
     animation: fadeIn 1s ease-out; /* Fade in hero content */
@@ -56,7 +56,7 @@
     font-weight: 700;
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2); /* Adjusted shadow for button on gradient */
     transition: transform 0.2s, box-shadow 0.2s, background-color 0.2s, color 0.2s;
-    border: 2px solid white;
+    border: 2px solid rgba(255, 255, 255, 0.9);
     background-color: transparent;
     color: white;
     border-radius: 50px; /* Pill shape */
@@ -66,7 +66,7 @@
     transform: translateY(-4px) scale(1.02);
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3); /* Adjusted shadow */
     background-color: white;
-    color: var(--color-primary-dark);
+    color: var(--color-primary-strong);
 }
 
 /* --- Section Styling (Common) --- */
@@ -138,18 +138,18 @@
 }
 
 .stepCard {
-    background-color: #fff;
+    background-color: var(--color-surface);
     padding: 35px;
     border-radius: 12px;
     box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
     transition: transform 0.3s ease-out, box-shadow 0.3s ease-out, border-color 0.3s;
-    border: 2px solid transparent;
+    border: 1px solid rgba(0, 0, 0, 0.02);
 }
 
 .stepCard:hover {
     transform: translateY(-8px) scale(1.03);
     box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
-    border-color: var(--color-primary-light);
+    border-color: rgba(37, 99, 235, 0.25);
 }
 
 /* --- Icon Styling --- */
@@ -195,7 +195,7 @@
 
 .stepCard h3 {
     font-size: 1.6em;
-    color: #333;
+    color: var(--color-ink);
     margin-bottom: 15px;
 }
 
@@ -251,7 +251,7 @@
 
 .benefitCard h3 {
     font-size: 1.5em;
-    color: #333;
+    color: var(--color-ink);
     margin-bottom: 15px;
 }
 
@@ -262,7 +262,7 @@
 
 /* Hero Section Dark */
 .darkMode .heroSection {
-    background: linear-gradient(135deg, var(--color-primary), #003f8a);
+    background: var(--gradient-primary);
     color: #ffffff;
 }
 
@@ -358,7 +358,7 @@
 
 /* Stats Section Dark */
 .darkMode .statsSection { /* Added */
-    background-color: #003f8a; /* Slightly adjusted dark blue */
+    background-color: var(--color-primary-strong);
 }
 /* Text is already white in light mode, should be fine */
 
@@ -375,5 +375,5 @@
 
 .darkMode .benefitCard:hover {
      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
-     border-color: #555;
+     border-color: var(--color-border-strong);
 }

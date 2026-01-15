@@ -1,0 +1,31 @@
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+.label {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-ink);
+}
+
+.input {
+  background: var(--color-surface);
+}
+
+.helper {
+  font-size: 12px;
+  color: var(--color-ink-subtle);
+}
+
+.error {
+  font-size: 12px;
+  color: var(--color-danger);
+}
+
+.inputError {
+  border-color: var(--color-danger);
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15);
+}

@@ -1,25 +1,26 @@
 /* src/pages/managerPages/Addicu.module.css */
 .cardContainer {
-  background-color: white;
+  background-color: var(--color-surface);
   padding: 30px;
-  border-radius: 10px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-border);
   max-width: 500px;
   margin: 0 auto;
 }
 
 .title {
-  color: var(--color-primary-dark, #0056b3);
+  color: var(--color-ink);
   margin-top: 0;
   margin-bottom: 10px;
   font-size: 24px;
 }
 
 .hospitalIdLabel {
-    color: #6c757d;
+    color: var(--color-ink-muted);
     font-size: 14px;
     margin-bottom: 20px;
-    border-bottom: 1px dashed #e0e0e0;
+    border-bottom: 1px dashed var(--color-border);
     padding-bottom: 10px;
 }
 
@@ -31,21 +32,21 @@
   display: block;
   margin-bottom: 5px;
   font-weight: 600;
-  color: #333;
+  color: var(--color-ink);
 }
 
 .formGroup input,
 .formGroup select {
   width: 100%;
   padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
   box-sizing: border-box;
 }
 
 .formGroup input:focus,
 .formGroup select:focus {
-  border-color: var(--color-primary, #007bff);
+  border-color: var(--color-primary);
   outline: none;
 }
 

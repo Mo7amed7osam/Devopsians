@@ -9,6 +9,7 @@ import Button from '../../components/common/Button';
 import Modal from '../../components/common/Modal';
 import SecureTextarea from '../../components/common/SecureTextarea';
 import ICUSelect from './ICUSelect';
+import Skeleton from '../../components/common/Skeleton';
 import { useNavigate } from 'react-router-dom';
 
 import { safeNavigate } from '../../utils/security';
@@ -78,7 +79,7 @@ const PatientHomePage = () => {
             // Listen for ambulance on the way notification
             socket.on('ambulanceOnTheWay', (data) => {
                 if (data.patientId === userId) {
-                    toast.success(`🚑 ${data.message} Your ambulance is heading to ${data.hospitalName}!`, {
+                    toast.success(`${data.message} Your ambulance is heading to ${data.hospitalName}!`, {
                         autoClose: 8000,
                         position: "top-center"
                     });
@@ -91,25 +92,25 @@ const PatientHomePage = () => {
 
             // Listen for ambulance approval notification
             socket.on('patientNotification', (data) => {
-                console.log('🔔 Patient notification received:', data);
+                console.log('Patient notification received:', data);
                 if (data.patientId === userId) {
                     if (data.type === 'ambulance_approved') {
-                        toast.info(`✅ ${data.message}`, {
+                        toast.info(`${data.message}`, {
                             autoClose: 5000,
                             position: "top-center"
                         });
                     } else if (data.type === 'ambulance_assigned') {
-                        toast.success(`🚑 ${data.message}`, {
+                        toast.success(`${data.message}`, {
                             autoClose: 8000,
                             position: "top-center"
                         });
                     } else if (data.type === 'pickup_request_sent') {
-                        toast.info(`🚑 ${data.message}`, {
+                        toast.info(`${data.message}`, {
                             autoClose: 8000,
                             position: "top-center"
                         });
                     } else if (data.type === 'ambulance_accepted') {
-                        toast.success(`🚑 ${data.message}`, {
+                        toast.success(`${data.message}`, {
                             autoClose: 8000,
                             position: "top-center"
                         });
@@ -124,7 +125,7 @@ const PatientHomePage = () => {
             // Listen for pickup request from patient reservation
             socket.on('ambulancePickupRequest', (data) => {
                 if (data.patientId === userId) {
-                    toast.info(`🚑 Your pickup request has been sent to ambulance crew!`, {
+                    toast.info(`Your pickup request has been sent to the ambulance crew.`, {
                         autoClose: 5000
                     });
                 }
@@ -133,7 +134,7 @@ const PatientHomePage = () => {
             // Listen for ICU check-out notification
             socket.on('icuCheckOut', (data) => {
                 if (data.patientId === userId) {
-                    toast.success('✅ You have been checked out. Thank you for choosing our services!');
+                    toast.success('You have been checked out. Thank you for choosing our services.');
                     // Reload patient data to update status
                     setTimeout(() => {
                         window.location.reload();
@@ -154,9 +155,9 @@ const PatientHomePage = () => {
 
             // Listen for when an ambulance accepts the pickup
             socket.on('ambulanceAccepted', (data) => {
-                console.log('🚑 Ambulance accepted event:', data);
+                console.log('Ambulance accepted event:', data);
                 if (data.patientId === userId) {
-                    toast.success(`🚑 An ambulance is on the way to pick you up!`, {
+                    toast.success(`An ambulance is on the way to pick you up.`, {
                         autoClose: 8000,
                         position: "top-center"
                     });
@@ -169,9 +170,9 @@ const PatientHomePage = () => {
 
             // Listen for patient arrival at hospital
             socket.on('patientArrived', (data) => {
-                console.log('🏥 Patient arrived event:', data);
+                console.log('Patient arrived event:', data);
                 if (data.patientId === userId) {
-                    toast.success(`🏥 You have arrived at the hospital! Please proceed to reception.`, {
+                    toast.success(`You have arrived at the hospital. Please proceed to reception.`, {
                         autoClose: 10000,
                         position: "top-center"
                     });
@@ -275,7 +276,24 @@ const PatientHomePage = () => {
         }
     };
 
-    if (loading) return <div className={styles.loadingState}>Loading patient dashboard...</div>;
+    if (loading) {
+        return (
+            <div className={styles.loadingState}>
+                <Skeleton variant="title" />
+                <Skeleton count={3} />
+                <div className={styles.loadingGrid}>
+                    <div className={styles.loadingCard}>
+                        <Skeleton variant="title" />
+                        <Skeleton count={4} />
+                    </div>
+                    <div className={styles.loadingCard}>
+                        <Skeleton variant="title" />
+                        <Skeleton variant="block" />
+                    </div>
+                </div>
+            </div>
+        );
+    }
     if (!patientData) return <div className={styles.errorState}>Could not load patient data.</div>;
 
     // If patient doesn't have an ICU reserved or is waiting for check-in approval
@@ -285,11 +303,11 @@ const PatientHomePage = () => {
                 <header className={styles.header}>
                     <h2 className={styles.welcomeTitle}>Welcome, {patientData.firstName} {patientData.lastName}</h2>
                     {patientData.patientStatus === 'RESERVED' ? (
-                        <div className={styles.icuStatus} style={{ color: '#2196f3' }}>
+                        <div className={`${styles.icuStatus} ${styles.icuStatusPending}`}>
                             <i className="fas fa-clock"></i> Your ICU reservation is pending. Waiting for receptionist approval...
                         </div>
                     ) : (
-                        <div className={styles.icuStatus} style={{ color: '#ff9800' }}>
+                        <div className={`${styles.icuStatus} ${styles.icuStatusNotice}`}>
                             <i className="fas fa-info-circle"></i> You don't have an ICU reserved yet. Please select one below.
                         </div>
                     )}
@@ -314,24 +332,19 @@ const PatientHomePage = () => {
 
                 {/* Ambulance Status Banner */}
                 {showAmbulanceStatus && (
-                    <div style={{
-                        marginTop: '15px',
-                        padding: '15px',
-                        backgroundColor: patientData.patientStatus === 'AWAITING_PICKUP' ? '#fff3cd' :
-                                       patientData.patientStatus === 'IN_TRANSIT' ? '#d1ecf1' :
-                                       '#d4edda',
-                        border: `2px solid ${patientData.patientStatus === 'AWAITING_PICKUP' ? '#ffc107' :
-                                             patientData.patientStatus === 'IN_TRANSIT' ? '#17a2b8' :
-                                             '#28a745'}`,
-                        borderRadius: '8px',
-                        textAlign: 'center'
-                    }}>
-                        <h3 style={{ margin: '0 0 10px 0' }}>
-                            {patientData.patientStatus === 'AWAITING_PICKUP' && '🚑 Ambulance Requested'}
-                            {patientData.patientStatus === 'IN_TRANSIT' && '🚐 Ambulance En Route!'}
-                            {patientData.patientStatus === 'ARRIVED' && '🏥 You Have Arrived!'}
+                    <div className={`${styles.ambulanceBanner} ${
+                        patientData.patientStatus === 'AWAITING_PICKUP'
+                            ? styles.bannerPending
+                            : patientData.patientStatus === 'IN_TRANSIT'
+                                ? styles.bannerTransit
+                                : styles.bannerArrived
+                    }`}>
+                        <h3 className={styles.bannerTitle}>
+                            {patientData.patientStatus === 'AWAITING_PICKUP' && 'Ambulance Requested'}
+                            {patientData.patientStatus === 'IN_TRANSIT' && 'Ambulance En Route'}
+                            {patientData.patientStatus === 'ARRIVED' && 'You Have Arrived'}
                         </h3>
-                        <p style={{ margin: '5px 0', fontSize: '1.1em' }}>
+                        <p className={styles.bannerText}>
                             {patientData.patientStatus === 'AWAITING_PICKUP' && 
                                 'An ambulance has been assigned to pick you up. The crew will accept shortly.'}
                             {patientData.patientStatus === 'IN_TRANSIT' && 
@@ -340,11 +353,11 @@ const PatientHomePage = () => {
                                 'You have arrived at the hospital. The receptionist will check you in shortly.'}
                         </p>
                         {patientData.pickupLocation && (
-                            <p style={{ fontSize: '0.9em', marginTop: '5px' }}>
+                            <p className={styles.bannerSubtext}>
                                 <strong>Pickup Location:</strong> {patientData.pickupLocation}
                             </p>
                         )}
-                        <div style={{ marginTop: '10px' }}>
+                        <div className={styles.bannerAction}>
                             <Button
                                 variant="primary"
                                 onClick={() => safeNavigate(navigate, '/patient/request-ambulance')}
@@ -359,8 +372,8 @@ const PatientHomePage = () => {
                     <Button 
                         onClick={handleCancelReservation} 
                         disabled={cancelLoading}
-                        variant="secondary"
-                        style={{ marginTop: '10px', backgroundColor: '#d32f2f', color: 'white' }}
+                        variant="danger"
+                        className={styles.cancelButton}
                     >
                         {cancelLoading ? 'Cancelling...' : 'Cancel ICU Reservation'}
                     </Button>
@@ -372,7 +385,7 @@ const PatientHomePage = () => {
                         <h3>Your Reserved ICU</h3>
                         <p><strong>Hospital:</strong> {icuData.hospital?.name || 'N/A'}</p>
                         <p><strong>Specialization:</strong> {icuData.specialization}</p>
-                        <p><strong>Status:</strong> <span style={{ color: '#4caf50', fontWeight: 'bold' }}>{icuData.status}</span></p>
+                        <p><strong>Status:</strong> <span className={styles.statusAvailable}>{icuData.status}</span></p>
                         <p><strong>Daily Fee:</strong> {icuData.fees} EGP</p>
                     </div>
                 )}
@@ -380,7 +393,7 @@ const PatientHomePage = () => {
                     <h3>Total Fees</h3>
                     <p className={styles.feeAmount}>EGP {(patientData.totalFees || 0).toFixed(2)}</p>
                     {patientData.reservedICU && patientData.patientStatus === 'CHECKED_IN' && (
-                        <p style={{color: patientData.feesPaid === true ? '#4caf50' : '#d32f2f', fontWeight: 'bold'}}>
+                        <p className={patientData.feesPaid === true ? styles.feePaid : styles.feeUnpaid}>
                             {patientData.feesPaid === true ? 'Fee Paid' : 'Fee Not Paid'}
                         </p>
                     )}
@@ -406,7 +419,7 @@ const PatientHomePage = () => {
                                     onMouseEnter={() => setHoverRating(ratingValue)}
                                     onMouseLeave={() => setHoverRating(0)}
                                 >
-                                    ★
+                                    *
                                 </span>
                             );
                         })}
@@ -419,7 +432,7 @@ const PatientHomePage = () => {
                         onChange={(e) => setRatingComment(e.target.value)}
                         maxLength={500}
                     />
-                    <Button type="submit" variant="primary" style={{ width: '100%', marginTop: '20px' }}>Submit Rating</Button>
+                    <Button type="submit" variant="primary" className={styles.modalSubmit}>Submit Rating</Button>
                 </form>
             </Modal>
         </div>

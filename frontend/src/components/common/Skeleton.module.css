@@ -1,0 +1,35 @@
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(90deg, rgba(15, 23, 42, 0.08), rgba(37, 99, 235, 0.15), rgba(15, 23, 42, 0.08));
+  border-radius: var(--radius-sm);
+  min-height: 12px;
+  animation: shimmer 1.2s infinite;
+}
+
+.line {
+  height: 12px;
+  width: 100%;
+}
+
+.title {
+  height: 22px;
+  width: 55%;
+}
+
+.block {
+  height: 120px;
+  width: 100%;
+  border-radius: var(--radius-lg);
+}
+
+@keyframes shimmer {
+  0% { background-position: -200px 0; }
+  100% { background-position: 200px 0; }
+}

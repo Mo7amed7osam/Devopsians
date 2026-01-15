@@ -5,6 +5,7 @@ import { viewICUsForManager, deleteICUById, updateICUById } from '../../utils/ap
 import styles from './ICUMgmt.module.css';
 import socket from '../../utils/realtime';
 import Button from '../../components/common/Button';
+import Skeleton from '../../components/common/Skeleton';
 
 const ICUMgmt = ({ hospitalId, refresh = 0 }) => {
     const [icus, setIcus] = useState([]);
@@ -43,7 +44,7 @@ const ICUMgmt = ({ hospitalId, refresh = 0 }) => {
                 const uid = icu._id || icu.id;
                 return uid === data.icuId ? { ...icu, status: 'Occupied', isReserved: true } : icu;
             }));
-            toast.info(`🏥 ICU ${data.room} reserved for patient`, {
+            toast.info(`ICU ${data.room} reserved for patient`, {
                 autoClose: 3000
             });
         });
@@ -148,7 +149,12 @@ const ICUMgmt = ({ hospitalId, refresh = 0 }) => {
                 />
             </div>
 
-            {loading ? <div className={styles.loading}>Loading ICUs...</div> : (
+            {loading ? (
+                <div className={styles.loading}>
+                    <Skeleton variant="title" />
+                    <Skeleton count={5} />
+                </div>
+            ) : (
                 <table className={styles.icuTable}>
                     <thead>
                         <tr>

@@ -7,6 +7,9 @@ import ViewAllHospital from './ViewAllHospital.jsx';
 import Modal from '../../components/common/Modal';
 import styles from './AdminDashboard.module.css';
 import Button from '../../components/common/Button';
+import Table from '../../components/common/Table';
+import Dropdown from '../../components/common/Dropdown';
+import Badge from '../../components/common/Badge';
 import SecureInput from '../../components/common/SecureInput';
 import SecureSelect from '../../components/common/SecureSelect';
 import { getRole, clearSession } from '../../utils/cookieUtils';
@@ -26,6 +29,7 @@ const AdminDashboard = () => {
     const [openHospitalId, setOpenHospitalId] = useState('');
     const [managerForm, setManagerForm] = useState({ name: '', email: '', password: '', hospitalId: '', phone: '', gender: 'Male' });
     const [hospitalsList, setHospitalsList] = useState([]);
+    const [hospitalIcuCounts, setHospitalIcuCounts] = useState({});
     const [usersList, setUsersList] = useState([]);
     const [isUserModalOpen, setIsUserModalOpen] = useState(false);
     const [selectedUser, setSelectedUser] = useState(null);
@@ -42,6 +46,7 @@ const AdminDashboard = () => {
         availableIcus: 0
     });
     const [loadingStats, setLoadingStats] = useState(true);
+    const [openMenuId, setOpenMenuId] = useState(null);
 
     // Verify Admin role on mount
     useEffect(() => {
@@ -54,6 +59,12 @@ const AdminDashboard = () => {
             return;
         }
     }, [navigate]);
+
+    useEffect(() => {
+        const handleCloseMenus = () => setOpenMenuId(null);
+        window.addEventListener('click', handleCloseMenus);
+        return () => window.removeEventListener('click', handleCloseMenus);
+    }, []);
 
     useEffect(() => {
         const loadStats = async () => {
@@ -102,6 +113,7 @@ const AdminDashboard = () => {
                     availableIcus: statsRes?.data?.availableIcus ?? 0,
                     totalManagers: managersArrayForStats.length || 0
                 });
+                setHospitalIcuCounts(statsRes?.data?.icuByHospital || {});
 
                 // Populate hospitals dropdown
                 setHospitalsList(hospitalsArray);
@@ -447,35 +459,72 @@ const AdminDashboard = () => {
                                 </form>
                             </Modal>
                         )}
-                        <div className={styles.usersTableWrap}>
-                            <table className={styles.usersTable}>
+                        <Table className={styles.usersTableWrap} tableClassName={styles.usersTable}>
                                 <thead>
                                     <tr>
                                         <th>Name</th>
                                         <th>Email</th>
                                         <th>Role</th>
                                         <th>Created</th>
-                                        <th>Action</th>
+                                        <th>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {usersList.map((u, i) => (
-                                        <tr key={u.id || i}>
-                                            <td>{u.firstName ? `${u.firstName} ${u.lastName || ''}` : (u.userName || 'User')}</td>
-                                            <td>{u.email || '—'}</td>
-                                            <td style={{ textTransform: 'capitalize' }}>{u.role}</td>
-                                            <td>{u.createdAt ? new Date(u.createdAt).toLocaleString() : '—'}</td>
-                                            <td style={{ display: 'flex', gap: 8 }}>
-                                                <Button size="small" variant="secondary" onClick={() => openUserModal(u)}>View</Button>
-                                                <Button size="small" variant="primary" onClick={() => { setSelectedUser(u); setIsEditingUser(true); setEditForm({ firstName: u.firstName || '', lastName: u.lastName || '', email: u.email || '', phone: u.phone || '', role: u.role || '', password: '' }); setIsUserModalOpen(true); }}>Edit</Button>
-                                                <Button size="small" variant="danger" onClick={() => handleDeleteUser(u)}>Delete</Button>
-                                                <Button size="small" variant="secondary" onClick={() => handleBlockToggleUser(u)}>{(u.isBlocked || u.blocked) ? 'Unblock' : 'Block'}</Button>
+                                    {usersList.length === 0 ? (
+                                        <tr>
+                                            <td colSpan={5} className={styles.tableEmpty}>
+                                                No users found. Create a new account to get started.
                                             </td>
                                         </tr>
-                                    ))}
+                                    ) : (
+                                        usersList.map((u, i) => (
+                                            <tr key={u.id || i}>
+                                                <td>{u.firstName ? `${u.firstName} ${u.lastName || ''}` : (u.userName || 'User')}</td>
+                                                <td>{u.email || '—'}</td>
+                                                <td>
+                                                    <Badge variant="neutral">{u.role}</Badge>
+                                                </td>
+                                                <td>{u.createdAt ? new Date(u.createdAt).toLocaleString() : '—'}</td>
+                                                <td className={styles.actionsCell}>
+                                                    <Dropdown
+                                                        isOpen={openMenuId === (u.id || i)}
+                                                        onToggle={() => setOpenMenuId(openMenuId === (u.id || i) ? null : (u.id || i))}
+                                                    >
+                                                        <button
+                                                            type="button"
+                                                            className={styles.menuItem}
+                                                            onClick={() => { openUserModal(u); setOpenMenuId(null); }}
+                                                        >
+                                                            View details
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            className={styles.menuItem}
+                                                            onClick={() => { setSelectedUser(u); setIsEditingUser(true); setEditForm({ firstName: u.firstName || '', lastName: u.lastName || '', email: u.email || '', phone: u.phone || '', role: u.role || '', password: '' }); setIsUserModalOpen(true); setOpenMenuId(null); }}
+                                                        >
+                                                            Edit user
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            className={`${styles.menuItem} ${styles.menuMuted}`}
+                                                            onClick={() => { handleBlockToggleUser(u); setOpenMenuId(null); }}
+                                                        >
+                                                            {(u.isBlocked || u.blocked) ? 'Unblock' : 'Block'}
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            className={`${styles.menuItem} ${styles.menuDanger}`}
+                                                            onClick={() => { handleDeleteUser(u); setOpenMenuId(null); }}
+                                                        >
+                                                            Delete
+                                                        </button>
+                                                    </Dropdown>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    )}
                                 </tbody>
-                            </table>
-                        </div>
+                        </Table>
                         {selectedUser && (
                             <Modal isOpen={isUserModalOpen} onClose={() => { setIsUserModalOpen(false); setIsEditingUser(false); }} contentLabel={`user-${selectedUser.id}`}>
                                 <div className={styles.modalHeader}>
@@ -560,6 +609,7 @@ const AdminDashboard = () => {
                             setManagerForm(prev => ({ ...prev, hospitalId: hospitalId || '' }));
                             setActiveTab('manageManagers');
                         }}
+                        hospitalIcuCounts={hospitalIcuCounts}
                     />
                 );
         }
@@ -575,33 +625,36 @@ const AdminDashboard = () => {
                     title="Total Hospitals" 
                     value={loadingStats ? '...' : (dashboardStats.totalHospitals || 0)} 
                     icon={iconHospital} 
-                    color="#007bff"
+                    color="var(--color-primary)"
+                    loading={loadingStats}
                 />
                 <DashBoardCard 
                     title="Total ICUs (System)" 
                     value={loadingStats ? '...' : (dashboardStats.totalIcus || 0)} 
                     icon={iconTotalIcu} 
-                    color="#6f42c1"
+                    color="var(--color-info)"
+                    loading={loadingStats}
                 />
                 <DashBoardCard 
                     title="Occupied ICUs" 
                     value={loadingStats ? '...' : `${dashboardStats.occupiedIcus || 0} / ${dashboardStats.totalIcus || 0}`}
                     icon={iconOccupiedIcu} 
-                    color="#dc3545"
+                    color="var(--color-danger)"
+                    loading={loadingStats}
                 />
             </section>
             <nav className={styles.tabsNav}>
-                <Button className={`${styles.tabButton} `} variant="secondary" onClick={() => setActiveTab('viewHospitals')} aria-label="Manage Hospitals">
+                <Button className={`${styles.tabButton} ${activeTab === 'viewHospitals' ? styles.active : ''}`} variant="ghost" onClick={() => setActiveTab('viewHospitals')} aria-label="Manage Hospitals">
                     Manage Hospitals
                 </Button>
-                <Button className={`${styles.tabButton} `} variant="primary" onClick={() => setActiveTab('addHospital')} aria-label="Add Hospital">
+                <Button className={`${styles.tabButton} ${activeTab === 'addHospital' ? styles.active : ''}`} variant="ghost" onClick={() => setActiveTab('addHospital')} aria-label="Add Hospital">
                     + Add Hospital
                 </Button>
                 {/* Employee management moved to the Manager dashboard */}
-                <Button className={`${styles.tabButton} `} variant="primary" onClick={() => setActiveTab('manageManagers')} aria-label="Add Manager">
+                <Button className={`${styles.tabButton} ${activeTab === 'manageManagers' ? styles.active : ''}`} variant="ghost" onClick={() => setActiveTab('manageManagers')} aria-label="Add Manager">
                     + Add Manager
                 </Button>
-                <Button className={`${styles.tabButton} `} variant="secondary" onClick={() => setActiveTab('manageUsers')} aria-label="Manage Users">
+                <Button className={`${styles.tabButton} ${activeTab === 'manageUsers' ? styles.active : ''}`} variant="ghost" onClick={() => setActiveTab('manageUsers')} aria-label="Manage Users">
                     Manage Users
                 </Button>
             </nav>

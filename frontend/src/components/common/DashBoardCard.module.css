@@ -1,20 +1,33 @@
 /* src/components/DashBoardCard.module.css */
 .card {
-  background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  padding: 20px;
+  background-color: var(--color-surface);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  padding: var(--space-5);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  transition: transform 0.3s;
-  border-left: 5px solid; /* Color controlled by prop */
-  min-width: 250px;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+  border: 1px solid var(--color-border);
+  min-width: 240px;
+  min-height: 110px;
+  position: relative;
+  overflow: hidden;
 }
 
 .card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--accent-color, var(--color-primary));
 }
 
 .content {
@@ -25,22 +38,29 @@
 }
 
 .title {
-  font-size: 14px;
-  color: #6c757d;
+  font-size: 12px;
+  color: var(--color-ink-subtle);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  font-weight: 500;
+  letter-spacing: 0.08em;
+  font-weight: 700;
 }
 
 .value {
-  font-size: 32px;
+  font-size: 28px;
   font-weight: 700;
-  color: #333;
-  line-height: 1;
+  color: var(--color-ink);
+  line-height: 1.1;
 }
 
 .icon {
-  font-size: 40px;
-  color: rgba(0, 123, 255, 0.6); /* Slightly transparent version of primary color */
+  font-size: 28px;
+  color: rgba(31, 41, 55, 0.35);
   margin-left: 15px;
+}
+
+.skeletonWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
 }

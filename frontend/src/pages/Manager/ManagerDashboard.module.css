@@ -1,20 +1,17 @@
 /* src/pages/ManagerDashboard.module.css */
 .managerDashboard {
-    padding: 30px;
-    max-width: 1400px;
+    padding: var(--space-6);
+    max-width: 1200px;
     margin: 0 auto;
-    /* Default light background */
-    background-color: var(--color-background-light, #f4f6f9);
-    min-height: 100vh;
-    transition: background-color 0.3s; /* Smooth transition */
+    background-color: transparent;
 }
 
 .header h1 {
-    color: var(--color-primary-dark, #0056b3);
+    color: var(--color-ink);
     text-align: center;
     margin-bottom: 30px;
     padding-bottom: 10px;
-    border-bottom: 3px solid #e0e0e0;
+    border-bottom: 2px solid var(--color-border);
 }
 
 .statsGrid {
@@ -27,65 +24,37 @@
 
 .contentArea {
     padding: 20px 0;
-    min-height: 400px; /* Adjusted height */
+    min-height: 320px;
 }
 
 .overviewPanel {
-    background-color: white; /* Default light card background */
+    background-color: var(--color-surface);
     padding: 30px;
-    border-radius: 8px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--color-border);
     text-align: center;
-    transition: background-color 0.3s, box-shadow 0.3s;
 }
 
 .sectionTitle {
-    color: #333; /* Default light text */
+    color: var(--color-ink);
     font-size: 24px;
     margin-top: 0;
     margin-bottom: 15px;
-    transition: color 0.3s;
 }
 
 /* Removed quickActions as tabs are used now */
 
 .sectionPlaceholder {
-    background-color: #fff3cd; /* Light warning background */
-    border: 1px solid #ffc107;
+    background-color: var(--color-accent-soft);
+    border: 1px solid var(--color-accent);
     padding: 20px;
-    border-radius: 5px;
+    border-radius: var(--radius-md);
     text-align: center;
-    color: #856404; /* Dark warning text */
-    transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+    color: #92400e;
 }
 
 /* --- Dark Mode Specific Rules --- */
-body.dark-mode .managerDashboard {
-    background-color: var(--color-background-light); /* Uses dark background variable */
-    color: var(--color-text-dark); /* Uses light text variable */
-}
-
-body.dark-mode .managerDashboard .header h1,
-body.dark-mode .managerDashboard .sectionTitle {
-     color: var(--color-text-dark); /* Light headings in dark mode */
-}
-
-body.dark-mode .managerDashboard .header {
-    border-bottom-color: var(--color-border); /* Darker border */
-}
-
-body.dark-mode .managerDashboard .overviewPanel {
-    background-color: var(--color-background-white); /* Use dark card background */
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
-}
-
-/* Ensure placeholder text/background are visible in dark mode */
-body.dark-mode .managerDashboard .sectionPlaceholder {
-    background-color: #332701; /* Darker warning background */
-    border-color: #856404;
-    color: #ffc107; /* Lighter warning text */
-}
-
 /* Employee management layout */
 .employeeMgmtGrid {
     display: flex;
@@ -108,48 +77,53 @@ body.dark-mode .managerDashboard .sectionPlaceholder {
 .hospitalDetails p {
     margin: 12px 0;
     font-size: 16px;
-    color: var(--color-text-dark, #333);
+    color: var(--color-ink-muted);
 }
 
 .hospitalDetails strong {
-    color: var(--color-primary-dark, #0056b3);
+    color: var(--color-primary);
     margin-right: 8px;
 }
 
 .statusActive {
-    color: #28a745;
+    color: var(--color-success);
     font-weight: bold;
 }
 
 .statusBlocked {
-    color: #dc3545;
+    color: var(--color-danger);
     font-weight: bold;
 }
 
 .noHospital {
-    color: #856404;
+    color: #92400e;
     font-size: 18px;
     margin-top: 20px;
 }
 
 .loadingContainer {
     display: flex;
-    justify-content: center;
-    align-items: center;
+    flex-direction: column;
+    gap: var(--space-4);
     min-height: 400px;
     font-size: 18px;
-    color: var(--color-primary-dark, #0056b3);
+    color: var(--color-ink-subtle);
+    background: var(--color-surface);
+    border-radius: var(--radius-xl);
+    padding: var(--space-6);
+    border: 1px solid var(--color-border);
+    box-shadow: var(--shadow-sm);
 }
 
 .noHospitalContainer {
-    background-color: #fff3cd;
-    border: 2px solid #ffc107;
+    background-color: var(--color-accent-soft);
+    border: 2px dashed var(--color-accent);
     padding: 40px;
-    border-radius: 8px;
+    border-radius: var(--radius-lg);
     text-align: center;
     margin: 40px auto;
     max-width: 600px;
-    color: #856404;
+    color: #92400e;
 }
 
 .noHospitalContainer p {
@@ -157,12 +131,16 @@ body.dark-mode .managerDashboard .sectionPlaceholder {
     margin: 15px 0;
 }
 
-body.dark-mode .hospitalDetails p {
-    color: var(--color-text-dark);
+.loadingGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: var(--space-4);
+    width: 100%;
 }
 
-body.dark-mode .noHospitalContainer {
-    background-color: #332701;
-    border-color: #856404;
-    color: #ffc107;
+.loadingCard {
+    background: var(--color-surface-2);
+    padding: var(--space-4);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-border);
 }

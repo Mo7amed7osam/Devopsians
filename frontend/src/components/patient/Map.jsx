@@ -213,7 +213,7 @@ function Map({ icus, hospitals = [], latitude, longitude, ambulances = [] }) {
                 icon={ambulanceIcon}
               >
                 <Popup>
-                  <h3>🚑 Ambulance</h3>
+                  <h3>Ambulance</h3>
                   <p><strong>Driver:</strong> {ambulance.firstName || ambulance.ambulanceName || 'En Route'}</p>
                   <p><strong>Status:</strong> {ambulance.status || 'EN_ROUTE'}</p>
                   {ambulance.eta && <p><strong>ETA:</strong> {ambulance.eta}</p>}

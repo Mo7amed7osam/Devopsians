@@ -1,18 +1,44 @@
 /* src/pages/PatientHomePage.module.css */
 .dashboard {
-    padding: 40px 20px;
-    max-width: 1400px;
+    padding: var(--space-7) var(--space-5);
+    max-width: 1200px;
     margin: 0 auto;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    min-height: 100vh;
+    background: transparent;
     box-sizing: border-box;
 }
 
+.loadingState {
+    max-width: 1100px;
+    margin: 40px auto;
+    padding: var(--space-6);
+    background: var(--color-surface);
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--color-border);
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+
+.loadingGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: var(--space-4);
+}
+
+.loadingCard {
+    background: var(--color-surface-2);
+    border-radius: var(--radius-lg);
+    padding: var(--space-4);
+    border: 1px solid var(--color-border);
+}
+
 .header {
-    background: white;
-    padding: 30px;
-    border-radius: 20px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    background: var(--color-surface);
+    padding: var(--space-6);
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--color-border);
+    box-shadow: var(--shadow-md);
     margin-bottom: 30px;
     text-align: center;
     position: relative;
@@ -26,15 +52,15 @@
     left: 0;
     right: 0;
     height: 5px;
-    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    background: var(--gradient-primary);
 }
 
 .welcomeTitle {
-    color: #2d3748;
+    color: var(--color-ink);
     margin-bottom: 15px;
     font-size: clamp(1.5rem, 4vw, 2.2rem);
     font-weight: 700;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: var(--gradient-primary);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -42,21 +68,80 @@
 
 .icuStatus {
     font-size: clamp(0.9rem, 2vw, 1.1rem);
-    color: #4a5568;
+    color: var(--color-ink-muted);
     padding: 12px 20px;
-    background: linear-gradient(135deg, #f6f8fb 0%, #e9ecef 100%);
+    background: var(--color-surface-2);
     border-radius: 50px;
     display: inline-block;
     margin-top: 10px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    box-shadow: var(--shadow-xs);
+    border: 1px solid var(--color-border);
     max-width: 100%;
     word-wrap: break-word;
 }
 
+.icuStatusPending {
+    color: var(--color-info);
+}
+
+.icuStatusNotice {
+    color: #b45309;
+}
+
 .icuStatus i {
-    color: #48bb78;
+    color: var(--color-success);
     margin-right: 10px;
     font-size: 1.2em;
+}
+
+.ambulanceBanner {
+    margin-top: 15px;
+    padding: 15px;
+    border-radius: var(--radius-lg);
+    text-align: center;
+    border: 2px solid transparent;
+}
+
+.bannerPending {
+    background: var(--color-accent-soft);
+    border-color: var(--color-accent);
+}
+
+.bannerTransit {
+    background: rgba(14, 165, 233, 0.16);
+    border-color: var(--color-info);
+}
+
+.bannerArrived {
+    background: var(--color-success-soft);
+    border-color: var(--color-success);
+}
+
+.bannerTitle {
+    margin: 0 0 10px 0;
+    color: var(--color-ink);
+}
+
+.bannerText {
+    margin: 5px 0;
+    font-size: 1.05em;
+    color: var(--color-ink-muted);
+}
+
+.bannerSubtext {
+    font-size: 0.9em;
+    margin-top: 5px;
+    color: var(--color-ink-muted);
+}
+
+.bannerAction {
+    margin-top: 10px;
+    display: flex;
+    justify-content: center;
+}
+
+.cancelButton {
+    margin-top: 10px;
 }
 
 .infoGrid {
@@ -67,14 +152,14 @@
 }
 
 .card {
-    background: white;
-    padding: 30px;
-    border-radius: 20px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    background: var(--color-surface);
+    padding: var(--space-6);
+    border-radius: var(--radius-xl);
+    border: 1px solid rgba(0, 0, 0, 0.02);
+    box-shadow: var(--shadow-sm);
+    transition: transform var(--transition-base), box-shadow var(--transition-base);
     position: relative;
     overflow: hidden;
-    border: none;
 }
 
 .card::before {
@@ -84,22 +169,22 @@
     left: 0;
     right: 0;
     height: 4px;
-    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    background: var(--gradient-primary);
 }
 
 .card:hover {
-    transform: translateY(-8px);
-    box-shadow: 0 20px 60px rgba(102, 126, 234, 0.3);
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-md);
 }
 
 .card h3 {
     margin-top: 0;
     margin-bottom: 20px;
     padding-bottom: 15px;
-    color: #2d3748;
+    color: var(--color-ink);
     font-size: 1.3em;
     font-weight: 600;
-    border-bottom: 2px solid #f7fafc;
+    border-bottom: 1px solid var(--color-border);
     position: relative;
 }
 
@@ -110,7 +195,7 @@
     left: 0;
     width: 50px;
     height: 2px;
-    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    background: var(--gradient-primary);
 }
 
 .scheduleList {
@@ -123,22 +208,37 @@
 }
 
 .card p {
-    color: #4a5568;
+    color: var(--color-ink-muted);
     margin: 12px 0;
     font-size: 1.05em;
     line-height: 1.6;
 }
 
 .card p strong {
-    color: #2d3748;
+    color: var(--color-ink);
     font-weight: 600;
     margin-right: 8px;
+}
+
+.statusAvailable {
+    color: var(--color-success);
+    font-weight: 700;
+}
+
+.feePaid {
+    color: var(--color-success);
+    font-weight: 700;
+}
+
+.feeUnpaid {
+    color: var(--color-danger);
+    font-weight: 700;
 }
 
 .feeAmount {
     font-size: 3em;
     font-weight: 800;
-    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    background: var(--gradient-accent);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -149,18 +249,18 @@
 .ratingCard textarea {
     width: 100%;
     padding: 15px;
-    border: 2px solid #e2e8f0;
-    border-radius: 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
     margin-bottom: 15px;
     resize: vertical;
     font-family: inherit;
-    transition: all 0.3s ease;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .ratingCard textarea:focus {
-    border-color: #667eea;
+    border-color: var(--color-primary);
     outline: none;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
 }
 
 /* Additional Services Section */
@@ -172,12 +272,13 @@
 }
 
 .actionGroup {
-    background: white;
-    padding: 30px;
-    border-radius: 20px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+    background: var(--color-surface);
+    padding: var(--space-6);
+    border-radius: var(--radius-xl);
+    border: 1px solid rgba(0, 0, 0, 0.02);
+    box-shadow: var(--shadow-sm);
     text-align: center;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform var(--transition-base), box-shadow var(--transition-base);
     position: relative;
     overflow: hidden;
 }
@@ -189,22 +290,22 @@
     left: 0;
     right: 0;
     height: 4px;
-    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    background: var(--gradient-primary);
 }
 
 .actionGroup:hover {
     transform: translateY(-5px);
-    box-shadow: 0 15px 50px rgba(102, 126, 234, 0.2);
+    box-shadow: var(--shadow-md);
 }
 
 .actionGroup h3 {
-    color: #2d3748;
+    color: var(--color-ink);
     margin-bottom: 20px;
     font-size: 1.2em;
 }
 
 .btnAction {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: var(--gradient-primary);
     color: white;
     padding: 14px 28px;
     border: none;
@@ -214,17 +315,18 @@
     margin-top: 15px;
     width: 100%;
     font-size: 1.05em;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+    box-shadow: var(--shadow-sm);
+    letter-spacing: 0.04em;
 }
 
 .btnAction:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+    box-shadow: var(--shadow-md);
 }
 
 .btnRate {
-    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    background: var(--gradient-accent);
     color: white;
     padding: 14px 28px;
     border: none;
@@ -234,13 +336,14 @@
     margin-top: 15px;
     width: 100%;
     font-size: 1.05em;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(245, 87, 108, 0.3);
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+    box-shadow: var(--shadow-sm);
+    letter-spacing: 0.04em;
 }
 
 .btnRate:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(245, 87, 108, 0.4);
+    box-shadow: var(--shadow-md);
 }
 
 /* --- Modal and Rating Styles  --- */
@@ -249,8 +352,8 @@
   width: 100%;
   padding: 12px;
   margin-bottom: 15px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
   box-sizing: border-box;
   font-size: 16px;
 }
@@ -259,12 +362,17 @@
   width: 100%;
   padding: 12px;
   margin-top: 20px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
   box-sizing: border-box;
   font-size: 16px;
   min-height: 80px;
   resize: vertical;
+}
+
+.modalSubmit {
+  width: 100%;
+  margin-top: 20px;
 }
 
 .starRating {
@@ -279,11 +387,11 @@
 }
 
 .starFilled {
-  color: #ffc107;
+  color: var(--color-accent);
 }
 
 .starEmpty {
-  color: #e4e5e9;
+  color: var(--color-border);
 }
 
 /* Responsive Design */

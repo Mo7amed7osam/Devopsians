@@ -7,27 +7,27 @@
     text-align: center;
     min-height: calc(100vh - 70px); /* Full viewport height minus nav */
     padding: 20px;
-    background-color: var(--color-background-light);
+    background-color: transparent;
 }
 
 .errorCode {
     font-size: 8rem;
     font-weight: 800;
-    color: var(--color-primary-dark);
+    color: var(--color-primary);
     margin: 0;
-    text-shadow: 4px 4px 0px rgba(0, 0, 0, 0.1);
+    text-shadow: 4px 4px 0px rgba(37, 99, 235, 0.15);
 }
 
 .title {
     font-size: 2.5rem;
-    color: var(--color-text-dark);
+    color: var(--color-ink);
     margin-top: 0;
     margin-bottom: 10px;
 }
 
 .message {
     font-size: 1.2rem;
-    color: var(--color-text-muted);
+    color: var(--color-ink-muted);
     margin-bottom: 30px;
 }
 
@@ -35,13 +35,13 @@
     background-color: var(--color-primary);
     color: white;
     padding: 12px 25px;
-    border-radius: 8px;
+    border-radius: var(--radius-pill);
     text-decoration: none;
     font-weight: 600;
     transition: background-color 0.2s, transform 0.2s;
 }
 
 .homeButton:hover {
-    background-color: var(--color-primary-dark);
+    background-color: var(--color-primary-strong);
     transform: translateY(-2px);
 }
