@@ -1,9 +1,8 @@
 name: Deploy to EC2 (Nginx + PM2)
 
 on:
-  push:
-    branches: ["main"]
-
+ on:
+  workflow_dispatch:
 concurrency:
   group: devopsians-ec2
   cancel-in-progress: true
