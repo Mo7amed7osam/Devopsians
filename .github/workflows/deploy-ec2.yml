@@ -1,0 +1,59 @@
+name: Deploy to EC2 (Nginx + PM2)
+
+on:
+  push:
+    branches: ["main"]
+
+concurrency:
+  group: devopsians-ec2
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          port: 22
+          script: |
+            set -e
+
+            echo "==> Update repo"
+            if [ -d "/home/ec2-user/Devopsians/.git" ]; then
+              cd /home/ec2-user/Devopsians
+              git fetch --all
+              git reset --hard origin/main
+            else
+              cd /home/ec2-user
+              git clone https://github.com/Mo7amed7osam/Devopsians.git
+              cd Devopsians
+            fi
+
+            echo "==> Backend: install & restart"
+            cd /home/ec2-user/Devopsians/backend
+            npm install --omit=dev
+
+            if pm2 describe devopsians-backend >/dev/null 2>&1; then
+              pm2 restart devopsians-backend
+            else
+              pm2 start index.js --name devopsians-backend
+            fi
+            pm2 save
+
+            echo "==> Frontend: build"
+            cd /home/ec2-user/Devopsians/frontend
+            npm install
+            npm run build
+
+            echo "==> Publish frontend via rsync (no wildcards)"
+            sudo rsync -a --delete /home/ec2-user/Devopsians/frontend/dist/ /usr/share/nginx/html/
+
+            echo "==> Restart nginx"
+            sudo systemctl restart nginx
+
+            echo "✅ EC2 deploy done"
