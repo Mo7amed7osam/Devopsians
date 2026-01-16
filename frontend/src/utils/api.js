@@ -360,6 +360,7 @@ export const viewAllEmployeesForManager = async (managerId) => await API.get(`/m
 // ============================================================
 export const updateMedicalHistoryForPatient = async (historyPayload) => await API.put('/patient/medical-history', historyPayload);
 export const rateHospitalByPatient = async (ratingPayload) => await API.post('/patient/rate-hospital', ratingPayload);
+export const getHospitalRatingForPatient = async (hospitalId) => await API.get(`/patient/hospital-rating/${hospitalId}`);
 export const getMedicineScheduleForUser = async (userId) => await API.get(`/patient/medicine-schedule/${userId}`);
 export const getTotalFeesForUser = async (userId) => await API.get(`/patient/total-fees/${userId}`);
 export const reserveICUForPatient = async (payload) => {

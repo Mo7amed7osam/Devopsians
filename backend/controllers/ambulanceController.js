@@ -292,88 +292,61 @@ export const acceptPickup = async (req, res, next) => {
       return next(new ErrorHandler("Ambulance not found", 404));
     }
 
-    // Check if ambulance is available
-    if (ambulance.status !== 'AVAILABLE') {
-      return next(new ErrorHandler("Ambulance is not available", 400));
+    if (!ambulance.assignedPatient) {
+      return next(new ErrorHandler("Ambulance has no assigned patient", 400));
     }
 
-    // Check if ambulance already has an assignment
-    if (ambulance.assignedPatient) {
-      return next(new ErrorHandler("Ambulance is already assigned to another patient", 400));
+    const assignedPatientId = ambulance.assignedPatient.toString();
+    if (patientId && assignedPatientId !== patientId.toString()) {
+      return next(new ErrorHandler("Ambulance is assigned to a different patient", 400));
     }
 
-    const patient = await User.findById(patientId).populate('reservedICU');
+    if (ambulance.status !== 'EN_ROUTE') {
+      return next(new ErrorHandler("Ambulance must be EN_ROUTE to mark pickup", 400));
+    }
+
+    const patient = await User.findById(ambulance.assignedPatient).populate('reservedICU');
     if (!patient || patient.role !== "Patient") {
       return next(new ErrorHandler("Patient not found", 404));
     }
 
-    // Check if patient is still waiting for pickup
-    if (patient.patientStatus !== 'AWAITING_PICKUP') {
-      return next(new ErrorHandler("Patient is not awaiting pickup. Status: " + patient.patientStatus, 400));
+    if (!['AWAITING_PICKUP', 'IN_TRANSIT'].includes(patient.patientStatus)) {
+      return next(new ErrorHandler("Patient must be awaiting pickup before pickup can be marked", 400));
     }
 
-    // Check if patient already has an ambulance assigned
-    if (patient.assignedAmbulance) {
-      return next(new ErrorHandler("Patient already has an ambulance assigned", 400));
+    const activeRequest = await AmbulanceRequest.findOne({
+      patient: patient._id,
+      acceptedBy: ambulanceId,
+      status: 'accepted'
+    });
+
+    if (!activeRequest) {
+      return next(new ErrorHandler("No accepted pickup request found for this patient", 400));
     }
 
-    // Get hospital info from patient's ICU reservation
-    const icu = await patient.reservedICU;
-    if (!icu) {
-      return next(new ErrorHandler("Patient has no ICU reservation", 404));
-    }
+    activeRequest.status = 'in_transit';
+    await activeRequest.save();
 
-    const hospital = await icu.populate('hospital', 'name address location');
-
-    // Assign ambulance to patient
-    ambulance.assignedPatient = patientId;
-    ambulance.assignedHospital = icu.hospital._id;
-    ambulance.destination = icu.hospital.name;
-    ambulance.status = 'EN_ROUTE';
-    await ambulance.save();
-
-    // Update patient with ambulance assignment and status
     patient.assignedAmbulance = ambulanceId;
     patient.patientStatus = 'IN_TRANSIT';
     await patient.save();
 
     // Emit socket event to notify patient
     if (io) {
-      // Notify the specific patient
-      const acceptedData = {
+      io.emit("patientNotification", {
         patientId: patient._id,
-        ambulanceId: ambulance._id,
-        ambulanceName: `${ambulance.firstName} ${ambulance.lastName}`,
-        message: `${ambulance.firstName} ${ambulance.lastName} is on the way to pick you up!`
-      };
-      console.log('🚑 [Socket] Emitting ambulanceAccepted:', acceptedData);
-      io.emit("ambulanceAccepted", acceptedData);
-
-      // Notify all ambulances that this request is no longer available
-      const takenData = {
-        patientId: patient._id,
-        ambulanceId: ambulance._id
-      };
-      console.log('📍 [Socket] Emitting pickupRequestTaken:', takenData);
-      io.emit("pickupRequestTaken", takenData);
-
-      // Emit patient notification
-      const notifData = {
-        patientId: patient._id,
-        message: `Ambulance crew ${ambulance.firstName} ${ambulance.lastName} accepted your pickup request and is on the way!`,
-        type: 'ambulance_accepted',
+        message: `Ambulance crew ${ambulance.firstName} ${ambulance.lastName} has picked you up and is heading to the hospital.`,
+        type: 'ambulance_picked_up',
         ambulanceId: ambulance._id,
         ambulanceName: `${ambulance.firstName} ${ambulance.lastName}`
-      };
-      console.log('📢 [Socket] Emitting patientNotification:', notifData);
-      io.emit("patientNotification", notifData);
+      });
     } else {
-      console.warn('⚠️ Socket.IO instance not available for ambulance acceptance events');
+      console.warn('⚠️ Socket.IO instance not available for pickup events');
     }
 
     res.status(200).json({
       success: true,
-      message: "Pickup accepted. Patient is now in transit.",
+      message: "Patient picked up. In transit to hospital.",
       patient,
       ambulance,
     });
@@ -399,6 +372,16 @@ export const markPatientArrived = async (req, res, next) => {
       return next(new ErrorHandler("Patient not found", 404));
     }
 
+    const activeRequest = await AmbulanceRequest.findOne({
+      patient: patientId,
+      acceptedBy: ambulanceId,
+      status: 'in_transit'
+    });
+
+    if (!activeRequest) {
+      return next(new ErrorHandler("Patient must be picked up before arrival can be marked", 400));
+    }
+
     // Update patient status to ARRIVED
     patient.patientStatus = 'ARRIVED';
     patient.needsPickup = false;
@@ -406,15 +389,8 @@ export const markPatientArrived = async (req, res, next) => {
     await patient.save();
 
     // Mark the active request as arrived so patient can request again
-    const activeRequest = await AmbulanceRequest.findOne({
-      patient: patientId,
-      acceptedBy: ambulanceId,
-      status: { $in: ['accepted', 'in_transit'] }
-    });
-    if (activeRequest) {
-      activeRequest.status = 'arrived';
-      await activeRequest.save();
-    }
+    activeRequest.status = 'arrived';
+    await activeRequest.save();
 
     // Update ambulance status to AVAILABLE and clear assignment
     ambulance.status = 'AVAILABLE';
@@ -683,9 +659,9 @@ export const acceptAmbulanceRequest = async (req, res, next) => {
     ambulance.destination = request.hospital.name;
     await ambulance.save();
 
-    // Update patient
+    // Update patient (assigned, not yet picked up)
     const patient = await User.findById(request.patient._id);
-    patient.patientStatus = 'IN_TRANSIT';
+    patient.patientStatus = 'AWAITING_PICKUP';
     patient.assignedAmbulance = ambulanceId;
     await patient.save();
 

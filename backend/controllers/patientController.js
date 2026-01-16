@@ -337,6 +337,39 @@ export const rateHospital = async (req, res) => {
   }
 };
 
+export const getHospitalRating = async (req, res) => {
+  const { hospitalId } = req.params;
+  const userId = req.user?.id;
+
+  try {
+    const hospital = await Hospital.findById(hospitalId);
+    if (!hospital) {
+      return res.status(404).json({ message: "Hospital not found." });
+    }
+
+    const feedbacks = await Feedback.find({ hospital: hospitalId });
+    const totalRatings = feedbacks.reduce((sum, feedback) => sum + feedback.rating, 0);
+    const averageRating = feedbacks.length
+      ? Number((totalRatings / feedbacks.length).toFixed(2))
+      : 5;
+
+    const patientFeedback = userId
+      ? await Feedback.findOne({ hospital: hospitalId, user: userId }).sort({ createdAt: -1 })
+      : null;
+
+    res.status(200).json({
+      success: true,
+      data: {
+        averageRating,
+        totalFeedbacks: feedbacks.length,
+        patientRating: patientFeedback ? patientFeedback.rating : null,
+      },
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
 export const reserveVisitorRoom = async (req, res) => {
   const { userId, roomId } = req.body;
 

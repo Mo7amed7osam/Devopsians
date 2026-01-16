@@ -30,13 +30,16 @@ const ReceptionistPanel = () => {
             if (socket) {
             socket.on('ambulanceStatusUpdate', (data) => {
                 console.log('[Socket] ambulanceStatusUpdate:', data);
-                setAmbulances(prev => 
-                    prev.map(amb => 
-                        amb._id === data.ambulanceId 
-                            ? { ...amb, status: data.status, currentLocation: data.location, eta: data.eta }
-                            : amb
-                    ).filter(amb => amb.status === 'EN_ROUTE') // Keep only EN_ROUTE ambulances
-                );
+                setAmbulances(prev => {
+                    const updated = prev
+                        .map(amb =>
+                            amb._id === data.ambulanceId
+                                ? { ...amb, status: data.status, currentLocation: data.location, eta: data.eta }
+                                : amb
+                        )
+                        .filter(amb => amb.status === 'EN_ROUTE');
+                    return filterAmbulancesByAssignedHospital(updated);
+                });
             });
 
             socket.on('ambulanceAssigned', (data) => {
@@ -159,6 +162,31 @@ const ReceptionistPanel = () => {
         });
     };
 
+    const filterAmbulancesByAssignedHospital = (items = [], hospitalIdOverride, hospitalNameOverride) => {
+        const effectiveHospitalId = hospitalIdOverride ?? assignedHospitalId;
+        const effectiveHospitalName = hospitalNameOverride ?? assignedHospitalName;
+        if (!effectiveHospitalId && !effectiveHospitalName) return items;
+        return items.filter((item) => {
+            const assignedHospital = item?.assignedHospital || item?.hospital;
+            const assignedHospitalId = assignedHospital?._id || assignedHospital?.id || assignedHospital;
+            if (effectiveHospitalId && assignedHospitalId) {
+                return String(assignedHospitalId) === String(effectiveHospitalId);
+            }
+            const nameCandidates = [
+                assignedHospital?.name,
+                item?.hospitalName,
+                item?.destination,
+            ]
+                .filter(Boolean)
+                .map((value) => value.toString().toLowerCase());
+            if (effectiveHospitalName && nameCandidates.length > 0) {
+                const target = effectiveHospitalName.toLowerCase();
+                return nameCandidates.some((name) => name === target);
+            }
+            return false;
+        });
+    };
+
     const loadData = async (hospitalIdOverride, hospitalNameOverride) => {
         setLoading(true);
         try {
@@ -179,7 +207,7 @@ const ReceptionistPanel = () => {
             // Handle ambulance data - filter for en route ambulances
             const ambulanceData = ambResponse.data?.ambulances || ambResponse.data?.data || [];
             const enRouteAmbulances = ambulanceData.filter(a => a.status === 'EN_ROUTE');
-            setAmbulances(enRouteAmbulances);
+            setAmbulances(filterAmbulancesByAssignedHospital(enRouteAmbulances, hospitalIdOverride, hospitalNameOverride));
         } catch (err) {
             toast.error("Failed to fetch dashboard data.");
             console.error(err);
@@ -219,7 +247,8 @@ const ReceptionistPanel = () => {
                 }
             });
             // Only keep EN_ROUTE for display
-            return Array.from(byId.values()).filter(a => a.status === 'EN_ROUTE');
+            const merged = Array.from(byId.values()).filter(a => a.status === 'EN_ROUTE');
+            return filterAmbulancesByAssignedHospital(merged);
         });
     }, [liveLocations]);
 
@@ -378,7 +407,7 @@ const ReceptionistPanel = () => {
                                             )}
                                             {hasLocation && (
                                                 <div style={{ fontSize: '0.85em', color: 'var(--color-success)' }}>
-                                                    � Location Active
+                                                    📍 Location Active
                                                 </div>
                                             )}
                                         </div>

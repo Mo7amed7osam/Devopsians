@@ -61,6 +61,40 @@
     color: var(--color-ink);
 }
 
+.panelHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.panelHeader h3 {
+    margin: 0 0 6px 0;
+}
+
+.panelSub {
+    margin: 0;
+    color: var(--color-ink-muted);
+    font-size: 0.95rem;
+}
+
+.panelMeta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.panelBadge {
+    background: var(--color-surface-2);
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+    padding: 6px 12px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--color-ink);
+}
+
 .ambulanceList {
     display: flex;
     flex-direction: column;
@@ -288,6 +322,12 @@
     background: var(--color-surface-2);
     border-radius: var(--radius-md);
     padding: 10px;
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.requestItem:hover {
+    box-shadow: var(--shadow-xs);
+    transform: translateY(-1px);
 }
 
 .requestHeader {
@@ -327,5 +367,10 @@
 @media (max-width: 900px) {
     .requestsLayout {
         grid-template-columns: 1fr;
+    }
+
+    .panelHeader {
+        flex-direction: column;
+        align-items: flex-start;
     }
 }

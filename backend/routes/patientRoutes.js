@@ -3,6 +3,7 @@ import {
   getAvailableICUs,
   updateMedicalHistory,
   rateHospital,
+  getHospitalRating,
   getMedicineSchedule,
   getTotalFees,
   reserveICU,
@@ -18,6 +19,7 @@ const router = express.Router();
 // All patient routes require authentication and Patient role
 router.put("/medical-history", isAuthenticated, authorizeRoles("Patient"), updateMedicalHistory);
 router.post("/rate-hospital", isAuthenticated, authorizeRoles("Patient"), rateHospital);
+router.get("/hospital-rating/:hospitalId", isAuthenticated, authorizeRoles("Patient"), getHospitalRating);
 router.get("/total-fees/:userId", isAuthenticated, authorizeRoles("Patient"), getTotalFees);
 
 router.post("/reserve-icu", isAuthenticated, authorizeRoles("Patient"), reserveICU);

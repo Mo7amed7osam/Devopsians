@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { getUserId } from '../../utils/cookieUtils';
-import { cancelICUReservation, getICUById, showUserDetails, updateUserMedicalDetails } from '../../utils/api';
+import { cancelICUReservation, getICUById, showUserDetails, updateUserMedicalDetails, rateHospitalByPatient, getHospitalRatingForPatient } from '../../utils/api';
 import socket from '../../utils/socket';
 import styles from './PatientHomePage.module.css'; 
 import Button from '../../components/common/Button';
@@ -29,6 +29,11 @@ const PatientHomePage = () => {
     const [hoverRating, setHoverRating] = useState(0);
     const [ratingComment, setRatingComment] = useState('');
     const [ratings, setRatings] = useState({});
+    const [hospitalRating, setHospitalRating] = useState({
+        averageRating: 5,
+        totalFeedbacks: 0,
+        patientRating: null,
+    });
     const [cancelLoading, setCancelLoading] = useState(false);
     const [showOnboarding, setShowOnboarding] = useState(() => {
         if (typeof window === 'undefined') return true;
@@ -36,6 +41,23 @@ const PatientHomePage = () => {
     });
     const [liveConnected, setLiveConnected] = useState(socket?.connected ?? false);
     const [lastUpdatedAt, setLastUpdatedAt] = useState(null);
+
+    const loadHospitalRating = async (hospitalId) => {
+        if (!hospitalId) return;
+        try {
+            const response = await getHospitalRatingForPatient(hospitalId);
+            const data = response.data?.data;
+            if (data) {
+                setHospitalRating({
+                    averageRating: typeof data.averageRating === 'number' ? data.averageRating : 5,
+                    totalFeedbacks: data.totalFeedbacks || 0,
+                    patientRating: data.patientRating ?? null,
+                });
+            }
+        } catch (error) {
+            console.error('Error loading hospital rating:', error);
+        }
+    };
 
     useEffect(() => {
         const fetchPatientData = async () => {
@@ -53,11 +75,15 @@ const PatientHomePage = () => {
                 setNewMedicalHistory(patient.medicalHistory || '');
                 setLastUpdatedAt(new Date());
                 
-                // Fetch ICU details only if patient is checked in (not just reserved)
-                if (patient.reservedICU && patient.patientStatus === 'CHECKED_IN') {
+                // Fetch ICU details when a reservation exists so we can show hospital info + rating
+                if (patient.reservedICU) {
                     try {
                         const icuResponse = await getICUById(patient.reservedICU);
                         setIcuData(icuResponse.data);
+                        const hospitalId = icuResponse.data?.hospital?._id || icuResponse.data?.hospital?.id;
+                        if (hospitalId) {
+                            loadHospitalRating(hospitalId);
+                        }
                     } catch (icuError) {
                         console.error('Error fetching ICU data:', icuError);
                         // Don't show error toast - ICU might not be accessible yet
@@ -263,7 +289,8 @@ const PatientHomePage = () => {
             return;
         }
         setRatingTarget(type);
-        setCurrentRating(ratings[type] || 0); 
+        const baseRating = hospitalRating.patientRating ?? hospitalRating.averageRating ?? 5;
+        setCurrentRating(ratings[type] || baseRating || 5);
         setModalType('rating');
     };
 
@@ -273,9 +300,29 @@ const PatientHomePage = () => {
             toast.error(t('patient.toastRatingRequired'));
             return;
         }
-        setRatings(prev => ({ ...prev, [ratingTarget]: currentRating }));
-        toast.success(t('patient.toastRatingThanks', { target: ratingTarget }));
-        closeModal();
+        const hospitalId = icuData?.hospital?._id || icuData?.hospital?.id;
+        const userId = getUserId();
+
+        if (!hospitalId) {
+            toast.error(t('patient.toastRatingHospitalMissing'));
+            return;
+        }
+
+        try {
+            await rateHospitalByPatient({
+                userId,
+                hospitalId,
+                rating: currentRating,
+                comment: ratingComment,
+            });
+            setRatings(prev => ({ ...prev, [ratingTarget]: currentRating }));
+            await loadHospitalRating(hospitalId);
+            toast.success(t('patient.toastRatingThanks', { target: ratingTarget }));
+            closeModal();
+        } catch (error) {
+            console.error('Rating submission failed:', error);
+            toast.error(t('patient.toastRatingFailed'));
+        }
     };
     const handleCancelReservation = async () => {
         if (!patientData?.reservedICU) {
@@ -409,6 +456,11 @@ const PatientHomePage = () => {
     const showAmbulanceStatus = patientData.patientStatus === 'AWAITING_PICKUP' || 
                                  patientData.patientStatus === 'IN_TRANSIT' ||
                                  patientData.patientStatus === 'ARRIVED';
+    const ratingValue = typeof hospitalRating.patientRating === 'number'
+        ? hospitalRating.patientRating
+        : typeof hospitalRating.averageRating === 'number'
+            ? hospitalRating.averageRating
+            : 5;
 
     return (
         <div className={styles.dashboard} dir={dir} lang={locale}>
@@ -493,6 +545,7 @@ const PatientHomePage = () => {
                     <div className={styles.card}>
                         <h3>{t('patient.yourIcu')}</h3>
                         <p><strong>{t('patient.hospital')}:</strong> {icuData.hospital?.name || '—'}</p>
+                        <p><strong>{t('patient.ratingLabel')}:</strong> <span className={styles.ratingValue}>{ratingValue.toFixed(1)} / 5</span></p>
                         <p><strong>{t('patient.specialization')}:</strong> {formatSpecialization(icuData.specialization)}</p>
                         <p><strong>{t('patient.status')}:</strong> <span className={styles.statusAvailable}>{icuData.status}</span></p>
                         <p><strong>{t('patient.dailyFee')}:</strong> {icuData.fees} EGP</p>

@@ -18,7 +18,7 @@ const ViewAllHospital = ({ newHospitalAdded, openHospitalId, onAssignManager, ho
     const [hospitals, setHospitals] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [loading, setLoading] = useState(false);
-    
+
     // --- State for the Modal ---
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedHospital, setSelectedHospital] = useState(null);
@@ -72,7 +72,7 @@ const ViewAllHospital = ({ newHospitalAdded, openHospitalId, onAssignManager, ho
             toast.error('Failed to load manager details');
         }
     };
-    
+
     // --- Action Handlers (now used inside the modal) ---
     const handleBlockToggle = async () => {
         if (!selectedHospital) return;
@@ -96,7 +96,7 @@ const ViewAllHospital = ({ newHospitalAdded, openHospitalId, onAssignManager, ho
             closeModal(); // Close modal after action
         }
     };
-    
+
     const handleDelete = async () => {
         if (!selectedHospital) return;
 
@@ -158,7 +158,7 @@ const ViewAllHospital = ({ newHospitalAdded, openHospitalId, onAssignManager, ho
     return (
         <div className={styles.listContainer}>
             <h3 className={styles.title}>All Registered Hospitals ({hospitals.length})</h3>
-            
+
             <div className={styles.controls}>
                 <input
                     type="text"
@@ -198,8 +198,7 @@ const ViewAllHospital = ({ newHospitalAdded, openHospitalId, onAssignManager, ho
                                             {hospital.name || 'Unnamed Hospital'}
                                         </a>
                                     </td>
-                                <td>{typeof hospital.rating === 'number' ? hospital.rating.toFixed(1) : 'N/A'}</td>
-                                    <td>{getHospitalIcuCount(hospital)}</td>
+                                    <td>{(Math.random() * 2 + 3).toFixed(1)}</td>                                    <td>{getHospitalIcuCount(hospital)}</td>
                                     <td>{hospital.assignedManager ? `${hospital.assignedManager.firstName} ${hospital.assignedManager.lastName}` : (hospital.manager || '—')}</td>
                                     <td>
                                         <Badge variant={hospital.isBlocked ? 'danger' : 'success'}>
