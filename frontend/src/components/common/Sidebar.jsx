@@ -54,7 +54,6 @@ const roleLinks = {
   patient: [
     { label: "My Dashboard", to: "/patient-dashboard", icon: icons.home },
     { label: "Request Ambulance", to: "/patient/request-ambulance", icon: icons.ambulance },
-    { label: "Find ICU", to: "/find-icu", icon: icons.map },
   ],
 };
 
@@ -86,13 +85,7 @@ const Sidebar = () => {
           ))}
         </div>
       </div>
-      <div className={styles.section}>
-        <div className={styles.sectionTitle}>Quick Actions</div>
-        <div className={styles.quickCard}>
-          <p>Use the top bar for profile and logout.</p>
-          <p className={styles.accentText}>Your access is role-based.</p>
-        </div>
-      </div>
+
     </aside>
   );
 };

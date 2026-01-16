@@ -45,6 +45,77 @@
     overflow: hidden;
 }
 
+.localeToggle {
+    position: absolute;
+    top: 16px;
+    inset-inline-end: 16px;
+    display: inline-flex;
+    gap: 6px;
+    background: var(--color-surface-2);
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+    padding: 4px;
+}
+
+.localeButton {
+    background: transparent;
+    border: none;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-ink-muted);
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.localeButton:hover {
+    background: var(--color-surface);
+    color: var(--color-ink);
+}
+
+.localeActive {
+    background: var(--color-primary-soft);
+    color: var(--color-primary);
+}
+
+.statusMeta {
+    margin-top: 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: var(--color-surface-2);
+    border: 1px solid var(--color-border);
+    font-size: 12px;
+    color: var(--color-ink-muted);
+}
+
+.liveDot {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: var(--color-ink-muted);
+}
+
+.liveOn {
+    background: var(--color-success);
+}
+
+.liveOff {
+    background: var(--color-danger);
+}
+
+.liveText {
+    font-weight: 600;
+    color: var(--color-ink);
+}
+
+.updatedText {
+    color: var(--color-ink-subtle);
+}
+
 .header::before {
     content: '';
     position: absolute;
@@ -142,6 +213,34 @@
 
 .cancelButton {
     margin-top: 10px;
+}
+
+.onboardingCard {
+    background: var(--color-surface);
+    border: 1px dashed rgba(37, 99, 235, 0.25);
+    border-radius: var(--radius-xl);
+    padding: var(--space-5);
+    box-shadow: var(--shadow-xs);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.onboardingCard h3 {
+    margin: 0 0 8px 0;
+    color: var(--color-ink);
+}
+
+.onboardingCard ul {
+    margin: 0;
+    padding-left: 18px;
+    color: var(--color-ink-muted);
+}
+
+.onboardingCard li {
+    margin: 6px 0;
 }
 
 .infoGrid {
@@ -418,6 +517,16 @@
   .header {
     padding: 20px 15px;
     margin-bottom: 20px;
+  }
+
+  .localeToggle {
+    position: static;
+    margin: 0 auto 10px;
+  }
+
+  .statusMeta {
+    flex-wrap: wrap;
+    justify-content: center;
   }
   
   .welcomeTitle {

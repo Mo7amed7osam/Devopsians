@@ -1,5 +1,5 @@
 // src/pages/ICUSelect.jsx
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 import { getAvailableICUsFromServer, fetchNearbyHospitalsPublic, reserveICUForPatient } from '../../utils/api';
@@ -12,14 +12,18 @@ import Button from '../../components/common/Button';
 import Modal from '../../components/common/Modal';
 import { safeNavigate } from '../../utils/security';
 import Skeleton from '../../components/common/Skeleton';
+import usePatientLocale from '../../hooks/usePatientLocale';
 
-const ICUSelect = () => {
+const ICUSelect = ({ embedded = false }) => {
     const navigate = useNavigate();
+    const { t, dir, locale } = usePatientLocale();
     const [userLocation, setUserLocation] = useState(null);
     const [icus, setIcus] = useState([]);
     const [hospitals, setHospitals] = useState([]);
     const [filters, setFilters] = useState({ specialization: '', searchTerm: '' });
     const [loading, setLoading] = useState(false);
+    const [lastUpdatedAt, setLastUpdatedAt] = useState(null);
+    const [liveConnected, setLiveConnected] = useState(socket?.connected ?? false);
     const [showPickupModal, setShowPickupModal] = useState(false);
     const openingModalRef = useRef(false);
     const [selectedIcuId, setSelectedIcuId] = useState(null);
@@ -46,6 +50,21 @@ const ICUSelect = () => {
             setUserLocation({ lat: 30.0444, lng: 31.2357 });
         }
     }, []);
+
+    useEffect(() => {
+        if (!socket) return;
+        const handleConnect = () => setLiveConnected(true);
+        const handleDisconnect = () => setLiveConnected(false);
+        socket.on('connect', handleConnect);
+        socket.on('disconnect', handleDisconnect);
+        setLiveConnected(socket.connected);
+        return () => {
+            socket.off('connect', handleConnect);
+            socket.off('disconnect', handleDisconnect);
+        };
+    }, []);
+
+    const markUpdated = useCallback(() => setLastUpdatedAt(new Date()), []);
     
     // --- Load ICUs and Hospitals from Backend ---
     const loadICUs = useCallback(async () => {
@@ -63,16 +82,17 @@ const ICUSelect = () => {
             setIcus(availableIcus);
 
             if (availableIcus.length === 0) {
-                toast.info('No available ICUs at the moment. Please try again later.');
+                toast.info(t('icu.noIcus'));
             }
+            markUpdated();
         } catch (err) {
             console.error("Failed to load ICU data:", err.response?.data || err.message);
-            const errorMsg = err.response?.data?.message || 'Failed to fetch ICU data. Please try again.';
+            const errorMsg = err.response?.data?.message || t('icu.noIcus');
             toast.error(errorMsg);
         } finally {
             setLoading(false);
         }
-    }, [userLocation]);
+    }, [userLocation, markUpdated, t]);
 
     // --- Load Nearby Hospitals (Public API - no auth required) ---
     const loadNearbyHospitals = useCallback(async () => {
@@ -81,11 +101,12 @@ const ICUSelect = () => {
             const response = await fetchNearbyHospitalsPublic(userLocation.lat, userLocation.lng, 50000); // 50km radius
             const hospitalList = response.data?.hospitals || [];
             setHospitals(hospitalList);
+            markUpdated();
         } catch (err) {
             console.error("Failed to load nearby hospitals:", err);
             // Don't show error toast - this is optional feature for map display
         }
-    }, [userLocation]);
+    }, [userLocation, markUpdated]);
 
     useEffect(() => {
         if (userLocation) {
@@ -129,7 +150,7 @@ const ICUSelect = () => {
                 console.log('[ICUSelect] ICU reserved event received:', data);
                 // Remove reserved ICU from available list
                 setIcus(prev => prev.filter(icu => icu._id !== data.icuId));
-                toast.info(`ICU at ${data.hospitalName} was just reserved`, {
+                toast.info(t('icu.toastReserved', { hospitalName: data.hospitalName }), {
                     autoClose: 3000
                 });
             });
@@ -138,7 +159,7 @@ const ICUSelect = () => {
                 console.log('[ICUSelect] ICU cancellation event received:', data);
                 // Reload ICUs to show newly available ICU
                 loadICUs();
-                toast.info('A new ICU became available.', {
+                toast.info(t('icu.toastAvailable'), {
                     autoClose: 3000
                 });
             });
@@ -147,7 +168,7 @@ const ICUSelect = () => {
                 console.log('[ICUSelect] ICU checkout event received:', data);
                 // Reload ICUs to show newly available ICU
                 loadICUs();
-                toast.info('A new ICU became available.', {
+                toast.info(t('icu.toastAvailable'), {
                     autoClose: 3000
                 });
             });
@@ -156,7 +177,7 @@ const ICUSelect = () => {
                 console.log('[ICUSelect] ICU status update event received:', data);
                 // Reload ICUs to reflect status changes
                 loadICUs();
-                toast.info(`ICU status updated at ${data.hospitalName}`, {
+                toast.info(t('icu.toastStatusUpdate', { hospitalName: data.hospitalName }), {
                     autoClose: 3000
                 });
             });
@@ -185,7 +206,7 @@ const ICUSelect = () => {
         const userId = getUserId();
         
         if (!userId) {
-            toast.error('Please log in to reserve an ICU.');
+            toast.error(t('icu.toastLogin'));
             return;
         }
 
@@ -229,7 +250,7 @@ const ICUSelect = () => {
     const handleConfirmReservation = async () => {
         
         if (needsPickup && !pickupLocation.trim()) {
-            toast.warn('Please enter your pickup location');
+            toast.warn(t('icu.toastPickupRequired'));
             return;
         }
 
@@ -259,11 +280,11 @@ const ICUSelect = () => {
             
             if (needsPickup) {
                 // Changed message to show PENDING status
-                toast.info('ICU reserved. Redirecting to your dashboard...', {
+                toast.info(t('icu.toastReservedRedirect'), {
                     autoClose: 2000
                 });
             } else {
-                toast.success('ICU reserved. Redirecting to your dashboard...', {
+                toast.success(t('icu.toastReservedRedirect'), {
                     autoClose: 2000
                 });
             }
@@ -278,7 +299,7 @@ const ICUSelect = () => {
 
         } catch (err) {
             console.error('Reservation error:', err);
-            const errorMessage = err.response?.data?.message || 'Reservation failed. Please try again.';
+            const errorMessage = err.response?.data?.message || t('icu.toastReservationFailed');
             toast.error(errorMessage);
         } finally {
             setLoading(false);
@@ -308,18 +329,34 @@ const ICUSelect = () => {
         return true;
     });
 
+    const hospitalsById = useMemo(() => {
+        const map = new Map();
+        hospitals.forEach((hospital) => {
+            const id = hospital?._id || hospital?.id;
+            if (id) {
+                map.set(String(id), hospital);
+            }
+        });
+        return map;
+    }, [hospitals]);
+
     const groupedHospitals = Object.values(
         filteredIcus.reduce((acc, icu) => {
             const hospital = icu?.hospital || {};
             const hospitalId = hospital?._id || hospital?.id || icu?.hospitalId || icu?.hospital;
-            const fallbackKey = `${hospital?.name || 'unknown'}-${hospital?.address || ''}`;
+            const fallbackName = hospital?.name || t('icu.unknownHospital');
+            const fallbackKey = `${fallbackName}-${hospital?.address || ''}`;
             const key = hospitalId ? String(hospitalId) : fallbackKey;
+            const hospitalMeta = hospitalId ? hospitalsById.get(String(hospitalId)) : null;
+            const distanceMeters = typeof hospitalMeta?.distance === 'number' ? hospitalMeta.distance : null;
 
             if (!acc[key]) {
                 acc[key] = {
                     hospitalId: hospitalId || null,
-                    hospitalName: hospital?.name || 'Unknown Hospital',
-                    address: hospital?.address || 'Location unavailable',
+                    hospitalName: hospital?.name || hospitalMeta?.name || t('icu.unknownHospital'),
+                    address: hospital?.address || hospitalMeta?.address || t('icu.distanceUnavailable'),
+                    location: hospital?.location || hospitalMeta?.location || null,
+                    distanceMeters,
                     icus: [],
                     specializations: new Set(),
                 };
@@ -335,10 +372,107 @@ const ICUSelect = () => {
         hospitalId: group.hospitalId,
         hospitalName: group.hospitalName,
         address: group.address,
+        location: group.location,
+        distanceMeters: group.distanceMeters,
         availableCount: group.icus.length,
         reserveIcuId: group.icus[0]?._id || group.icus[0]?.id || null,
         specializations: Array.from(group.specializations),
     }));
+
+    const formatLastUpdated = useCallback(() => {
+        if (!lastUpdatedAt) return t('icu.justNow');
+        const diffMs = Date.now() - lastUpdatedAt.getTime();
+        const diffMin = Math.max(0, Math.round(diffMs / 60000));
+        if (diffMin <= 1) return t('icu.justNow');
+        return t('icu.minutesAgo', { count: diffMin });
+    }, [lastUpdatedAt, t]);
+
+    const formatSpecialization = useCallback((value) => {
+        switch (value) {
+            case 'Surgical ICU':
+                return t('icu.specialization.surgical');
+            case 'Cardiac ICU':
+                return t('icu.specialization.cardiac');
+            case 'Neonatal ICU':
+                return t('icu.specialization.neonatal');
+            case 'Pediatric ICU':
+                return t('icu.specialization.pediatric');
+            case 'Neurological ICU':
+                return t('icu.specialization.neurological');
+            default:
+                return value;
+        }
+    }, [t]);
+
+    const insights = useMemo(() => {
+        const totalAvailable = filteredIcus.length;
+        const hospitalsAvailable = groupedHospitals.length;
+
+        const feeValues = filteredIcus
+            .map((icu) => Number(icu?.fees))
+            .filter((fee) => !Number.isNaN(fee));
+        const avgFee =
+            feeValues.length > 0
+                ? Math.round(feeValues.reduce((sum, value) => sum + value, 0) / feeValues.length)
+                : null;
+
+        const specializationCounts = filteredIcus.reduce((acc, icu) => {
+            const key = icu?.specialization;
+            if (!key) return acc;
+            acc[key] = (acc[key] || 0) + 1;
+            return acc;
+        }, {});
+
+        const topSpecializationEntry = Object.entries(specializationCounts).sort((a, b) => b[1] - a[1])[0];
+
+        let closest = null;
+        const withDistance = groupedHospitals
+            .filter((group) => typeof group.distanceMeters === 'number')
+            .sort((a, b) => a.distanceMeters - b.distanceMeters);
+
+        if (withDistance.length > 0) {
+            const candidate = withDistance[0];
+            closest = {
+                name: candidate.hospitalName,
+                distanceKm: (candidate.distanceMeters / 1000).toFixed(1),
+            };
+        } else if (userLocation) {
+            const distanceKm = (lat1, lon1, lat2, lon2) => {
+                const R = 6371;
+                const dLat = ((lat2 - lat1) * Math.PI) / 180;
+                const dLon = ((lon2 - lon1) * Math.PI) / 180;
+                const a =
+                    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                    Math.cos((lat1 * Math.PI) / 180) *
+                        Math.cos((lat2 * Math.PI) / 180) *
+                        Math.sin(dLon / 2) *
+                        Math.sin(dLon / 2);
+                const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+                return R * c;
+            };
+            let best = null;
+            groupedHospitals.forEach((group) => {
+                const coords = group.location?.coordinates;
+                if (!Array.isArray(coords) || coords.length !== 2) return;
+                const [lng, lat] = coords;
+                const dist = distanceKm(userLocation.lat, userLocation.lng, lat, lng);
+                if (!best || dist < best.distance) {
+                    best = { name: group.hospitalName, distance: dist };
+                }
+            });
+            if (best) {
+                closest = { name: best.name, distanceKm: best.distance.toFixed(1) };
+            }
+        }
+
+        return {
+            totalAvailable,
+            hospitalsAvailable,
+            avgFee,
+            topSpecializationEntry,
+            closest,
+        };
+    }, [filteredIcus, groupedHospitals, userLocation]);
 
     if (!userLocation) {
         return (
@@ -351,31 +485,78 @@ const ICUSelect = () => {
     }
     
     return (
-        <div className={styles.finderPage}>
-            <header className={styles.pageHeader}>
-                <h1>Select Nearest Available ICU</h1>
-                <p>Real-time availability. Click Reserve to book your ICU.</p>
-            </header>
+        <div
+            className={`${styles.finderPage} ${embedded ? styles.finderPageEmbedded : ''}`}
+            dir={dir}
+            lang={locale}
+        >
+            {!embedded && (
+                <header className={styles.pageHeader}>
+                    <h1>{t('icu.selectTitle')}</h1>
+                    <p>{t('icu.selectSubtitle')}</p>
+                </header>
+            )}
 
             <div className={styles.controls}>
                 <input 
                     type="text" 
                     name="searchTerm"
-                    placeholder="Search by hospital name" 
+                    placeholder={t('icu.searchPlaceholder')}
                     value={filters.searchTerm} 
                     onChange={handleFilterChange}
                 />
                 <select name="specialization" value={filters.specialization} onChange={handleFilterChange}>
-                    <option value="">All Specializations</option>
-                    <option value="Surgical ICU">Surgical ICU</option>
-                    <option value="Cardiac ICU">Cardiac ICU</option>
-                    <option value="Neonatal ICU">Neonatal ICU</option>
-                    <option value="Pediatric ICU">Pediatric ICU</option>
-                    <option value="Neurological ICU">Neurological ICU</option>
+                    <option value="">{t('icu.allSpecializations')}</option>
+                    <option value="Surgical ICU">{t('icu.specialization.surgical')}</option>
+                    <option value="Cardiac ICU">{t('icu.specialization.cardiac')}</option>
+                    <option value="Neonatal ICU">{t('icu.specialization.neonatal')}</option>
+                    <option value="Pediatric ICU">{t('icu.specialization.pediatric')}</option>
+                    <option value="Neurological ICU">{t('icu.specialization.neurological')}</option>
                 </select>
                 <Button onClick={() => { loadICUs(); loadNearbyHospitals(); }} disabled={loading} variant="primary">
-                    {loading ? 'Searching...' : 'Refresh'}
+                    {loading ? t('common.searching') : t('icu.refresh')}
                 </Button>
+            </div>
+
+            <div className={styles.insightsGrid}>
+                <div className={styles.insightCard}>
+                    <div className={styles.insightLabel}>{t('icu.insightIcus', { count: insights.totalAvailable })}</div>
+                    <div className={styles.insightValue}>{insights.totalAvailable}</div>
+                    <div className={styles.insightSub}>{t('icu.insightHospitals', { count: insights.hospitalsAvailable })}</div>
+                </div>
+                {insights.topSpecializationEntry && (
+                    <div className={styles.insightCard}>
+                        <div className={styles.insightLabel}>{t('icu.insightsTitle')}</div>
+                        <div className={styles.insightValue}>{formatSpecialization(insights.topSpecializationEntry[0])}</div>
+                        <div className={styles.insightSub}>
+                            {t('icu.insightTopSpecialization', {
+                                name: formatSpecialization(insights.topSpecializationEntry[0]),
+                                count: insights.topSpecializationEntry[1],
+                            })}
+                        </div>
+                    </div>
+                )}
+                {insights.avgFee != null && (
+                    <div className={styles.insightCard}>
+                        <div className={styles.insightLabel}>{t('patient.dailyFee')}</div>
+                        <div className={styles.insightValue}>{insights.avgFee}</div>
+                        <div className={styles.insightSub}>
+                            {t('icu.insightAvgFee', { value: insights.avgFee })}
+                        </div>
+                    </div>
+                )}
+                {insights.closest && (
+                    <div className={styles.insightCard}>
+                        <div className={styles.insightLabel}>{t('icu.insightsTitle')}</div>
+                        <div className={styles.insightValue}>{insights.closest.name}</div>
+                        <div className={styles.insightSub}>
+                            {t('icu.insightClosest', {
+                                name: insights.closest.name,
+                                distance: insights.closest.distanceKm,
+                            })}
+                        </div>
+                    </div>
+                )}
             </div>
 
             <div className={styles.contentGrid}>
@@ -389,8 +570,22 @@ const ICUSelect = () => {
                 </div>
                 
                 <div className={styles.listArea}>
-                    <h3>{groupedHospitals.length} Hospitals with Available ICUs</h3>
-                    <Icus icuList={groupedHospitals} onReserve={handleReserve} loading={loading} />
+                    <div className={styles.listHeader}>
+                        <div>
+                            <div className={styles.listTitle}>{t('icu.hospitalsAvailable')}</div>
+                            <div className={styles.listMeta}>
+                                <span>{t('icu.insightHospitals', { count: groupedHospitals.length })}</span>
+                                <span className={styles.metaDivider}>•</span>
+                                <span>{t('icu.insightIcus', { count: insights.totalAvailable })}</span>
+                            </div>
+                        </div>
+                        <div className={styles.listStatus}>
+                            <span className={`${styles.liveDot} ${liveConnected ? styles.liveOn : styles.liveOff}`} />
+                            <span className={styles.liveText}>{liveConnected ? t('common.live') : t('common.offline')}</span>
+                            <span className={styles.updatedText}>{t('common.lastUpdated', { time: formatLastUpdated() })}</span>
+                        </div>
+                    </div>
+                    <Icus icuList={groupedHospitals} onReserve={handleReserve} loading={loading} t={t} />
                 </div>
             </div>
 
@@ -401,11 +596,11 @@ const ICUSelect = () => {
                 setPickupLocation('');
             }}>
                 <div style={{ padding: '1.5rem' }}>
-                    <h2 style={{ marginBottom: '1rem' }}>Complete Your Reservation</h2>
+                    <h2 style={{ marginBottom: '1rem' }}>{t('icu.reservationTitle')}</h2>
                         
                         <div style={{ marginBottom: '1.5rem' }}>
                             <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
-                                Do you need ambulance pickup?
+                                {t('icu.pickupQuestion')}
                             </label>
                             <div style={{ display: 'flex', gap: '1rem', marginTop: '10px' }}>
                                 <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
@@ -417,7 +612,7 @@ const ICUSelect = () => {
                                         onChange={() => setNeedsPickup(true)}
                                         style={{ marginRight: '0.5rem' }}
                                     />
-                                    Yes, I need ambulance pickup
+                                    {t('icu.pickupYes')}
                                 </label>
                                 <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
                                     <input 
@@ -428,7 +623,7 @@ const ICUSelect = () => {
                                         onChange={() => setNeedsPickup(false)}
                                         style={{ marginRight: '0.5rem' }}
                                     />
-                                    No, I will come directly
+                                    {t('icu.pickupNo')}
                                 </label>
                             </div>
                         </div>
@@ -436,13 +631,13 @@ const ICUSelect = () => {
                         {needsPickup && (
                             <div style={{ marginBottom: '1.5rem' }}>
                                 <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
-                                    Your Current Location/Address
+                                    {t('icu.pickupAddress')}
                                 </label>
                                 <input 
                                     type="text"
                                     value={pickupLocation}
                                     onChange={(e) => setPickupLocation(e.target.value)}
-                                    placeholder="Enter your current address for pickup"
+                                    placeholder={t('icu.pickupAddressPlaceholder')}
                                     style={{ 
                                         width: '100%', 
                                         padding: '10px', 
@@ -459,14 +654,14 @@ const ICUSelect = () => {
                                 variant="secondary"
                                 onClick={() => setShowPickupModal(false)}
                             >
-                                Cancel
+                                {t('common.cancel')}
                             </Button>
                             <Button 
                                 variant="primary"
                                 onClick={handleConfirmReservation}
                                 disabled={loading}
                             >
-                                {loading ? 'Reserving...' : 'Confirm Reservation'}
+                                {loading ? t('icu.reserving') : t('icu.confirmReservation')}
                             </Button>
                         </div>
                     </div>

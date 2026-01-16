@@ -146,7 +146,7 @@ export const reserveICU = async (req, res, next) => {
                     // Notify patient
                     const patientNotif = {
                         patientId: populatedRequest.patient._id,
-                        message: '🚑 Your ambulance request has been sent to all available ambulance crews!',
+                        message: 'Your ambulance request has been sent to all available ambulance crews!',
                         type: 'pickup_request_sent'
                     };
                     console.log('📢 [Socket] Emitting patientNotification:', patientNotif);

@@ -11,13 +11,15 @@ import SecureTextarea from '../../components/common/SecureTextarea';
 import ICUSelect from './ICUSelect';
 import Skeleton from '../../components/common/Skeleton';
 import { useNavigate } from 'react-router-dom';
+import usePatientLocale from '../../hooks/usePatientLocale';
 
 import { safeNavigate } from '../../utils/security';
 
 const PatientHomePage = () => {
     const [patientData, setPatientData] = useState(null);
     const [icuData, setIcuData] = useState(null);
-        const navigate = useNavigate();
+    const navigate = useNavigate();
+    const { t, dir, locale, setLocale } = usePatientLocale();
     // Doctor role removed — no doctor-specific data fetched
     const [newMedicalHistory, setNewMedicalHistory] = useState('');
     const [loading, setLoading] = useState(true);
@@ -28,6 +30,12 @@ const PatientHomePage = () => {
     const [ratingComment, setRatingComment] = useState('');
     const [ratings, setRatings] = useState({});
     const [cancelLoading, setCancelLoading] = useState(false);
+    const [showOnboarding, setShowOnboarding] = useState(() => {
+        if (typeof window === 'undefined') return true;
+        return window.localStorage.getItem('patient_onboarding_hidden') !== '1';
+    });
+    const [liveConnected, setLiveConnected] = useState(socket?.connected ?? false);
+    const [lastUpdatedAt, setLastUpdatedAt] = useState(null);
 
     useEffect(() => {
         const fetchPatientData = async () => {
@@ -35,7 +43,7 @@ const PatientHomePage = () => {
                 setLoading(true);
                 const userId = getUserId();
                 if (!userId) {
-                    toast.error('User ID not found. Please log in again.');
+                    toast.error(t('patient.toastUserIdMissing'));
                     setLoading(false);
                     return;
                 }
@@ -43,6 +51,7 @@ const PatientHomePage = () => {
                 const patient = patientResponse.data.user;
                 setPatientData(patient);
                 setNewMedicalHistory(patient.medicalHistory || '');
+                setLastUpdatedAt(new Date());
                 
                 // Fetch ICU details only if patient is checked in (not just reserved)
                 if (patient.reservedICU && patient.patientStatus === 'CHECKED_IN') {
@@ -56,7 +65,7 @@ const PatientHomePage = () => {
                 }
             } catch (error) {
                 console.error('Error fetching patient data:', error);
-                toast.error('Failed to load patient data. Please try again.');
+                toast.error(t('patient.toastLoadFailed'));
             } finally {
                 setLoading(false);
             }
@@ -65,10 +74,18 @@ const PatientHomePage = () => {
 
         // Listen for real-time check-in notification
         const userId = getUserId();
+        const handleConnect = () => setLiveConnected(true);
+        const handleDisconnect = () => setLiveConnected(false);
+        if (socket) {
+            socket.on('connect', handleConnect);
+            socket.on('disconnect', handleDisconnect);
+            setLiveConnected(socket.connected);
+        }
+
         if (userId && socket) {
             socket.on('patientCheckedIn', (data) => {
                 if (data.patientId === userId) {
-                    toast.success(`You have been checked in to ${data.hospitalName} - Room ${data.room}!`);
+                    toast.success(t('patient.toastCheckedIn', { hospitalName: data.hospitalName, room: data.room }));
                     // Reload patient data to show ICU details
                     setTimeout(() => {
                         window.location.reload();
@@ -79,7 +96,7 @@ const PatientHomePage = () => {
             // Listen for ambulance on the way notification
             socket.on('ambulanceOnTheWay', (data) => {
                 if (data.patientId === userId) {
-                    toast.success(`${data.message} Your ambulance is heading to ${data.hospitalName}!`, {
+                    toast.success(t('patient.toastAmbulanceOnWay', { message: data.message, hospitalName: data.hospitalName }), {
                         autoClose: 8000,
                         position: "top-center"
                     });
@@ -125,7 +142,7 @@ const PatientHomePage = () => {
             // Listen for pickup request from patient reservation
             socket.on('ambulancePickupRequest', (data) => {
                 if (data.patientId === userId) {
-                    toast.info(`Your pickup request has been sent to the ambulance crew.`, {
+                    toast.info(t('patient.toastPickupSent'), {
                         autoClose: 5000
                     });
                 }
@@ -134,7 +151,7 @@ const PatientHomePage = () => {
             // Listen for ICU check-out notification
             socket.on('icuCheckOut', (data) => {
                 if (data.patientId === userId) {
-                    toast.success('You have been checked out. Thank you for choosing our services.');
+                    toast.success(t('patient.toastCheckedOut'));
                     // Reload patient data to update status
                     setTimeout(() => {
                         window.location.reload();
@@ -145,7 +162,7 @@ const PatientHomePage = () => {
             // Listen for ICU reservation cancellation
             socket.on('icuReservationCancelled', (data) => {
                 if (data.patientId === userId) {
-                    toast.info('Your ICU reservation has been cancelled.');
+                    toast.info(t('patient.toastReservationCancelled'));
                     // Reload patient data to update status
                     setTimeout(() => {
                         window.location.reload();
@@ -157,7 +174,7 @@ const PatientHomePage = () => {
             socket.on('ambulanceAccepted', (data) => {
                 console.log('Ambulance accepted event:', data);
                 if (data.patientId === userId) {
-                    toast.success(`An ambulance is on the way to pick you up.`, {
+                    toast.success(t('patient.toastAmbulanceAccepted'), {
                         autoClose: 8000,
                         position: "top-center"
                     });
@@ -172,7 +189,7 @@ const PatientHomePage = () => {
             socket.on('patientArrived', (data) => {
                 console.log('Patient arrived event:', data);
                 if (data.patientId === userId) {
-                    toast.success(`You have arrived at the hospital. Please proceed to reception.`, {
+                    toast.success(t('patient.toastArrived'), {
                         autoClose: 10000,
                         position: "top-center"
                     });
@@ -187,6 +204,8 @@ const PatientHomePage = () => {
         // Cleanup socket listeners
         return () => {
             if (socket) {
+                socket.off('connect', handleConnect);
+                socket.off('disconnect', handleDisconnect);
                 socket.off('patientCheckedIn');
                 socket.off('ambulanceOnTheWay');
                 socket.off('patientNotification');
@@ -198,6 +217,38 @@ const PatientHomePage = () => {
             }
         };
     }, []);
+
+    const dismissOnboarding = () => {
+        setShowOnboarding(false);
+        if (typeof window !== 'undefined') {
+            window.localStorage.setItem('patient_onboarding_hidden', '1');
+        }
+    };
+
+    const formatLastUpdated = () => {
+        if (!lastUpdatedAt) return t('common.justNow');
+        const diffMs = Date.now() - lastUpdatedAt.getTime();
+        const diffMin = Math.max(0, Math.round(diffMs / 60000));
+        if (diffMin <= 1) return t('common.justNow');
+        return t('common.minutesAgo', { count: diffMin });
+    };
+
+    const formatSpecialization = (value) => {
+        switch (value) {
+            case 'Surgical ICU':
+                return t('icu.specialization.surgical');
+            case 'Cardiac ICU':
+                return t('icu.specialization.cardiac');
+            case 'Neonatal ICU':
+                return t('icu.specialization.neonatal');
+            case 'Pediatric ICU':
+                return t('icu.specialization.pediatric');
+            case 'Neurological ICU':
+                return t('icu.specialization.neurological');
+            default:
+                return value || '—';
+        }
+    };
 
     const closeModal = () => {
         setModalType(null);
@@ -219,20 +270,20 @@ const PatientHomePage = () => {
     const handleRatingSubmit = async (e) => {
         e.preventDefault();
         if (currentRating === 0) {
-            toast.error('Please select a rating from 1 to 5.');
+            toast.error(t('patient.toastRatingRequired'));
             return;
         }
         setRatings(prev => ({ ...prev, [ratingTarget]: currentRating }));
-        toast.success(`Thank you for your feedback on the ${ratingTarget}!`);
+        toast.success(t('patient.toastRatingThanks', { target: ratingTarget }));
         closeModal();
     };
     const handleCancelReservation = async () => {
         if (!patientData?.reservedICU) {
-            toast.error('No ICU reservation found to cancel.');
+            toast.error(t('patient.toastNoReservation'));
             return;
         }
 
-        if (!window.confirm('Are you sure you want to cancel your ICU reservation?')) {
+        if (!window.confirm(t('patient.toastCancelConfirm'))) {
             return;
         }
 
@@ -250,7 +301,7 @@ const PatientHomePage = () => {
                 patientId: userId
             });
             
-            toast.success('ICU reservation cancelled successfully!');
+            toast.success(t('patient.toastCancelSuccess'));
             
             // Update local state immediately
             setPatientData(prev => ({
@@ -269,7 +320,7 @@ const PatientHomePage = () => {
             console.error('Error cancelling reservation:', error);
             console.error('Error response:', error.response?.data);
             console.error('Full error:', JSON.stringify(error.response?.data, null, 2));
-            const errorMessage = error.response?.data?.message || 'Failed to cancel reservation. Please try again.';
+            const errorMessage = error.response?.data?.message || t('patient.toastCancelFailed');
             toast.error(errorMessage);
         } finally {
             setCancelLoading(false);
@@ -294,25 +345,62 @@ const PatientHomePage = () => {
             </div>
         );
     }
-    if (!patientData) return <div className={styles.errorState}>Could not load patient data.</div>;
+    if (!patientData) return <div className={styles.errorState}>{t('patient.loadFailed')}</div>;
 
     // If patient doesn't have an ICU reserved or is waiting for check-in approval
     if (!patientData.reservedICU || patientData.patientStatus === 'RESERVED') {
         return (
-            <div className={styles.dashboard}>
+            <div className={styles.dashboard} dir={dir} lang={locale}>
                 <header className={styles.header}>
-                    <h2 className={styles.welcomeTitle}>Welcome, {patientData.firstName} {patientData.lastName}</h2>
+                    <div className={styles.localeToggle}>
+                        <button
+                            type="button"
+                            className={`${styles.localeButton} ${locale === 'en' ? styles.localeActive : ''}`}
+                            onClick={() => setLocale('en')}
+                        >
+                            {t('lang.english')}
+                        </button>
+                        <button
+                            type="button"
+                            className={`${styles.localeButton} ${locale === 'ar' ? styles.localeActive : ''}`}
+                            onClick={() => setLocale('ar')}
+                        >
+                            {t('lang.arabic')}
+                        </button>
+                    </div>
+                    <h2 className={styles.welcomeTitle}>{t('patient.welcome', { name: `${patientData.firstName} ${patientData.lastName}` })}</h2>
+                    <div className={styles.statusMeta}>
+                        <span className={`${styles.liveDot} ${liveConnected ? styles.liveOn : styles.liveOff}`} />
+                        <span className={styles.liveText}>{liveConnected ? t('common.live') : t('common.offline')}</span>
+                        <span className={styles.updatedText}>{t('common.lastUpdated', { time: formatLastUpdated() })}</span>
+                    </div>
                     {patientData.patientStatus === 'RESERVED' ? (
                         <div className={`${styles.icuStatus} ${styles.icuStatusPending}`}>
-                            <i className="fas fa-clock"></i> Your ICU reservation is pending. Waiting for receptionist approval...
+                            <i className="fas fa-clock"></i> {t('patient.pendingReservation')}
                         </div>
                     ) : (
                         <div className={`${styles.icuStatus} ${styles.icuStatusNotice}`}>
-                            <i className="fas fa-info-circle"></i> You don't have an ICU reserved yet. Please select one below.
+                            <i className="fas fa-info-circle"></i> {t('patient.noReservation')}
                         </div>
                     )}
                 </header>
-                {!patientData.reservedICU && <ICUSelect />}
+                {showOnboarding && (
+                    <div className={styles.onboardingCard}>
+                        <div>
+                            <h3>{t('patient.gettingStarted')}</h3>
+                            <ul>
+                                <li>{t('patient.stepChoose')}</li>
+                                <li>{t('patient.stepReserve')}</li>
+                                <li>{t('patient.stepPickup')}</li>
+                                <li>{t('patient.stepTrack')}</li>
+                            </ul>
+                        </div>
+                        <Button variant="secondary" onClick={dismissOnboarding}>
+                            {t('common.dismiss')}
+                        </Button>
+                    </div>
+                )}
+                {!patientData.reservedICU && <ICUSelect embedded />}
             </div>
         );
     }
@@ -323,11 +411,32 @@ const PatientHomePage = () => {
                                  patientData.patientStatus === 'ARRIVED';
 
     return (
-        <div className={styles.dashboard}>
+        <div className={styles.dashboard} dir={dir} lang={locale}>
             <header className={styles.header}>
-                <h2 className={styles.welcomeTitle}>Welcome, {patientData.firstName} {patientData.lastName}</h2>
+                <div className={styles.localeToggle}>
+                    <button
+                        type="button"
+                        className={`${styles.localeButton} ${locale === 'en' ? styles.localeActive : ''}`}
+                        onClick={() => setLocale('en')}
+                    >
+                        {t('lang.english')}
+                    </button>
+                    <button
+                        type="button"
+                        className={`${styles.localeButton} ${locale === 'ar' ? styles.localeActive : ''}`}
+                        onClick={() => setLocale('ar')}
+                    >
+                        {t('lang.arabic')}
+                    </button>
+                </div>
+                <h2 className={styles.welcomeTitle}>{t('patient.welcome', { name: `${patientData.firstName} ${patientData.lastName}` })}</h2>
+                <div className={styles.statusMeta}>
+                    <span className={`${styles.liveDot} ${liveConnected ? styles.liveOn : styles.liveOff}`} />
+                    <span className={styles.liveText}>{liveConnected ? t('common.live') : t('common.offline')}</span>
+                    <span className={styles.updatedText}>{t('common.lastUpdated', { time: formatLastUpdated() })}</span>
+                </div>
                 <div className={styles.icuStatus}>
-                    <i className="fas fa-heartbeat"></i> Reserved ICU: <strong>{icuData?.specialization || 'None'}</strong>
+                    <i className="fas fa-heartbeat"></i> {t('patient.reservedIcu')}: <strong>{icuData?.specialization || '—'}</strong>
                 </div>
 
                 {/* Ambulance Status Banner */}
@@ -340,21 +449,21 @@ const PatientHomePage = () => {
                                 : styles.bannerArrived
                     }`}>
                         <h3 className={styles.bannerTitle}>
-                            {patientData.patientStatus === 'AWAITING_PICKUP' && 'Ambulance Requested'}
-                            {patientData.patientStatus === 'IN_TRANSIT' && 'Ambulance En Route'}
-                            {patientData.patientStatus === 'ARRIVED' && 'You Have Arrived'}
+                            {patientData.patientStatus === 'AWAITING_PICKUP' && t('patient.ambulanceRequested')}
+                            {patientData.patientStatus === 'IN_TRANSIT' && t('patient.ambulanceEnRoute')}
+                            {patientData.patientStatus === 'ARRIVED' && t('patient.arrived')}
                         </h3>
                         <p className={styles.bannerText}>
                             {patientData.patientStatus === 'AWAITING_PICKUP' && 
-                                'An ambulance has been assigned to pick you up. The crew will accept shortly.'}
+                                t('patient.bannerPending')}
                             {patientData.patientStatus === 'IN_TRANSIT' && 
-                                'Your ambulance is on the way to pick you up! Please be ready.'}
+                                t('patient.bannerTransit')}
                             {patientData.patientStatus === 'ARRIVED' && 
-                                'You have arrived at the hospital. The receptionist will check you in shortly.'}
+                                t('patient.bannerArrived')}
                         </p>
                         {patientData.pickupLocation && (
                             <p className={styles.bannerSubtext}>
-                                <strong>Pickup Location:</strong> {patientData.pickupLocation}
+                                <strong>{t('patient.pickupLocation')}:</strong> {patientData.pickupLocation}
                             </p>
                         )}
                         <div className={styles.bannerAction}>
@@ -362,7 +471,7 @@ const PatientHomePage = () => {
                                 variant="primary"
                                 onClick={() => safeNavigate(navigate, '/patient/request-ambulance')}
                             >
-                                Track Ambulance / Manage Request
+                                {t('patient.trackAmbulance')}
                             </Button>
                         </div>
                     </div>
@@ -375,38 +484,38 @@ const PatientHomePage = () => {
                         variant="danger"
                         className={styles.cancelButton}
                     >
-                        {cancelLoading ? 'Cancelling...' : 'Cancel ICU Reservation'}
+                        {cancelLoading ? t('patient.cancelling') : t('patient.cancelReservation')}
                     </Button>
                 )}
             </header>
             <section className={styles.infoGrid}>
                 {icuData && (
                     <div className={styles.card}>
-                        <h3>Your Reserved ICU</h3>
-                        <p><strong>Hospital:</strong> {icuData.hospital?.name || 'N/A'}</p>
-                        <p><strong>Specialization:</strong> {icuData.specialization}</p>
-                        <p><strong>Status:</strong> <span className={styles.statusAvailable}>{icuData.status}</span></p>
-                        <p><strong>Daily Fee:</strong> {icuData.fees} EGP</p>
+                        <h3>{t('patient.yourIcu')}</h3>
+                        <p><strong>{t('patient.hospital')}:</strong> {icuData.hospital?.name || '—'}</p>
+                        <p><strong>{t('patient.specialization')}:</strong> {formatSpecialization(icuData.specialization)}</p>
+                        <p><strong>{t('patient.status')}:</strong> <span className={styles.statusAvailable}>{icuData.status}</span></p>
+                        <p><strong>{t('patient.dailyFee')}:</strong> {icuData.fees} EGP</p>
                     </div>
                 )}
                 <div className={styles.card}>
-                    <h3>Total Fees</h3>
+                    <h3>{t('patient.totalFees')}</h3>
                     <p className={styles.feeAmount}>EGP {(patientData.totalFees || 0).toFixed(2)}</p>
                     {patientData.reservedICU && patientData.patientStatus === 'CHECKED_IN' && (
                         <p className={patientData.feesPaid === true ? styles.feePaid : styles.feeUnpaid}>
-                            {patientData.feesPaid === true ? 'Fee Paid' : 'Fee Not Paid'}
+                            {patientData.feesPaid === true ? t('patient.feePaid') : t('patient.feeUnpaid')}
                         </p>
                     )}
                 </div>
             </section>
             <section className={styles.reservationActions}>
                 <div className={styles.actionGroup}>
-                    <h3>Service Feedback</h3>
-                    <Button onClick={() => handleRate('Hospital')} className={styles.btnRate}>Rate Hospital</Button>
+                    <h3>{t('patient.feedback')}</h3>
+                    <Button onClick={() => handleRate(t('patient.hospital'))} className={styles.btnRate}>{t('patient.rateHospital')}</Button>
                 </div>
             </section>
             <Modal isOpen={modalType === 'rating'} onClose={closeModal} contentLabel="rating-modal">
-                <h2>Rate the {ratingTarget}</h2>
+                <h2>{t('patient.rateTarget', { target: ratingTarget })}</h2>
                 <form onSubmit={handleRatingSubmit}>
                     <div className={styles.starRating}>
                         {[...Array(5)].map((_, index) => {
@@ -427,12 +536,12 @@ const PatientHomePage = () => {
                     <SecureTextarea 
                         name="ratingComment"
                         className={styles.modalTextarea}
-                        placeholder="Leave a comment (optional)..."
+                        placeholder={t('patient.ratingPlaceholder')}
                         value={ratingComment}
                         onChange={(e) => setRatingComment(e.target.value)}
                         maxLength={500}
                     />
-                    <Button type="submit" variant="primary" className={styles.modalSubmit}>Submit Rating</Button>
+                    <Button type="submit" variant="primary" className={styles.modalSubmit}>{t('common.submit')}</Button>
                 </form>
             </Modal>
         </div>

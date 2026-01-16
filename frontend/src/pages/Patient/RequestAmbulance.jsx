@@ -13,6 +13,7 @@ import { showUserDetails } from '../../utils/api';
 import socket from '../../utils/socket';
 import { API_BASE } from '../../utils/api';
 import useOsrmRoute from '../../hooks/useOsrmRoute';
+import usePatientLocale from '../../hooks/usePatientLocale';
 
 // Fix Leaflet default marker icon issue
 delete L.Icon.Default.prototype._getIconUrl;
@@ -33,6 +34,7 @@ function LocationPicker({ onLocationSelect }) {
 }
 
 const RequestAmbulance = () => {
+  const { t, dir, locale, setLocale } = usePatientLocale();
   const [patientData, setPatientData] = useState(null);
   const [pickupLocation, setPickupLocation] = useState('');
   const [pickupCoords, setPickupCoords] = useState(null);
@@ -43,6 +45,7 @@ const RequestAmbulance = () => {
   const [hasActiveRequest, setHasActiveRequest] = useState(false);
   const [activeRequest, setActiveRequest] = useState(null);
   const [ambulanceTracking, setAmbulanceTracking] = useState(null);
+  const [lastTrackingUpdatedAt, setLastTrackingUpdatedAt] = useState(null);
 
   const ambulanceCoords =
     ambulanceTracking?.currentLocation?.coordinates &&
@@ -59,6 +62,14 @@ const RequestAmbulance = () => {
     to: pickupCoords,
     enabled: Boolean(ambulanceCoords && pickupCoords),
   });
+
+  const formatLastUpdated = () => {
+    if (!lastTrackingUpdatedAt) return t('common.justNow');
+    const diffMs = Date.now() - lastTrackingUpdatedAt.getTime();
+    const diffMin = Math.max(0, Math.round(diffMs / 60000));
+    if (diffMin <= 1) return t('common.justNow');
+    return t('common.minutesAgo', { count: diffMin });
+  };
 
   useEffect(() => {
     loadPatientData();
@@ -111,6 +122,7 @@ const RequestAmbulance = () => {
             currentLocation: data.location,
             eta: data.eta
           }));
+          setLastTrackingUpdatedAt(new Date());
         }
       });
 
@@ -120,7 +132,7 @@ const RequestAmbulance = () => {
           setHasActiveRequest(false);
           setActiveRequest(null);
           setAmbulanceTracking(null);
-          toast.success('You have arrived. You can request an ambulance again if needed.');
+          toast.success(t('ambulance.toastArrivedAgain'));
         }
       });
 
@@ -129,7 +141,7 @@ const RequestAmbulance = () => {
         if (data.patientId === userId) {
           setHasActiveRequest(false);
           setActiveRequest(null);
-          toast.info('Your ambulance request was cancelled');
+          toast.info(t('ambulance.toastCancelled'));
         }
       });
     }
@@ -151,7 +163,7 @@ const RequestAmbulance = () => {
       setPatientData(response.data.user);
     } catch (error) {
       console.error('Error loading patient data:', error);
-      toast.error('Failed to load your details');
+      toast.error(t('ambulance.toastLoadDetailsFailed'));
     }
   };
 
@@ -175,6 +187,7 @@ const RequestAmbulance = () => {
             ambulanceName: `${data.data.acceptedBy.firstName} ${data.data.acceptedBy.lastName}`,
             currentLocation: data.data.acceptedBy.currentLocation,
           });
+          setLastTrackingUpdatedAt(new Date());
         }
       } else {
         setHasActiveRequest(false);
@@ -187,19 +200,24 @@ const RequestAmbulance = () => {
 
   const handleMapClick = (latlng) => {
     setPickupCoords(latlng);
-    toast.info(`Pickup location updated to: ${latlng.lat.toFixed(4)}, ${latlng.lng.toFixed(4)}`);
+    toast.info(
+      t('ambulance.toastPickupUpdated', {
+        lat: latlng.lat.toFixed(4),
+        lng: latlng.lng.toFixed(4),
+      })
+    );
   };
 
   const handleSubmitRequest = async (e) => {
     e.preventDefault();
 
     if (!pickupCoords) {
-      toast.error('Please select a pickup location on the map');
+      toast.error(t('ambulance.toastSelectPickup'));
       return;
     }
 
     if (!patientData?.reservedICU) {
-      toast.error('You must have an ICU reservation before requesting an ambulance');
+      toast.error(t('ambulance.toastNeedReservation'));
       return;
     }
 
@@ -230,7 +248,7 @@ const RequestAmbulance = () => {
         throw new Error(data.message || 'Failed to create ambulance request');
       }
 
-      toast.success('Ambulance request sent. Waiting for a crew to accept...');
+      toast.success(t('ambulance.toastRequestSent'));
       setHasActiveRequest(true);
       setActiveRequest(data.data);
       
@@ -240,7 +258,7 @@ const RequestAmbulance = () => {
       setUrgency('normal');
     } catch (error) {
       console.error('Error creating ambulance request:', error);
-      toast.error(error.message || 'Failed to send ambulance request');
+      toast.error(error.message || t('ambulance.toastRequestFailed'));
     } finally {
       setLoading(false);
     }
@@ -249,7 +267,7 @@ const RequestAmbulance = () => {
   const handleCancelRequest = async () => {
     if (!activeRequest) return;
 
-    const confirmCancel = window.confirm('Are you sure you want to cancel your ambulance request?');
+    const confirmCancel = window.confirm(t('ambulance.toastCancelConfirm'));
     if (!confirmCancel) return;
 
     try {
@@ -267,36 +285,52 @@ const RequestAmbulance = () => {
         throw new Error(data.message || 'Failed to cancel request');
       }
 
-      toast.success('Ambulance request cancelled');
+      toast.success(t('ambulance.toastCancelSuccess'));
       setHasActiveRequest(false);
       setActiveRequest(null);
       setAmbulanceTracking(null);
     } catch (error) {
       console.error('Error cancelling request:', error);
-      toast.error(error.message || 'Failed to cancel request');
+      toast.error(error.message || t('ambulance.toastCancelFailed'));
     }
   };
 
   if (!userLocation) {
     return (
-      <div className={styles.container}>
+      <div className={styles.container} dir={dir} lang={locale}>
         <div className={styles.loading}>
-          <p>Getting your location...</p>
+          <p>{t('common.loading')}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className={styles.container}>
+    <div className={styles.container} dir={dir} lang={locale}>
       <header className={styles.header}>
-        <h1>Request Ambulance Pickup</h1>
-        <p>Select your pickup location and request an ambulance</p>
+        <div className={styles.localeToggle}>
+          <button
+            type="button"
+            className={`${styles.localeButton} ${locale === 'en' ? styles.localeActive : ''}`}
+            onClick={() => setLocale('en')}
+          >
+            {t('lang.english')}
+          </button>
+          <button
+            type="button"
+            className={`${styles.localeButton} ${locale === 'ar' ? styles.localeActive : ''}`}
+            onClick={() => setLocale('ar')}
+          >
+            {t('lang.arabic')}
+          </button>
+        </div>
+        <h1>{t('ambulance.title')}</h1>
+        <p>{t('ambulance.subtitle')}</p>
       </header>
 
       {hasActiveRequest && activeRequest ? (
         <section className={styles.activeRequest}>
-          <h2>Active Ambulance Request</h2>
+          <h2>{t('ambulance.activeRequest')}</h2>
           
           <div className={styles.requestDetails}>
             <div className={styles.statusBadge} data-status={activeRequest.status}>
@@ -304,39 +338,44 @@ const RequestAmbulance = () => {
             </div>
             
             <div className={styles.detailRow}>
-              <strong>Pickup Location:</strong> {activeRequest.pickupLocation}
+              <strong>{t('ambulance.pickupLocation')}:</strong> {activeRequest.pickupLocation}
             </div>
             <div className={styles.detailRow}>
-              <strong>Hospital:</strong> {activeRequest.hospital?.name}
+              <strong>{t('ambulance.hospital')}:</strong> {activeRequest.hospital?.name}
             </div>
             <div className={styles.detailRow}>
-              <strong>Urgency:</strong> {activeRequest.urgency.toUpperCase()}
+              <strong>{t('ambulance.urgency')}:</strong> {activeRequest.urgency.toUpperCase()}
             </div>
             <div className={styles.detailRow}>
-              <strong>Requested:</strong> {new Date(activeRequest.createdAt).toLocaleString()}
+              <strong>{t('ambulance.requested')}:</strong> {new Date(activeRequest.createdAt).toLocaleString()}
             </div>
 
             {ambulanceTracking &&
               (activeRequest.status === 'accepted' || activeRequest.status === 'in_transit') &&
               activeRequest.acceptedBy && (
                 <div className={styles.ambulanceInfo}>
-                  <h3>Ambulance En Route</h3>
+                  <h3>{t('ambulance.enRoute')}</h3>
                   <div className={styles.detailRow}>
-                    <strong>Crew:</strong> {ambulanceTracking.ambulanceName}
+                    <strong>{t('ambulance.crew')}:</strong> {ambulanceTracking.ambulanceName}
                   </div>
                   {ambulanceTracking.eta && (
                     <div className={styles.detailRow}>
-                      <strong>ETA:</strong> {ambulanceTracking.eta} minutes
+                      <strong>{t('ambulance.eta')}:</strong> {ambulanceTracking.eta} {t('common.minutesLabel')}
                     </div>
                   )}
                   {distanceKm != null && (
                     <div className={styles.detailRow}>
-                      <strong>Distance:</strong> I'm {distanceKm.toFixed(1)} km away
+                      <strong>{t('ambulance.distance')}:</strong> {t('ambulance.imAway', { distance: distanceKm.toFixed(1) })}
                     </div>
                   )}
                   {etaMinutes != null && (
                     <div className={styles.detailRow}>
-                      <strong>ETA (route):</strong> {Math.max(1, Math.round(etaMinutes))} minutes
+                      <strong>{t('ambulance.etaRoute')}:</strong> {Math.max(1, Math.round(etaMinutes))} {t('common.minutesLabel')}
+                    </div>
+                  )}
+                  {lastTrackingUpdatedAt && (
+                    <div className={styles.detailRow}>
+                      <strong>{t('common.lastUpdated', { time: formatLastUpdated() })}</strong>
                     </div>
                   )}
                 </div>
@@ -344,7 +383,7 @@ const RequestAmbulance = () => {
 
             {activeRequest.status === 'pending' && (
               <Button variant="danger" onClick={handleCancelRequest} style={{ marginTop: '20px' }}>
-                Cancel Request
+                {t('ambulance.cancelRequest')}
               </Button>
             )}
           </div>
@@ -352,7 +391,7 @@ const RequestAmbulance = () => {
           {/* Live tracking map */}
           {ambulanceTracking && ambulanceTracking.currentLocation && (
             <div className={styles.trackingMap}>
-              <h3>Live Ambulance Location</h3>
+              <h3>{t('ambulance.liveMap')}</h3>
               <MapContainer
                 center={[pickupCoords.lat, pickupCoords.lng]}
                 zoom={13}
@@ -373,7 +412,7 @@ const RequestAmbulance = () => {
                 {/* Patient pickup location */}
                 <Marker position={[pickupCoords.lat, pickupCoords.lng]}>
                   <Popup>
-                    <strong>Your Pickup Location</strong>
+                    <strong>{t('ambulance.pickupLocation')}</strong>
                   </Popup>
                 </Marker>
 
@@ -394,7 +433,7 @@ const RequestAmbulance = () => {
                     <Popup>
                       <strong>{ambulanceTracking.ambulanceName}</strong>
                       <br />
-                      En route to you
+                      {t('ambulance.enRoute')}
                     </Popup>
                   </Marker>
                 )}
@@ -406,50 +445,50 @@ const RequestAmbulance = () => {
         <section className={styles.requestForm}>
           <form onSubmit={handleSubmitRequest}>
             <div className={styles.formGroup}>
-              <label htmlFor="pickupLocation">Pickup Address (Optional)</label>
+              <label htmlFor="pickupLocation">{t('ambulance.pickupAddress', { optional: t('common.optional') })}</label>
               <SecureInput
                 type="text"
                 id="pickupLocation"
                 name="pickupLocation"
                 value={pickupLocation}
                 onChange={(e) => setPickupLocation(e.target.value)}
-                placeholder="e.g., 123 Main St, Cairo"
+                placeholder={t('icu.pickupAddressPlaceholder')}
                 maxLength={500}
               />
-              <small>Or click on the map below to set your pickup location</small>
+              <small>{t('ambulance.pickupHint')}</small>
             </div>
 
             <div className={styles.formGroup}>
-              <label htmlFor="urgency">Urgency Level</label>
+              <label htmlFor="urgency">{t('ambulance.urgencyLevel')}</label>
               <SecureSelect
                 id="urgency"
                 name="urgency"
                 value={urgency}
                 onChange={(e) => setUrgency(e.target.value)}
                 options={[
-                  { value: 'normal', label: 'Normal' },
-                  { value: 'urgent', label: 'Urgent' },
-                  { value: 'critical', label: 'Critical' }
+                  { value: 'normal', label: t('ambulance.urgencyNormal') },
+                  { value: 'urgent', label: t('ambulance.urgencyUrgent') },
+                  { value: 'critical', label: t('ambulance.urgencyCritical') }
                 ]}
               />
             </div>
 
             <div className={styles.formGroup}>
-              <label htmlFor="notes">Additional Notes (Optional)</label>
+              <label htmlFor="notes">{t('ambulance.notesLabel', { optional: t('common.optional') })}</label>
               <SecureTextarea
                 id="notes"
                 name="notes"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                placeholder="Any special instructions or medical conditions..."
+                placeholder={t('ambulance.notesPlaceholder')}
                 rows={3}
                 maxLength={1000}
               />
             </div>
 
             <div className={styles.mapContainer}>
-              <h3>Select Pickup Location on Map</h3>
-              <p>Click anywhere on the map to set your pickup location</p>
+              <h3>{t('ambulance.selectPickupOnMap')}</h3>
+              <p>{t('ambulance.clickMapHint')}</p>
               <MapContainer
                 center={[userLocation.lat, userLocation.lng]}
                 zoom={13}
@@ -464,7 +503,7 @@ const RequestAmbulance = () => {
                 {pickupCoords && (
                   <Marker position={[pickupCoords.lat, pickupCoords.lng]}>
                     <Popup>
-                      <strong>Your Pickup Location</strong>
+                      <strong>{t('ambulance.pickupLocation')}</strong>
                       <br />
                       Lat: {pickupCoords.lat.toFixed(4)}
                       <br />
@@ -475,7 +514,10 @@ const RequestAmbulance = () => {
               </MapContainer>
               {pickupCoords && (
                 <p className={styles.coordsDisplay}>
-                  Selected: {pickupCoords.lat.toFixed(4)}, {pickupCoords.lng.toFixed(4)}
+                  {t('ambulance.selected', {
+                    lat: pickupCoords.lat.toFixed(4),
+                    lng: pickupCoords.lng.toFixed(4),
+                  })}
                 </p>
               )}
             </div>
@@ -486,12 +528,12 @@ const RequestAmbulance = () => {
               disabled={loading || !pickupCoords || !patientData?.reservedICU}
               style={{ width: '100%', marginTop: '20px' }}
             >
-              {loading ? 'Sending Request...' : 'Request Ambulance'}
+              {loading ? t('ambulance.sending') : t('ambulance.requestPickup')}
             </Button>
 
             {!patientData?.reservedICU && (
               <p className={styles.warning}>
-                You must have an ICU reservation before requesting an ambulance.
+                {t('ambulance.toastNeedReservation')}
               </p>
             )}
           </form>

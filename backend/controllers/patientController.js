@@ -190,7 +190,7 @@ export const reserveICU = async (req, res) => {
           // Notify patient that request is PENDING
           io.emit('patientNotification', {
             patientId: userId,
-            message: `🚑 Pickup request sent to all available ambulances. Status: PENDING - Waiting for a crew to accept...`,
+            message: `Pickup request sent to all available ambulances. Status: PENDING - Waiting for a crew to accept...`,
             type: 'pickup_request_sent'
           });
         } else {

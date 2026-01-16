@@ -1,9 +1,9 @@
 import React from "react";
 import { MapContainer, TileLayer, Marker, Popup, Polyline, Tooltip, useMap } from "react-leaflet";
 import L from "leaflet";
-import { useState } from "react";
 import styles from "./Map.module.css";
 import "leaflet/dist/leaflet.css";
+import usePatientLocale from "../../hooks/usePatientLocale";
 
 // Custom icons for different marker types
 const hospitalIcon = new L.Icon({
@@ -43,7 +43,7 @@ const ambulanceIcon = new L.Icon({
 });
 
 // Component to handle "Go to My Location" button
-function RecenterButton({ latitude, longitude }) {
+function RecenterButton({ latitude, longitude, label }) {
   const map = useMap();
   
   const handleRecenter = () => {
@@ -87,13 +87,15 @@ function RecenterButton({ latitude, longitude }) {
         e.target.style.boxShadow = '0 4px 12px rgba(40, 167, 69, 0.4)';
       }}
     >
-      📍 My Location
+      {label}
     </button>
   );
 }
 
 function Map({ icus, hospitals = [], latitude, longitude, ambulances = [] }) {
-  if (!icus) return <p>Loading...</p>;
+  const { t } = usePatientLocale();
+
+  if (!icus) return <p>{t("map.loading")}</p>;
 
   // Haversine formula to compute distance in meters between two lat/lon points
   const distanceMeters = (lat1, lon1, lat2, lon2) => {
@@ -137,10 +139,10 @@ function Map({ icus, hospitals = [], latitude, longitude, ambulances = [] }) {
                 icon={hospitalIcon}
               >
                 <Popup>
-                  <h3>{hospital.name || 'Unknown Hospital'}</h3>
-                  <p><strong>Address:</strong> {hospital.address || 'N/A'}</p>
-                  <p><strong>Contact:</strong> {hospital.contactNumber || 'N/A'}</p>
-                  {distance && <p><strong>Distance:</strong> {distance} m</p>}
+                  <h3>{hospital.name || t("icu.unknownHospital")}</h3>
+                  <p><strong>{t("map.address")}:</strong> {hospital.address || 'N/A'}</p>
+                  <p><strong>{t("map.contact")}:</strong> {hospital.contactNumber || 'N/A'}</p>
+                  {distance && <p><strong>{t("map.distance")}:</strong> {distance} m</p>}
                 </Popup>
               </Marker>
             );
@@ -184,13 +186,13 @@ function Map({ icus, hospitals = [], latitude, longitude, ambulances = [] }) {
                   icon={icuIcon}
                 >
                   <Popup>
-                    <h3>{icu.hospital?.name || 'Unknown Hospital'}</h3>
-                    <p><strong>Address:</strong> {icu.hospital?.address || 'N/A'}</p>
-                    <p><strong>Specialization:</strong> {icu.specialization}</p>
-                    <p><strong>Room:</strong> {icu.room}</p>
-                    <p><strong>Fee:</strong> {icu.fees} EGP/day</p>
+                    <h3>{icu.hospital?.name || t("icu.unknownHospital")}</h3>
+                    <p><strong>{t("map.address")}:</strong> {icu.hospital?.address || 'N/A'}</p>
+                    <p><strong>{t("map.specialization")}:</strong> {icu.specialization}</p>
+                    <p><strong>{t("map.room")}:</strong> {icu.room}</p>
+                    <p><strong>{t("map.fee")}:</strong> {icu.fees} EGP/day</p>
                     {distance && (
-                      <p><strong>Distance:</strong> {distance} m</p>
+                      <p><strong>{t("map.distance")}:</strong> {distance} m</p>
                     )}
                   </Popup>
                 </Marker>
@@ -213,11 +215,11 @@ function Map({ icus, hospitals = [], latitude, longitude, ambulances = [] }) {
                 icon={ambulanceIcon}
               >
                 <Popup>
-                  <h3>Ambulance</h3>
-                  <p><strong>Driver:</strong> {ambulance.firstName || ambulance.ambulanceName || 'En Route'}</p>
-                  <p><strong>Status:</strong> {ambulance.status || 'EN_ROUTE'}</p>
-                  {ambulance.eta && <p><strong>ETA:</strong> {ambulance.eta}</p>}
-                  {ambulance.destination && <p><strong>To:</strong> {ambulance.destination}</p>}
+                  <h3>{t("map.ambulance")}</h3>
+                  <p><strong>{t("map.driver")}:</strong> {ambulance.firstName || ambulance.ambulanceName || 'En Route'}</p>
+                  <p><strong>{t("map.status")}:</strong> {ambulance.status || 'EN_ROUTE'}</p>
+                  {ambulance.eta && <p><strong>{t("map.eta")}:</strong> {ambulance.eta}</p>}
+                  {ambulance.destination && <p><strong>{t("map.destination")}:</strong> {ambulance.destination}</p>}
                 </Popup>
               </Marker>
             );
@@ -229,7 +231,7 @@ function Map({ icus, hospitals = [], latitude, longitude, ambulances = [] }) {
         {latitude != null && longitude != null && (
           <Marker position={[latitude, longitude]} icon={userLocationIcon}>
             <Popup>
-              <strong>📍 Your Location</strong>
+              <strong>{t("map.yourLocation")}</strong>
               <br />
               Lat: {latitude.toFixed(4)}
               <br />
@@ -239,7 +241,7 @@ function Map({ icus, hospitals = [], latitude, longitude, ambulances = [] }) {
         )}
         
         {/* Recenter button */}
-        <RecenterButton latitude={latitude} longitude={longitude} />
+        <RecenterButton latitude={latitude} longitude={longitude} label={t("map.myLocation")} />
       </MapContainer>
     </div>
   );

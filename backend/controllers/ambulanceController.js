@@ -344,7 +344,7 @@ export const acceptPickup = async (req, res, next) => {
         patientId: patient._id,
         ambulanceId: ambulance._id,
         ambulanceName: `${ambulance.firstName} ${ambulance.lastName}`,
-        message: `🚑 ${ambulance.firstName} ${ambulance.lastName} is on the way to pick you up!`
+        message: `${ambulance.firstName} ${ambulance.lastName} is on the way to pick you up!`
       };
       console.log('🚑 [Socket] Emitting ambulanceAccepted:', acceptedData);
       io.emit("ambulanceAccepted", acceptedData);
@@ -360,7 +360,7 @@ export const acceptPickup = async (req, res, next) => {
       // Emit patient notification
       const notifData = {
         patientId: patient._id,
-        message: `🚑 Ambulance crew ${ambulance.firstName} ${ambulance.lastName} accepted your pickup request and is on the way!`,
+        message: `Ambulance crew ${ambulance.firstName} ${ambulance.lastName} accepted your pickup request and is on the way!`,
         type: 'ambulance_accepted',
         ambulanceId: ambulance._id,
         ambulanceName: `${ambulance.firstName} ${ambulance.lastName}`
@@ -545,7 +545,7 @@ export const createAmbulanceRequest = async (req, res, next) => {
       // Notify patient
       const patientNotif = {
         patientId: populatedRequest.patient._id,
-        message: '🚑 Your ambulance request has been sent to all available ambulance crews!',
+        message: 'Your ambulance request has been sent to all available ambulance crews!',
         type: 'pickup_request_sent'
       };
       console.log('📢 [Socket] Emitting patientNotification:', patientNotif);
@@ -696,7 +696,7 @@ export const acceptAmbulanceRequest = async (req, res, next) => {
         patientId: request.patient._id,
         ambulanceId: ambulance._id,
         ambulanceName: `${ambulance.firstName} ${ambulance.lastName}`,
-        message: `🚑 ${ambulance.firstName} ${ambulance.lastName} is on the way to pick you up!`
+        message: `${ambulance.firstName} ${ambulance.lastName} is on the way to pick you up!`
       });
 
       // Remove request from all ambulances' lists
@@ -709,7 +709,7 @@ export const acceptAmbulanceRequest = async (req, res, next) => {
       // Notify patient directly
       io.emit('patientNotification', {
         patientId: request.patient._id,
-        message: `🚑 Ambulance crew ${ambulance.firstName} ${ambulance.lastName} accepted your pickup request and is on the way!`,
+        message: `Ambulance crew ${ambulance.firstName} ${ambulance.lastName} accepted your pickup request and is on the way!`,
         type: 'ambulance_accepted',
         ambulanceId: ambulance._id,
         ambulanceName: `${ambulance.firstName} ${ambulance.lastName}`
@@ -896,7 +896,7 @@ export const notifyPatientWaiting = async (req, res, next) => {
     if (io) {
       io.emit("patientNotification", {
         patientId: patient._id,
-        message: `🚑 Ambulance crew ${ambulance.firstName} ${ambulance.lastName} is waiting at your pickup location. ${note ? note : "Please proceed to meet them."}`,
+        message: `Ambulance crew ${ambulance.firstName} ${ambulance.lastName} is waiting at your pickup location. ${note ? note : "Please proceed to meet them."}`,
         type: "ambulance_waiting",
         ambulanceId: ambulance._id,
         location: ambulance.currentLocation || null,
