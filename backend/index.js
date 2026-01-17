@@ -31,6 +31,8 @@ const __dirname = dirname(__filename);
 dotenv.config({ path: join(__dirname, '.env') });
 
 const app = express();
+app.set("trust proxy", 1); 
+
 const httpServer = createServer(app);
 const port = process.env.PORT || 3030;
 const mongoUrl = process.env.MONGO_URL;
