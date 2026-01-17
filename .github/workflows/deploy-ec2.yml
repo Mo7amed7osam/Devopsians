@@ -1,4 +1,4 @@
-name: Deploy to EC2 ( only build what changed)
+name: Deploy to EC2 (Smart + Health Check)
 
 on:
   push:
@@ -63,12 +63,11 @@ jobs:
             echo "==> Backend changed?  $BACKEND_CHANGED"
             echo "==> Frontend changed? $FRONTEND_CHANGED"
 
-            # Backend deploy (only if changed)
+            # Backend deploy
             if [ "$BACKEND_CHANGED" -eq 1 ]; then
               echo "==> Backend: install & restart"
               cd "$REPO_DIR/backend"
 
-              # Faster + reproducible if package-lock exists
               if [ -f package-lock.json ]; then
                 npm ci --omit=dev
               else
@@ -86,7 +85,7 @@ jobs:
               echo "==> Backend unchanged, skipping."
             fi
 
-            # Frontend deploy (only if changed)
+            # Frontend deploy
             if [ "$FRONTEND_CHANGED" -eq 1 ]; then
               echo "==> Frontend: install & build"
               cd "$REPO_DIR/frontend"
@@ -108,4 +107,15 @@ jobs:
               echo "==> Frontend unchanged, skipping."
             fi
 
-            echo "✅ EC2 deploy done"
+            echo "==> Health checks"
+            # 1) Frontend should return 200
+            curl -fsS -o /dev/null -I http://127.0.0.1
+
+            # 2) Backend process should be online
+            pm2 jlist | grep -q '"name":"devopsians-backend"' || (echo "❌ PM2 app not found" && exit 1)
+            pm2 describe devopsians-backend | grep -q "status *online" || (echo "❌ Backend not online" && pm2 logs devopsians-backend --lines 80 && exit 1)
+
+            # 3) Backend port open locally
+            curl -fsS -o /dev/null http://127.0.0.1:5000 || (echo "❌ Backend not responding on 5000" && pm2 logs devopsians-backend --lines 80 && exit 1)
+
+            echo "✅ EC2 deploy done + healthy"
