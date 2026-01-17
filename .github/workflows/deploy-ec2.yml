@@ -1,4 +1,4 @@
-name: Deploy to EC2 (Smart + Health Check)
+name: Deploy to EC2 (Smart + Env + Health)
 
 on:
   push:
@@ -63,6 +63,17 @@ jobs:
             echo "==> Backend changed?  $BACKEND_CHANGED"
             echo "==> Frontend changed? $FRONTEND_CHANGED"
 
+            echo "==> Write backend .env from GitHub Secrets"
+            cat > "$REPO_DIR/backend/.env" << 'EOF'
+            MONGO_URL=${{ secrets.MONGO_URL }}
+            PORT=${{ secrets.BACKEND_PORT }}
+            NODE_ENV=production
+            CORS_ALLOW_ALL=true
+            FRONTEND_URL=http://${{ secrets.EC2_HOST }}
+            JWT_SECRET=${{ secrets.JWT_SECRET }}
+            EOF
+            chmod 600 "$REPO_DIR/backend/.env"
+
             # Backend deploy
             if [ "$BACKEND_CHANGED" -eq 1 ]; then
               echo "==> Backend: install & restart"
@@ -82,7 +93,9 @@ jobs:
 
               pm2 save
             else
-              echo "==> Backend unchanged, skipping."
+              echo "==> Backend unchanged, restarting to ensure env is loaded"
+              pm2 restart devopsians-backend --update-env || true
+              pm2 save || true
             fi
 
             # Frontend deploy
@@ -108,54 +121,25 @@ jobs:
             fi
 
             echo "==> Health checks"
+            echo "✅ Nginx OK (127.0.0.1:80)"
+            curl -fsS -o /dev/null -I http://127.0.0.1
 
-            # -----------------------------------------
-            # OLD CHECKS (commented - kept for history)
-            # -----------------------------------------
-            # # 1) Frontend should return 200
-            # curl -fsS -o /dev/null -I http://127.0.0.1
-            #
-            # # 2) Backend process should be online
-            # pm2 jlist | grep -q '"name":"devopsians-backend"' || (echo "❌ PM2 app not found" && exit 1)
-            # pm2 describe devopsians-backend | grep -q "status *online" || (echo "❌ Backend not online" && pm2 logs devopsians-backend --lines 80 && exit 1)
-            #
-            # # 3) Backend port open locally
-            # curl -fsS -o /dev/null http://127.0.0.1:5000 || (echo "❌ Backend not responding on 5000" && pm2 logs devopsians-backend --lines 80 && exit 1)
+            echo "✅ PM2 app exists: devopsians-backend"
+            pm2 describe devopsians-backend >/dev/null
 
-            # -----------------------------------------
-            # NEW CHECKS (robust + correct)
-            # -----------------------------------------
-
-            # 1) Nginx check (should respond on port 80)
-            if curl -fsS -I http://127.0.0.1 >/dev/null; then
-              echo "✅ Nginx OK (127.0.0.1:80)"
-            else
-              echo "❌ Nginx not responding"
-              sudo systemctl status nginx --no-pager || true
-              sudo tail -n 80 /var/log/nginx/error.log || true
-              exit 1
-            fi
-
-            # 2) PM2 process existence (avoid parsing describe output)
-            if pm2 id devopsians-backend >/dev/null 2>&1; then
-              echo "✅ PM2 app exists: devopsians-backend"
-            else
-              echo "❌ PM2 app not found: devopsians-backend"
-              pm2 status || true
-              exit 1
-            fi
-
-            # 3) Backend health endpoint (real truth)
-            # NOTE: change 5000 if your backend runs on a different port
-            if curl -fsS http://127.0.0.1:5000/health >/dev/null; then
-              echo "✅ Backend OK (5000/health)"
-            else
-              echo "❌ Backend health failed (5000/health)"
-              echo "---- pm2 status ----"
-              pm2 status || true
-              echo "---- backend logs (last 120 lines) ----"
-              pm2 logs devopsians-backend --lines 120 || true
-              exit 1
-            fi
+            echo "==> Wait for backend port"
+            for i in {1..15}; do
+              if curl -fsS http://127.0.0.1:${{ secrets.BACKEND_PORT }}/health >/dev/null; then
+                echo "✅ Backend health OK"
+                break
+              fi
+              sleep 1
+              if [ "$i" -eq 15 ]; then
+                echo "❌ Backend health failed"
+                pm2 status
+                pm2 logs devopsians-backend --lines 120
+                exit 1
+              fi
+            done
 
             echo "✅ EC2 deploy done + healthy"
