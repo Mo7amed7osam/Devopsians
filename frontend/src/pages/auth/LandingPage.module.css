@@ -1,379 +1,516 @@
 /* src/pages/LandingPage.module.css */
 
-/* --- Page Container --- */
 .pageContainer {
-    background-color: var(--color-background-light);
-    overflow-x: hidden; /* Prevent horizontal scrollbars from animations */
+    background: #F8FAFC;
+    color: var(--color-ink);
+    overflow-x: hidden;
 }
 
-/* --- NEW: Keyframes for Animations --- */
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 24px;
+    box-sizing: border-box;
 }
 
-@keyframes slideInUp {
-  from { transform: translateY(30px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+.srOnly {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    border: 0;
 }
 
-/* --- Hero Section --- */
 .heroSection {
-    min-height: 70vh; /* Adjusted height */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    padding: 80px 20px;
-    /* --- MODIFIED: Use a richer gradient instead of image --- */
-    background: var(--gradient-primary);
-    color: #ffffff; /* --- CHANGE: Default text is light on gradient --- */
     position: relative;
-    animation: fadeIn 1s ease-out; /* Fade in hero content */
+    padding: 96px 0 64px;
 }
 
-.heroContent h1 {
-    font-size: 4em;
-    color: #ffffff;
-    margin-bottom: 20px;
-    font-weight: 800;
-    text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.4); /* Reduced shadow slightly */
+.heroSection::before {
+    content: '';
+    position: absolute;
+    top: -120px;
+    left: -120px;
+    right: -120px;
+    height: 420px;
+    background: radial-gradient(circle at 20% 20%, rgba(37, 99, 235, 0.18), transparent 55%),
+        radial-gradient(circle at 80% 30%, rgba(20, 184, 166, 0.18), transparent 60%);
+    pointer-events: none;
+}
+
+.heroGrid {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 48px;
+    align-items: center;
+}
+
+.heroLeft h1 {
+    font-size: clamp(2.4rem, 4vw, 3.6rem);
+    margin: 12px 0 16px;
+    color: var(--color-ink);
+    letter-spacing: -0.02em;
+}
+
+.eyebrow {
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    letter-spacing: 0.2em;
+    color: var(--color-ink-muted);
+    font-weight: 600;
 }
 
 .subtitle {
-    font-size: 1.6em;
-    color: rgba(255, 255, 255, 0.95);
-    margin-bottom: 50px;
-    max-width: 800px;
-    margin-left: auto;
-    margin-right: auto;
-    text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.3); /* Reduced shadow slightly */
-}
-
-.ctaButton {
-    padding: 20px 45px;
-    font-size: 1.5em;
-    font-weight: 700;
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2); /* Adjusted shadow for button on gradient */
-    transition: transform 0.2s, box-shadow 0.2s, background-color 0.2s, color 0.2s;
-    border: 2px solid rgba(255, 255, 255, 0.9);
-    background-color: transparent;
-    color: white;
-    border-radius: 50px; /* Pill shape */
-}
-
-.ctaButton:hover {
-    transform: translateY(-4px) scale(1.02);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3); /* Adjusted shadow */
-    background-color: white;
-    color: var(--color-primary-strong);
-}
-
-/* --- Section Styling (Common) --- */
-.howItWorksSection,
-.benefitsSection,
-.statsSection /* Added */
- {
-    padding: 80px 20px;
-    text-align: center;
-    position: relative;
-    overflow: hidden;
-    animation: slideInUp 0.8s ease-out forwards;
-    opacity: 0; /* Start hidden for animation */
-}
-/* Delay animation for subsequent sections */
-.statsSection { /* Added */
-    animation-delay: 0.1s;
-}
-.benefitsSection {
-    animation-delay: 0.2s;
-}
-
-
-.howItWorksSection {
-    background-color: var(--color-background-white);
-}
-
-.benefitsSection {
-    background-color: var(--color-background-light);
-}
-
-
-/* --- Section Divider --- */
-.howItWorksSection::before,
-.benefitsSection::before,
-.statsSection::before /* Added */
-{
-    content: '';
-    position: absolute;
-    top: -20px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 60px;
-    height: 5px;
-    background-color: var(--color-primary);
-    border-radius: 3px;
-    opacity: 0.5;
-}
-/* --- HIDE DIVIDER FOR STATS --- */
-.statsSection::before {
-    display: none;
-}
-
-
-.howItWorksSection h2,
-.benefitsSection h2 {
-    font-size: 2.8em;
-    color: var(--color-primary-dark);
-    margin-bottom: 50px;
-}
-
-/* --- How It Works Section --- */
-.stepsGrid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 40px;
-    max-width: 1100px;
-    margin: 0 auto;
-}
-
-.stepCard {
-    background-color: var(--color-surface);
-    padding: 35px;
-    border-radius: 12px;
-    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
-    transition: transform 0.3s ease-out, box-shadow 0.3s ease-out, border-color 0.3s;
-    border: 1px solid rgba(0, 0, 0, 0.02);
-}
-
-.stepCard:hover {
-    transform: translateY(-8px) scale(1.03);
-    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
-    border-color: rgba(37, 99, 235, 0.25);
-}
-
-/* --- Icon Styling --- */
-.stepCard .iconWrapper,
-.benefitCard .iconWrapper {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
+    font-size: 1.1rem;
+    line-height: 1.6;
+    color: var(--color-ink-muted);
+    max-width: 520px;
     margin-bottom: 20px;
-    background-color: var(--color-primary-light);
-    transition: background-color 0.3s, color 0.3s;
-}
-.benefitCard .iconWrapper {
-     background-color: var(--color-success-light);
 }
 
-.stepCard i,
-.benefitCard i {
-    font-size: 2.5em;
-    color: var(--color-primary);
-    transition: color 0.3s; /* Add transition for icon color */
+.searchBar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px;
+    background: #ffffff;
+    border: 1px solid var(--color-border);
+    border-radius: 14px;
+    box-shadow: var(--shadow-xs);
+    max-width: 540px;
 }
-.benefitCard i {
+
+.searchBar input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: 12px 14px;
+    font-size: 1rem;
+    color: var(--color-ink);
+}
+
+.searchBar input:focus {
+    outline: none;
+}
+
+.searchBar:focus-within {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
+}
+
+.searchButton {
+    border: none;
+    background: var(--color-primary);
+    color: #ffffff;
+    padding: 12px 18px;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.searchButton:hover {
+    background: var(--color-primary-strong);
+    transform: translateY(-1px);
+}
+
+.searchButton:focus-visible {
+    outline: 3px solid rgba(37, 99, 235, 0.35);
+    outline-offset: 2px;
+}
+
+.locationLink {
+    margin-top: 10px;
+    background: transparent;
+    border: none;
+    color: var(--color-primary);
+    font-weight: 600;
+    cursor: pointer;
+    padding: 4px 0;
+}
+
+.locationLink:focus-visible {
+    outline: 2px solid rgba(37, 99, 235, 0.35);
+    outline-offset: 4px;
+    border-radius: 6px;
+}
+
+.ctaRow {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 18px;
+}
+
+.primaryCta,
+.secondaryCta {
+    padding: 14px 22px;
+    border-radius: 999px;
+    font-weight: 600;
+}
+
+.trustStrip {
+    margin-top: 32px;
+    padding-top: 20px;
+    border-top: 1px solid var(--color-border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    color: var(--color-ink-muted);
+    font-size: 0.95rem;
+}
+
+.trustDivider {
+    opacity: 0.4;
+}
+
+.heroRight {
+    display: flex;
+    justify-content: center;
+}
+
+.previewCard {
+    width: 100%;
+    max-width: 460px;
+    background: #ffffff;
+    border-radius: 20px;
+    border: 1px solid var(--color-border);
+    box-shadow: var(--shadow-md);
+    padding: 24px;
+}
+
+.previewHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.previewHeader h3 {
+    margin: 6px 0 0;
+    font-size: 1.25rem;
+    color: var(--color-ink);
+}
+
+.previewLabel {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--color-ink-muted);
+    font-weight: 600;
+}
+
+.previewBadge {
+    background: rgba(34, 197, 94, 0.12);
+    color: var(--color-success);
+    font-weight: 600;
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 0.85rem;
+}
+
+.previewList {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.previewRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: var(--color-surface-2);
+    border: 1px solid var(--color-border);
+}
+
+.previewTitle {
+    font-weight: 600;
+    margin: 0;
+    color: var(--color-ink);
+}
+
+.previewMeta {
+    margin: 4px 0 0;
+    font-size: 0.9rem;
+    color: var(--color-ink-muted);
+}
+
+.statusBadge {
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+
+.statusAvailable {
+    background: rgba(34, 197, 94, 0.15);
     color: var(--color-success);
 }
 
-.stepCard:hover .iconWrapper {
-    background-color: var(--color-primary);
-}
-.stepCard:hover i {
-    color: white;
-}
-.benefitCard:hover .iconWrapper {
-    background-color: var(--color-success);
-}
-.benefitCard:hover i {
-     color: white;
+.statusLimited {
+    background: rgba(245, 158, 11, 0.15);
+    color: var(--color-accent);
 }
 
+.statusBusy {
+    background: rgba(239, 68, 68, 0.15);
+    color: var(--color-danger);
+}
+
+.previewFooter {
+    margin-top: 20px;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 16px;
+    align-items: center;
+    color: var(--color-ink-muted);
+    font-size: 0.9rem;
+}
+
+.previewFooterLabel {
+    margin: 0;
+}
+
+.previewFooterValue {
+    margin: 6px 0 0;
+    font-weight: 600;
+    color: var(--color-ink);
+}
+
+.previewFooterDivider {
+    width: 1px;
+    height: 38px;
+    background: var(--color-border);
+}
+
+.sectionHeader {
+    text-align: center;
+    margin-bottom: 36px;
+}
+
+.sectionHeader h2 {
+    font-size: clamp(2rem, 3vw, 2.6rem);
+    margin-bottom: 10px;
+}
+
+.sectionHeader p {
+    color: var(--color-ink-muted);
+    margin: 0;
+}
+
+.stepsSection {
+    padding: 72px 0;
+    background: #F8FAFC;
+}
+
+.stepsGrid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 24px;
+}
+
+.stepCard {
+    background: #ffffff;
+    border: 1px solid var(--color-border);
+    border-radius: 16px;
+    padding: 26px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.stepCard:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-sm);
+}
+
+.iconWrapper {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(37, 99, 235, 0.12);
+    color: var(--color-primary);
+    margin-bottom: 16px;
+}
 
 .stepCard h3 {
-    font-size: 1.6em;
-    color: var(--color-ink);
-    margin-bottom: 15px;
+    margin: 0 0 10px;
+    font-size: 1.2rem;
 }
 
-/* --- Stats Section --- */
-.statsSection { /* Added */
-    background-color: var(--color-primary-dark);
-    color: white;
-    padding: 50px 20px; /* Adjusted padding */
+.stepCard p {
+    margin: 0;
+    color: var(--color-ink-muted);
+    line-height: 1.6;
 }
 
-.statsGrid { /* Added */
+.statsSection {
+    padding: 56px 0 72px;
+    background: #ffffff;
+}
+
+.statsGrid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 30px;
-    max-width: 900px; /* Adjusted width */
-    margin: 0 auto;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 20px;
 }
 
-.statNumber { /* Added */
+.statCard {
+    padding: 24px;
+    border-radius: 16px;
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+    text-align: center;
+}
+
+.statNumber {
     display: block;
-    font-size: 3em; /* Slightly larger */
+    font-size: 2.4rem;
     font-weight: 700;
-    margin-bottom: 5px;
+    color: var(--color-ink);
 }
 
-.statLabel { /* Added */
-    font-size: 1.2em; /* Slightly larger */
-    opacity: 0.9; /* Less transparent */
+.statLabel {
+    font-size: 1rem;
+    color: var(--color-ink-muted);
 }
-/* --- End of Stats Section --- */
 
-/* --- Benefits Section --- */
+.benefitsSection {
+    padding: 72px 0 96px;
+    background: #F8FAFC;
+}
+
 .benefitsGrid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 40px;
-    max-width: 1100px;
-    margin: 0 auto;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 24px;
 }
 
 .benefitCard {
-    background-color: var(--color-background-white);
-    padding: 35px 25px;
-    border-radius: 12px;
+    background: #ffffff;
     border: 1px solid var(--color-border);
-    transition: transform 0.3s ease-out, box-shadow 0.3s ease-out;
+    border-radius: 16px;
+    padding: 26px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .benefitCard:hover {
-     transform: translateY(-5px);
-     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-sm);
 }
 
 .benefitCard h3 {
-    font-size: 1.5em;
-    color: var(--color-ink);
-    margin-bottom: 15px;
+    margin: 0 0 10px;
+    font-size: 1.2rem;
 }
 
-/* --- Dark Mode Overrides --- */
+.benefitCard p {
+    margin: 0;
+    color: var(--color-ink-muted);
+    line-height: 1.6;
+}
+
 .darkMode {
-  /* .pageContainer dark mode handled by body.dark-mode */
+    background: #0b1220;
+    color: #e2e8f0;
 }
 
-/* Hero Section Dark */
-.darkMode .heroSection {
-    background: var(--gradient-primary);
-    color: #ffffff;
+.darkMode .heroSection::before {
+    background: radial-gradient(circle at 20% 20%, rgba(56, 189, 248, 0.22), transparent 55%),
+        radial-gradient(circle at 80% 30%, rgba(20, 184, 166, 0.2), transparent 60%);
 }
 
-.darkMode .heroContent h1 {
-     color: #ffffff;
-     text-shadow: 2px 2px 10px rgba(0, 0, 0, 0.7);
-}
-
-.darkMode .subtitle {
-    color: rgba(230, 230, 230, 0.9);
-    text-shadow: 1px 1px 5px rgba(0, 0, 0, 0.6);
-}
-
-.darkMode .ctaButton {
-    border-color: rgba(255, 255, 255, 0.8);
-    color: rgba(255, 255, 255, 0.9);
-    background-color: transparent;
-}
-
-.darkMode .ctaButton:hover {
-    background-color: rgba(255, 255, 255, 0.9);
-    color: var(--color-primary-dark);
-    border-color: white;
-}
-
-
-/* How It Works Section Dark */
-.darkMode .howItWorksSection {
-    background-color: var(--color-background-white);
-}
-
-.darkMode .howItWorksSection h2,
-.darkMode .benefitsSection h2 {
-    color: var(--color-text-dark);
-}
-
-.darkMode .howItWorksSection::before,
-.darkMode .benefitsSection::before,
-.darkMode .statsSection::before /* Added */
-{
-    background-color: var(--color-primary-light);
-    opacity: 0.6;
-}
-.darkMode .statsSection::before { /* Added */
-     display: none; /* Keep hidden */
-}
-
-
-.darkMode .stepCard {
-    background-color: #2a2a2a;
-    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
-    border-color: transparent;
-}
-
-.darkMode .stepCard:hover {
-    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
-    border-color: var(--color-border);
-}
-
-/* Dark Mode Icon Wrapper */
-.darkMode .stepCard .iconWrapper,
-.darkMode .benefitCard .iconWrapper {
-    background-color: #333;
-}
-.darkMode .stepCard:hover .iconWrapper {
-     background-color: var(--color-primary);
-}
-.darkMode .benefitCard:hover .iconWrapper {
-     background-color: var(--color-success);
-}
-/* Ensure icon color changes correctly */
-.darkMode .stepCard i,
-.darkMode .benefitCard i {
-    color: var(--color-primary);
-}
-.darkMode .benefitCard i {
-     color: var(--color-success);
-}
-.darkMode .stepCard:hover i,
-.darkMode .benefitCard:hover i {
-    color: white;
-}
-
-.darkMode .stepCard h3,
-.darkMode .benefitCard h3 {
-     color: var(--color-text-dark);
-}
-
+.darkMode .subtitle,
+.darkMode .sectionHeader p,
 .darkMode .stepCard p,
-.darkMode .benefitCard p {
-     color: var(--color-text-muted);
+.darkMode .benefitCard p,
+.darkMode .statLabel,
+.darkMode .previewMeta,
+.darkMode .previewFooterLabel,
+.darkMode .trustStrip {
+    color: rgba(226, 232, 240, 0.7);
 }
 
-/* Stats Section Dark */
-.darkMode .statsSection { /* Added */
-    background-color: var(--color-primary-strong);
-}
-/* Text is already white in light mode, should be fine */
-
-/* Benefits Section Dark */
-.darkMode .benefitsSection {
-    background-color: var(--color-background-light);
-}
-
-.darkMode .benefitCard {
-    background-color: var(--color-background-white);
-    border-color: var(--color-border);
-    box-shadow: none;
+.darkMode .previewCard,
+.darkMode .stepCard,
+.darkMode .benefitCard,
+.darkMode .statCard,
+.darkMode .previewRow,
+.darkMode .searchBar {
+    background: #0f172a;
+    border-color: rgba(148, 163, 184, 0.25);
 }
 
-.darkMode .benefitCard:hover {
-     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
-     border-color: var(--color-border-strong);
+.darkMode .searchBar input {
+    color: #e2e8f0;
+}
+
+.darkMode .previewTitle,
+.darkMode .previewFooterValue,
+.darkMode .statNumber,
+.darkMode .heroLeft h1,
+.darkMode .sectionHeader h2 {
+    color: #f8fafc;
+}
+
+.darkMode .previewFooterDivider {
+    background: rgba(148, 163, 184, 0.25);
+}
+
+@media (max-width: 960px) {
+    .heroGrid {
+        grid-template-columns: 1fr;
+    }
+
+    .heroRight {
+        justify-content: flex-start;
+    }
+
+    .previewCard {
+        max-width: 100%;
+    }
+
+    .stepsGrid,
+    .benefitsGrid,
+    .statsGrid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 720px) {
+    .searchBar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .searchButton {
+        width: 100%;
+    }
+
+    .ctaRow {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .previewFooter {
+        grid-template-columns: 1fr;
+    }
+
+    .previewFooterDivider {
+        display: none;
+    }
+
+    .stepsGrid,
+    .benefitsGrid,
+    .statsGrid {
+        grid-template-columns: 1fr;
+    }
 }

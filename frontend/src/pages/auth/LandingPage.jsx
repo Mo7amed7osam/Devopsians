@@ -2,152 +2,224 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { safeNavigate } from '../../utils/security';
-import styles from './LandingPage.module.css'; //
-import Button from '../../components/common/Button'; //
-import { useAuth } from '../../contexts/AuthContext'; //
+import styles from './LandingPage.module.css';
+import Button from '../../components/common/Button';
+import { useAuth } from '../../contexts/AuthContext';
 
 const LandingPage = () => {
     const navigate = useNavigate();
-    const { isDarkMode } = useAuth(); // Get dark mode state
+    const { isDarkMode } = useAuth();
 
     const handleFindIcuClick = () => {
         safeNavigate(navigate, '/find-icu');
     };
 
-    // Construct class name for dark mode
+    const handleLoginClick = () => {
+        safeNavigate(navigate, '/login');
+    };
+
+    const handleSearchSubmit = (event) => {
+        event.preventDefault();
+        handleFindIcuClick();
+    };
+
     const containerClasses = `${styles.pageContainer} ${isDarkMode ? styles.darkMode : ''}`;
 
     return (
         <div className={containerClasses}>
-            {/* --- Hero Section --- */}
             <section className={styles.heroSection}>
-                <div className={styles.heroContent}>
-                    {/* --- UPDATED HEADLINE --- */}
-                    <h1>Your Lifeline to Immediate ICU Care</h1>
-                    <p className={styles.subtitle}>
-                        Locate and reserve the nearest available Intensive Care Unit (ICU) in real-time across our hospital network. Speed and accuracy when it matters most.
-                         Our intuitive platform gives you peace of mind during critical moments.
-                    </p>
-                    <Button
-                        onClick={handleFindIcuClick}
-                        variant="primary" // Variant prop might be less relevant due to specific class styling
-                        className={styles.ctaButton}
-                    >
-                        Find Nearest ICU Now
-                        <i className="fas fa-search-location" style={{ marginLeft: '10px' }}></i>
-                    </Button>
+                <div className={styles.container}>
+                    <div className={styles.heroGrid}>
+                        <div className={styles.heroLeft}>
+                            <span className={styles.eyebrow}>ICU Management Platform</span>
+                            <h1>Find critical ICU care fast.</h1>
+                            <p className={styles.subtitle}>
+                                Real-time ICU availability across trusted hospitals.
+                                Reserve confidently when every minute matters.
+                            </p>
+                            <form className={styles.searchBar} onSubmit={handleSearchSubmit}>
+                                <label className={styles.srOnly} htmlFor="icu-search">
+                                    Search hospitals, cities, or specializations
+                                </label>
+                                <input
+                                    id="icu-search"
+                                    type="text"
+                                    placeholder="Search hospitals, cities, or specializations"
+                                />
+                                <button type="submit" className={styles.searchButton}>
+                                    Search
+                                </button>
+                            </form>
+                            <button
+                                type="button"
+                                className={styles.locationLink}
+                                onClick={handleFindIcuClick}
+                            >
+                                Use my location
+                            </button>
+                            <div className={styles.ctaRow}>
+                                <Button
+                                    onClick={handleFindIcuClick}
+                                    variant="primary"
+                                    className={styles.primaryCta}
+                                >
+                                    Find ICU now
+                                </Button>
+                                <Button
+                                    onClick={handleLoginClick}
+                                    variant="secondary"
+                                    className={styles.secondaryCta}
+                                >
+                                    Login
+                                </Button>
+                            </div>
+                        </div>
+                        <div className={styles.heroRight}>
+                            <div className={styles.previewCard}>
+                                <div className={styles.previewHeader}>
+                                    <div>
+                                        <span className={styles.previewLabel}>Live ICU Status</span>
+                                        <h3>Availability Snapshot</h3>
+                                    </div>
+                                    <span className={styles.previewBadge}>Updated now</span>
+                                </div>
+                                <div className={styles.previewList}>
+                                    <div className={styles.previewRow}>
+                                        <div>
+                                            <p className={styles.previewTitle}>Al-Rayan Hospital</p>
+                                            <p className={styles.previewMeta}>Medical ICU - 3 beds</p>
+                                        </div>
+                                        <span className={`${styles.statusBadge} ${styles.statusAvailable}`}>
+                                            Available
+                                        </span>
+                                    </div>
+                                    <div className={styles.previewRow}>
+                                        <div>
+                                            <p className={styles.previewTitle}>City Care Center</p>
+                                            <p className={styles.previewMeta}>Cardiac ICU - 1 bed</p>
+                                        </div>
+                                        <span className={`${styles.statusBadge} ${styles.statusLimited}`}>
+                                            Limited
+                                        </span>
+                                    </div>
+                                    <div className={styles.previewRow}>
+                                        <div>
+                                            <p className={styles.previewTitle}>Nile Health</p>
+                                            <p className={styles.previewMeta}>Surgical ICU - 0 beds</p>
+                                        </div>
+                                        <span className={`${styles.statusBadge} ${styles.statusBusy}`}>
+                                            Full
+                                        </span>
+                                    </div>
+                                </div>
+                                <div className={styles.previewFooter}>
+                                    <div>
+                                        <p className={styles.previewFooterLabel}>Avg. response time</p>
+                                        <p className={styles.previewFooterValue}>Under 2 minutes</p>
+                                    </div>
+                                    <div className={styles.previewFooterDivider} />
+                                    <div>
+                                        <p className={styles.previewFooterLabel}>Coverage</p>
+                                        <p className={styles.previewFooterValue}>24/7 across partner hospitals</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div className={styles.trustStrip}>
+                        <span>Real-time availability</span>
+                        <span className={styles.trustDivider}>|</span>
+                        <span>Role-based access</span>
+                        <span className={styles.trustDivider}>|</span>
+                        <span>Secure workflow</span>
+                    </div>
                 </div>
             </section>
 
-            {/* --- How It Works Section --- */}
-            <section className={styles.howItWorksSection}>
-                 {/* --- UPDATED TITLE --- */}
-                <h2>Simple Steps to Secure Care</h2>
-                <div className={styles.stepsGrid}>
-                    <div className={styles.stepCard}>
-                        <div className={styles.iconWrapper}>
-                            <i className="fas fa-map-marked-alt"></i>
-                        </div>
-                         {/* --- UPDATED STEP --- */}
-                        <h3>1. Locate Nearby ICUs</h3>
-                        <p>Use our interactive map to find hospitals with ICU availability near you or your patient's location.</p>
+            <section id="how-it-works" className={styles.stepsSection}>
+                <div className={styles.container}>
+                    <div className={styles.sectionHeader}>
+                        <h2>Simple steps to secure care</h2>
+                        <p>Find, verify, and reserve ICU beds in minutes.</p>
                     </div>
-                    <div className={styles.stepCard}>
-                        <div className={styles.iconWrapper}>
-                            <i className="fas fa-eye"></i>
+                    <div className={styles.stepsGrid}>
+                        <div className={styles.stepCard}>
+                            <div className={styles.iconWrapper}>
+                                <i className="fas fa-map-marked-alt"></i>
+                            </div>
+                            <h3>Locate nearby ICUs</h3>
+                            <p>Search hospitals based on distance and specialization in seconds.</p>
                         </div>
-                        {/* --- UPDATED STEP --- */}
-                        <h3>2. Verify Real-Time Availability</h3>
-                        <p>Instantly see up-to-the-minute bed status, unit specialization, and essential hospital information.</p>
-                    </div>
-                    <div className={styles.stepCard}>
-                         <div className={styles.iconWrapper}>
-                           <i className="fas fa-calendar-check"></i>
+                        <div className={styles.stepCard}>
+                            <div className={styles.iconWrapper}>
+                                <i className="fas fa-eye"></i>
+                            </div>
+                            <h3>Verify live availability</h3>
+                            <p>See real-time bed status, unit details, and hospital contacts.</p>
                         </div>
-                         {/* --- UPDATED STEP --- */}
-                        <h3>3. Secure Your Reservation</h3>
-                        <p>Log in to the patient portal to reserve an available ICU bed immediately, confirming your spot.</p>
+                        <div className={styles.stepCard}>
+                            <div className={styles.iconWrapper}>
+                                <i className="fas fa-calendar-check"></i>
+                            </div>
+                            <h3>Reserve instantly</h3>
+                            <p>Confirm an ICU bed and coordinate pickup when needed.</p>
+                        </div>
                     </div>
                 </div>
             </section>
 
-             {/* --- Statistics Section --- */}
             <section className={styles.statsSection}>
-                 <div className={styles.statsGrid}>
-                     <div>
-                         <span className={styles.statNumber}>15+</span>
-                         <span className={styles.statLabel}>Hospitals Connected</span>
-                     </div>
-                     <div>
-                          <span className={styles.statNumber}>99%</span>
-                         <span className={styles.statLabel}>Real-Time Accuracy</span>
-                     </div>
-                     <div>
-                          <span className={styles.statNumber}>24/7</span>
-                         <span className={styles.statLabel}>System Availability</span>
-                     </div>
-                 </div>
+                <div className={styles.container}>
+                    <div className={styles.statsGrid}>
+                        <div className={styles.statCard}>
+                            <span className={styles.statNumber}>15+</span>
+                            <span className={styles.statLabel}>Hospitals connected</span>
+                        </div>
+                        <div className={styles.statCard}>
+                            <span className={styles.statNumber}>99%</span>
+                            <span className={styles.statLabel}>Real-time accuracy</span>
+                        </div>
+                        <div className={styles.statCard}>
+                            <span className={styles.statNumber}>24/7</span>
+                            <span className={styles.statLabel}>System availability</span>
+                        </div>
+                    </div>
+                </div>
             </section>
-            {/* --- End of Statistics Section --- */}
 
-            {/* --- Benefits Section --- */}
             <section className={styles.benefitsSection}>
-                 {/* --- UPDATED TITLE --- */}
-                 <h2>The ICU Reservation Advantage</h2>
-                 <div className={styles.benefitsGrid}>
-                     <div className={styles.benefitCard}>
-                         <div className={styles.iconWrapper}>
-                            <i className="fas fa-tachometer-alt"></i>
-                         </div>
-                          {/* --- UPDATED BENEFIT --- */}
-                         <h3>Unmatched Speed</h3>
-                         <p>Instantly find available ICUs, eliminating stressful delays and saving critical time in emergencies.</p>
-                     </div>
-                     <div className={styles.benefitCard}>
-                         <div className={styles.iconWrapper}>
-                            <i className="fas fa-crosshairs"></i>
-                         </div>
-                          {/* --- UPDATED BENEFIT --- */}
-                         <h3>Verified Availability</h3>
-                         <p>Our system uses real-time data feeds, ensuring the ICU availability you see is accurate and trustworthy.</p>
-                     </div>
-                     <div className={styles.benefitCard}>
-                         <div className={styles.iconWrapper}>
-                             <i className="fas fa-shield-alt"></i>
-                         </div>
-                           {/* --- UPDATED BENEFIT --- */}
-                         <h3>Extensive & Reliable Network</h3>
-                         <p>Gain access to a wide range of specialized ICUs across numerous trusted hospital partners.</p>
-                     </div>
-                 </div>
+                <div className={styles.container}>
+                    <div className={styles.sectionHeader}>
+                        <h2>Why teams trust ICU Reservation</h2>
+                        <p>Designed for clarity, speed, and secure coordination.</p>
+                    </div>
+                    <div className={styles.benefitsGrid}>
+                        <div className={styles.benefitCard}>
+                            <div className={styles.iconWrapper}>
+                                <i className="fas fa-tachometer-alt"></i>
+                            </div>
+                            <h3>Fast triage decisions</h3>
+                            <p>Surface ICU availability quickly so teams can act without delays.</p>
+                        </div>
+                        <div className={styles.benefitCard}>
+                            <div className={styles.iconWrapper}>
+                                <i className="fas fa-crosshairs"></i>
+                            </div>
+                            <h3>Verified data</h3>
+                            <p>Live updates keep availability and bed details accurate.</p>
+                        </div>
+                        <div className={styles.benefitCard}>
+                            <div className={styles.iconWrapper}>
+                                <i className="fas fa-shield-alt"></i>
+                            </div>
+                            <h3>Secure workflow</h3>
+                            <p>Role-based access ensures each team member sees only what they need.</p>
+                        </div>
+                    </div>
+                </div>
             </section>
-
-             {/* --- Testimonial Section (Optional - Add if desired) --- */}
-            {/*
-            <section className={styles.testimonialSection}>
-                <blockquote className={styles.testimonialQuote}>
-                    "During a stressful emergency, ICU Reservation was incredibly fast and easy to use. We found an available bed in minutes. Highly recommended!"
-                </blockquote>
-                <p className={styles.testimonialAuthor}>- A Grateful User</p>
-            </section>
-            */}
-
-             {/* --- Final Call to Action (Optional - Add if desired) --- */}
-            {/*
-            <section className={styles.finalCtaSection}>
-                <h2>Ready to find the care you need?</h2>
-                <Button
-                    onClick={handleFindIcuClick}
-                    variant="success"
-                    className={styles.ctaButton} // Reuse hero button style or create a new one
-                 >
-                    Search for Available ICUs Now
-                </Button>
-            </section>
-            */}
-
         </div>
     );
 };
 
-export default LandingPage; //
+export default LandingPage;
