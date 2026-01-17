@@ -75,7 +75,7 @@ jobs:
               fi
 
               if pm2 describe devopsians-backend >/dev/null 2>&1; then
-                pm2 restart devopsians-backend
+                pm2 restart devopsians-backend --update-env
               else
                 pm2 start index.js --name devopsians-backend
               fi
@@ -108,14 +108,54 @@ jobs:
             fi
 
             echo "==> Health checks"
-            # 1) Frontend should return 200
-            curl -fsS -o /dev/null -I http://127.0.0.1
 
-            # 2) Backend process should be online
-            pm2 jlist | grep -q '"name":"devopsians-backend"' || (echo "❌ PM2 app not found" && exit 1)
-            pm2 describe devopsians-backend | grep -q "status *online" || (echo "❌ Backend not online" && pm2 logs devopsians-backend --lines 80 && exit 1)
+            # -----------------------------------------
+            # OLD CHECKS (commented - kept for history)
+            # -----------------------------------------
+            # # 1) Frontend should return 200
+            # curl -fsS -o /dev/null -I http://127.0.0.1
+            #
+            # # 2) Backend process should be online
+            # pm2 jlist | grep -q '"name":"devopsians-backend"' || (echo "❌ PM2 app not found" && exit 1)
+            # pm2 describe devopsians-backend | grep -q "status *online" || (echo "❌ Backend not online" && pm2 logs devopsians-backend --lines 80 && exit 1)
+            #
+            # # 3) Backend port open locally
+            # curl -fsS -o /dev/null http://127.0.0.1:5000 || (echo "❌ Backend not responding on 5000" && pm2 logs devopsians-backend --lines 80 && exit 1)
 
-            # 3) Backend port open locally
-            curl -fsS -o /dev/null http://127.0.0.1:5000 || (echo "❌ Backend not responding on 5000" && pm2 logs devopsians-backend --lines 80 && exit 1)
+            # -----------------------------------------
+            # NEW CHECKS (robust + correct)
+            # -----------------------------------------
+
+            # 1) Nginx check (should respond on port 80)
+            if curl -fsS -I http://127.0.0.1 >/dev/null; then
+              echo "✅ Nginx OK (127.0.0.1:80)"
+            else
+              echo "❌ Nginx not responding"
+              sudo systemctl status nginx --no-pager || true
+              sudo tail -n 80 /var/log/nginx/error.log || true
+              exit 1
+            fi
+
+            # 2) PM2 process existence (avoid parsing describe output)
+            if pm2 id devopsians-backend >/dev/null 2>&1; then
+              echo "✅ PM2 app exists: devopsians-backend"
+            else
+              echo "❌ PM2 app not found: devopsians-backend"
+              pm2 status || true
+              exit 1
+            fi
+
+            # 3) Backend health endpoint (real truth)
+            # NOTE: change 5000 if your backend runs on a different port
+            if curl -fsS http://127.0.0.1:5000/health >/dev/null; then
+              echo "✅ Backend OK (5000/health)"
+            else
+              echo "❌ Backend health failed (5000/health)"
+              echo "---- pm2 status ----"
+              pm2 status || true
+              echo "---- backend logs (last 120 lines) ----"
+              pm2 logs devopsians-backend --lines 120 || true
+              exit 1
+            fi
 
             echo "✅ EC2 deploy done + healthy"
