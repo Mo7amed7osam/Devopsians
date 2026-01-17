@@ -1,3 +1,4 @@
+[![Deploy to EC2 (Smart + Health Check)](https://github.com/Mo7amed7osam/Devopsians/actions/workflows/deploy-ec2.yml/badge.svg)](https://github.com/Mo7amed7osam/Devopsians/actions/workflows/deploy-ec2.yml)
 # Devopsians
 hihi
 Full‑stack hospital management app with a Node.js/Express + MongoDB backend and a React (Vite) frontend. Dockerfiles and a production docker‑compose stack are included, along with a Jenkins pipeline for CI/CD.
