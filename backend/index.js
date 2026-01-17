@@ -31,7 +31,7 @@ const __dirname = dirname(__filename);
 dotenv.config({ path: join(__dirname, '.env') });
 
 const app = express();
-app.set("trust proxy", 1); 
+app.set("trust proxy", true); 
 
 const httpServer = createServer(app);
 const port = process.env.PORT || 3030;
