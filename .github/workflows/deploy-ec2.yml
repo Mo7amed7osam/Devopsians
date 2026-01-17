@@ -1,8 +1,9 @@
-name: Deploy to EC2 (Nginx + PM2)
+name: Deploy to EC2 ( only build what changed)
 
 on:
+  push:
+    branches: ["main"]
 
-  workflow_dispatch:
 concurrency:
   group: devopsians-ec2
   cancel-in-progress: true
@@ -20,39 +21,91 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           port: 22
           script: |
-            set -e
+            set -euo pipefail
 
-            echo "==> Update repo"
-            if [ -d "/home/ec2-user/Devopsians/.git" ]; then
-              cd /home/ec2-user/Devopsians
+            REPO_DIR="/home/ec2-user/Devopsians"
+            CACHE_DIR="/home/ec2-user/.deploy-cache"
+            mkdir -p "$CACHE_DIR"
+
+            echo "==> Ensure repo exists"
+            if [ -d "$REPO_DIR/.git" ]; then
+              cd "$REPO_DIR"
+              OLD_SHA="$(cat "$CACHE_DIR/last_sha" 2>/dev/null || true)"
               git fetch --all
               git reset --hard origin/main
             else
               cd /home/ec2-user
               git clone https://github.com/Mo7amed7osam/Devopsians.git
-              cd Devopsians
+              cd "$REPO_DIR"
+              OLD_SHA=""
             fi
 
-            echo "==> Backend: install & restart"
-            cd /home/ec2-user/Devopsians/backend
-            npm install --omit=dev
+            NEW_SHA="$(git rev-parse HEAD)"
+            echo "$NEW_SHA" > "$CACHE_DIR/last_sha"
+            echo "==> Deployed commit: $NEW_SHA"
 
-            if pm2 describe devopsians-backend >/dev/null 2>&1; then
-              pm2 restart devopsians-backend
+            # Detect changes
+            BACKEND_CHANGED=1
+            FRONTEND_CHANGED=1
+
+            if [ -n "${OLD_SHA}" ] && git cat-file -e "${OLD_SHA}^{commit}" 2>/dev/null; then
+              CHANGED_FILES="$(git diff --name-only "$OLD_SHA" "$NEW_SHA" || true)"
+              echo "==> Changed files since last deploy:"
+              echo "$CHANGED_FILES" | sed '/^$/d' || true
+
+              BACKEND_CHANGED=0
+              FRONTEND_CHANGED=0
+
+              echo "$CHANGED_FILES" | grep -qE '^(backend/|package.json|package-lock.json)' && BACKEND_CHANGED=1 || true
+              echo "$CHANGED_FILES" | grep -qE '^(frontend/|package.json|package-lock.json)' && FRONTEND_CHANGED=1 || true
+            fi
+
+            echo "==> Backend changed?  $BACKEND_CHANGED"
+            echo "==> Frontend changed? $FRONTEND_CHANGED"
+
+            # Backend deploy (only if changed)
+            if [ "$BACKEND_CHANGED" -eq 1 ]; then
+              echo "==> Backend: install & restart"
+              cd "$REPO_DIR/backend"
+
+              # Faster + reproducible if package-lock exists
+              if [ -f package-lock.json ]; then
+                npm ci --omit=dev
+              else
+                npm install --omit=dev
+              fi
+
+              if pm2 describe devopsians-backend >/dev/null 2>&1; then
+                pm2 restart devopsians-backend
+              else
+                pm2 start index.js --name devopsians-backend
+              fi
+
+              pm2 save
             else
-              pm2 start index.js --name devopsians-backend
+              echo "==> Backend unchanged, skipping."
             fi
-            pm2 save
 
-            echo "==> Frontend: build"
-            cd /home/ec2-user/Devopsians/frontend
-            npm install
-            npm run build
+            # Frontend deploy (only if changed)
+            if [ "$FRONTEND_CHANGED" -eq 1 ]; then
+              echo "==> Frontend: install & build"
+              cd "$REPO_DIR/frontend"
 
-            echo "==> Publish frontend via rsync (no wildcards)"
-            sudo rsync -a --delete /home/ec2-user/Devopsians/frontend/dist/ /usr/share/nginx/html/
+              if [ -f package-lock.json ]; then
+                npm ci
+              else
+                npm install
+              fi
 
-            echo "==> Restart nginx"
-            sudo systemctl restart nginx
+              npm run build
+
+              echo "==> Publish frontend via rsync"
+              sudo rsync -a --delete "$REPO_DIR/frontend/dist/" /usr/share/nginx/html/
+
+              echo "==> Restart nginx"
+              sudo systemctl restart nginx
+            else
+              echo "==> Frontend unchanged, skipping."
+            fi
 
             echo "✅ EC2 deploy done"
