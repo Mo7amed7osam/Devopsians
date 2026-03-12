@@ -1,219 +1,262 @@
-[![Deploy to EC2 (Smart + Health Check)](https://github.com/Mo7amed7osam/Devopsians/actions/workflows/deploy-ec2.yml/badge.svg)](https://github.com/Mo7amed7osam/Devopsians/actions/workflows/deploy-ec2.yml)
-# Devopsians
-hihi
-Full‑stack hospital management app with a Node.js/Express + MongoDB backend and a React (Vite) frontend. Dockerfiles and a production docker‑compose stack are included, along with a Jenkins pipeline for CI/CD.
+CareSync
 
-Frontend runs on port 80 (Nginx). Backend API runs on port 3030.
+CareSync is a real-time healthcare coordination platform designed to streamline ICU reservation, emergency transport, and hospital intake workflows.
 
-## Documentation
+The system connects patients, ambulance crews, hospital receptionists, managers, and administrators through a structured workflow with real-time updates, improving visibility and response time during critical care situations.
 
-Comprehensive system documentation and the development plan for the ICU Reservation & Management System is available in `docs/ICU_Reservation_Management_System_v1.0.md`.
+⸻
 
-Open `docs/ICU_Reservation_Management_System_v1.0.md` for feature prioritization, roles, user flows, data model, and a suggested development timeline.
+Overview
 
-## Tech stack
+CareSync unifies ICU reservation requests and emergency coordination into a single operational workflow.
 
-- Backend: Node.js 20, Express, Mongoose, Socket.IO, JWT, CORS
-- Frontend: React 18, Vite, React Router, Socket.IO client
-- Infra: Docker, Nginx (for frontend), docker‑compose, Jenkins
+Hospitals and emergency teams can track requests from initial intake to final admission, ensuring faster decisions and better coordination between departments.
 
-## Repository structure
+The platform enables:
+	•	Real-time ICU reservation tracking
+	•	Ambulance dispatch coordination
+	•	Hospital intake and patient management
+	•	Role-based operational control
+	•	Live system updates across all participants
 
-- `backend/` — Express API, routes, models, utils, `Dockerfile`
-- `frontend/` — React UI (Vite), `nginx.conf`, `Dockerfile`
-- `Deploy/` — Production `docker-compose.yml`, Jenkins pipeline files
+⸻
 
-## Quickstart: local development (no Docker)
+Problem
 
-Prereqs:
-- Node.js 20 and npm
-- MongoDB (local or Atlas connection string)
+In many hospital networks, ICU reservations and emergency coordination happen through fragmented channels such as:
+	•	phone calls
+	•	manual coordination
+	•	disconnected systems
 
-1) Backend
-- Create `backend/.env` with at least:
-  - `MONGO_URL=<your MongoDB connection string>`
-  - `PORT=3030` (optional, defaults to 3030)
-  - `FRONTEND_URL=http://localhost:5173` (for local dev with Vite)
-  - `JWT_SECRET` or `JWT_SECRET_KEY` and `JWT_EXPIRE` (see Env Vars section)
-  - `COOKIE_EXPIRE=1` (days)
-- Install deps and run in dev mode:
+This results in:
+	•	slow approval cycles
+	•	unclear reservation status
+	•	inefficient ambulance-to-hospital handoffs
+	•	limited operational visibility
 
-```pwsh
+⸻
+
+Solution
+
+CareSync provides a workflow-first platform where ICU reservation requests move through a structured lifecycle:
+
+Request → Review → Approval → Status
+
+Each stage is visible to the relevant stakeholders, and real-time updates ensure all actors stay synchronized.
+
+The system integrates patient requests, ambulance operations, and hospital intake into a single operational platform.
+
+⸻
+
+Impact
+
+CareSync improves healthcare coordination by:
+	•	Delivering a full ICU reservation lifecycle with clear ownership at each stage
+	•	Enabling real-time status propagation across patients, hospitals, and ambulance crews
+	•	Reducing manual coordination between emergency responders and hospitals
+	•	Providing a production-ready cloud deployment architecture
+
+⸻
+
+Key Features
+
+Structured ICU Reservation Workflow
+
+Clear request lifecycle from patient submission to hospital approval.
+
+Real-Time Status Updates
+
+Live synchronization using Socket.IO for request status changes.
+
+Multi-Role Access System
+
+Different workflows and permissions for:
+	•	Patients
+	•	Ambulance crews
+	•	Receptionists
+	•	Hospital managers
+	•	System administrators
+
+Operational Dashboard
+
+Responsive dashboard for managing reservations and monitoring activity.
+
+Cloud-Ready Architecture
+
+Containerized services with infrastructure designed for reliable deployment.
+
+⸻
+
+User Roles
+
+Patient
+	•	Search hospitals with available ICU capacity
+	•	Reserve ICU beds
+	•	Request ambulance pickup
+	•	Track request status
+	•	Rate hospital services
+
+Ambulance Crew
+	•	View open pickup requests
+	•	Accept transport jobs
+	•	Track route and trip status
+	•	Mark pickup and hospital arrival
+
+Receptionist
+	•	Manage ICU reservations for assigned hospital
+	•	Check patients in and out
+	•	Process payments and administrative tasks
+
+Manager
+	•	Manage hospital ICUs and staff
+	•	Oversee hospital operational activity
+
+Admin
+	•	Manage hospitals, users, and system-wide operations
+
+⸻
+
+End-to-End Workflow
+	1.	Patient searches for hospitals with available ICU beds
+	2.	Patient reserves an ICU bed
+	3.	Patient optionally requests ambulance pickup
+	4.	Ambulance crew accepts the transport request
+	5.	Receptionist receives the case and prepares admission
+	6.	Patient arrives and is checked in
+	7.	System updates all actors in real time
+
+⸻
+
+Tech Stack
+
+Backend
+	•	Node.js
+	•	Express.js
+	•	MongoDB
+	•	Mongoose
+	•	Socket.IO
+	•	JWT Authentication
+
+Frontend
+	•	React
+	•	Vite
+	•	React Router
+	•	Socket.IO Client
+
+Infrastructure
+	•	Docker
+	•	Nginx
+	•	Docker Compose
+	•	Jenkins CI/CD
+	•	AWS EC2
+
+⸻
+
+Repository Structure
+
+backend/      Express API, models, routes, utilities
+frontend/     React UI application
+Deploy/       Production Docker Compose configuration and pipelines
+docs/         System documentation and architecture planning
+
+
+⸻
+
+Local Development
+
+Prerequisites
+	•	Node.js 20
+	•	MongoDB (local or Atlas)
+
+⸻
+
+Backend
+
+Create .env in backend/:
+
+MONGO_URL=<your MongoDB connection string>
+PORT=3030
+FRONTEND_URL=http://localhost:5173
+JWT_SECRET=<secret>
+JWT_EXPIRE=1d
+COOKIE_EXPIRE=1
+
+Run backend:
+
 cd backend
 npm install
 npm run dev
-```
 
-Backend will listen on http://localhost:3030.
+Backend will run on:
 
-2) Frontend
-- Create (optional) `.env.local` in `frontend/` if you want to override the default API base:
-  - `VITE_API_URL=http://localhost:3030`
-- Install deps and run Vite dev server:
+http://localhost:3030
 
-```pwsh
+
+⸻
+
+Frontend
+
+Create optional .env.local:
+
+VITE_API_URL=http://localhost:3030
+
+Run frontend:
+
 cd frontend
 npm install
 npm run dev
-```
 
-Open http://localhost:5173
+Frontend runs on:
 
-Notes
-- CORS is restricted to `FRONTEND_URL`. For local dev, make sure it matches the Vite URL (http://localhost:5173).
-- Socket.IO uses the same origin allow‑list as CORS via `FRONTEND_URL`.
+http://localhost:5173
 
-## Run with Docker (single container builds)
 
-Build images locally:
+⸻
 
-```pwsh
-# From repo root
-docker build -t devopsians-backend:local -f backend/Dockerfile .
-docker build -t devopsians-frontend:local -f frontend/Dockerfile --build-arg VITE_API_URL=http://localhost:3030 .
-```
+Docker Deployment
+
+Build images:
+
+docker build -t caresync-backend -f backend/Dockerfile .
+docker build -t caresync-frontend -f frontend/Dockerfile .
 
 Run containers:
 
-```pwsh
-# Backend API on 3030
-docker run -d --name devopsians-backend -p 3030:3030 `
-  -e NODE_ENV=production `
-  -e PORT=3030 `
-  -e MONGO_URL="<your MongoDB connection string>" `
-  -e FRONTEND_URL="http://localhost" `
-  devopsians-backend:local
+docker run -d -p 3030:3030 caresync-backend
+docker run -d -p 80:80 caresync-frontend
 
-# Frontend on 80 (Nginx)
-docker run -d --name devopsians-frontend -p 80:80 devopsians-frontend:local
-```
+Frontend:
 
-Open http://localhost for the UI and the API will be reachable at http://localhost:3030.
+http://localhost
 
-## Run with Docker Compose (production stack)
+Backend API:
 
-The production stack uses prebuilt images from a Docker registry and lives in `Deploy/docker-compose.yml`.
+http://localhost:3030
 
-1) Create an env file `Deploy/.env`:
 
-```
-DOCKERHUB_USERNAME=your-dockerhub-user
-MONGO_URL=mongodb+srv://...
-FRONTEND_URL=http://localhost
-```
+⸻
 
-2) Start the stack:
+CI/CD
 
-```pwsh
-docker compose -f Deploy/docker-compose.yml --env-file Deploy/.env up -d
-```
+The project includes automated CI/CD pipelines that:
+	•	build Docker images
+	•	push them to Docker Hub
+	•	deploy the stack to an EC2 instance
+	•	run health checks after deployment
 
-Services
-- Frontend: http://localhost (port 80)
-- Backend: http://localhost:3030
+CI/CD tools used:
+	•	GitHub Actions
+	•	Jenkins
+	•	Docker Hub
+	•	AWS EC2
 
-Tip: For fully local builds without a registry, either
-- build and tag images as `${DOCKERHUB_USERNAME}/devopsians-frontend:latest` and `${DOCKERHUB_USERNAME}/devopsians-backend:latest`, or
-- modify `Deploy/docker-compose.yml` to use local `build:` contexts instead of `image:`.
+⸻
 
-## Environment variables
+Project Type
 
-Backend (Express)
-- `MONGO_URL` (required): MongoDB connection string
-- `PORT` (default: 3030): API port
-- `FRONTEND_URL` (required): Allowed origin for CORS and Socket.IO
-- JWT config:
-  - `JWT_SECRET` or `JWT_SECRET_KEY`: secret used to sign tokens
-  - `JWT_EXPIRE` (default: `1d`): token TTL
-  - `COOKIE_EXPIRE` (default: `1`): cookie expiration in days
-- `NODE_ENV` (e.g., `development` or `production`)
+CareSync is a hospital operations and emergency coordination platform designed primarily for:
+	•	hospital networks
+	•	emergency coordination centers
+	•	healthcare operators
 
-Frontend (Vite/React)
-- `VITE_API_URL`: base URL for the backend API. If not set, defaults to `http://localhost:3030` in `src/utils/api.js`.
-
-Notes
-- Ensure the same JWT secret is used consistently across all backend modules that verify/sign tokens.
-- In production, cookies are set `SameSite=Strict` and `secure` when `NODE_ENV=production`.
-
-## NPM scripts
-
-Backend (`backend/package.json`)
-- `npm run dev`: start with nodemon
-- `npm start`: start with node
-
-Frontend (`frontend/package.json`)
-- `npm run dev`: Vite dev server
-- `npm run build`: production build
-- `npm run preview`: preview build on port 5173
-
-## CI/CD with Jenkins
-
-The `Jenkinsfile` builds and pushes two images:
-- `${DOCKERHUB_USERNAME}/devopsians-backend:latest`
-- `${DOCKERHUB_USERNAME}/devopsians-frontend:latest`
-
-Then it SSHes to the target host and runs docker compose using an env file that contains at least:
-- `DOCKERHUB_USERNAME`, `MONGO_URL`, `FRONTEND_URL`
-
-Expected Jenkins credentials/params
-- `dockerhub-credentials` (username/password for Docker Hub)
-- `ec2-ssh-key` (SSH private key for the target host)
-- `DOCKERHUB_USERNAME` (string parameter or env)
-- `MONGO_URL` (secret text)
-- `FRONTEND_URL` (string parameter)
-
-## Troubleshooting
-
-- CORS errors (403/blocked): Make sure `FRONTEND_URL` matches exactly the site origin (e.g., `http://localhost:5173` for Vite dev, or `http://<server-ip>` behind Nginx).
-- Socket.IO not connecting: Same as above—allowed origin must include the frontend origin.
-- 401/Authentication issues: Ensure the JWT secret env var matches what your code uses for signing and verifying. Also confirm cookies are being sent by the browser (same site, HTTPS in production).
-- Port already in use: Change host port bindings (80/3030) or stop conflicting services.
-
----
-
-Made with ❤️ by the Devopsians team.
-
-## CI/CD with GitLab
-
-An alternative GitLab pipeline is provided in `.gitlab-ci.yml` with stages:
-`prepare` → `test` → `build` → `docker` → `deploy`.
-
-### Required GitLab CI Variables
-Set these in `Settings > CI/CD > Variables` (masked/protected where sensitive):
-
-| Variable | Purpose |
-|----------|---------|
-| `DOCKERHUB_USERNAME` | Docker Hub namespace for images |
-| `DOCKERHUB_PASSWORD` | Docker Hub access token/password (masked) |
-| `EC2_HOST` | Target host/IP for SSH deployment |
-| `EC2_USER` | SSH username (e.g. `ubuntu`) |
-| `EC2_SSH_KEY` | Private key content used for SSH (masked, file or variable) |
-| `MONGO_URL` | Production MongoDB connection string |
-| `FRONTEND_URL` | Public URL of the deployed frontend (e.g. `http://your-domain`) |
-| `VITE_API_URL` | Backend API base injected at build (defaults to `http://localhost:3030` if unset) |
-| `IMAGE_TAG` (optional) | Override tag (defaults to pipeline IID) |
-| `DOCKER_COMPOSE_FILE` (optional) | Alternate compose file path (defaults to `Deploy/docker-compose.yml`) |
-
-### Pipeline Behavior
-* Frontend build uses `VITE_API_URL` (falls back to localhost:3030).
-* Images pushed as `devopsians-backend:latest` and `devopsians-frontend:latest` plus unique tag.
-* Deploy job SSHes to the host, writes `~/devopsians.env`, pulls latest images, and runs `docker compose up -d`.
-* Health check curls the frontend root.
-
-### Common GitLab Issues
-| Symptom | Fix |
-|---------|-----|
-| `config key may not be used with rules` | Remove legacy `only/except` when using `rules`. |
-| Pipeline cannot parse YAML | Ensure no heredoc (`<<EOF`) blocks; use chained commands instead. |
-| Frontend cannot reach backend | Set `VITE_API_URL` and expose port 3030 in compose. |
-| Missing environment URL warning | Ensure `FRONTEND_URL` includes protocol (`http://` or `https://`). |
-
-### Local Validation
-You can lint the file with:
-```bash
-curl -s --request POST --header "PRIVATE-TOKEN: <token>" \
-  --form "content=$(cat .gitlab-ci.yml)" \
-  https://gitlab.com/api/v4/ci/lint
-```
-ز
-زظ
+The platform follows a B2B / B2B2C model, where hospitals operate the system while patients interact with it through the reservation workflow.
